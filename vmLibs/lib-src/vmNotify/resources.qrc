@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resources/notify-1.png</file>
+        <file>resources/notify-2.png</file>
+        <file>resources/notify-3.png</file>
+    </qresource>
+</RCC>

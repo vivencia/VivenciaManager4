@@ -1,0 +1,12 @@
+#ifndef DBRECORDS_GLOBAL_H
+#define DBRECORDS_GLOBAL_H
+
+#include <QtCore/qglobal.h>
+
+#if defined(DBRECORDS_LIBRARY)
+#  define DBRECORDSSHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define DBRECORDSSHARED_EXPORT Q_DECL_IMPORT
+#endif
+
+#endif // DBRECORDS_GLOBAL_H

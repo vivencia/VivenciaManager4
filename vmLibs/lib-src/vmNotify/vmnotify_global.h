@@ -1,0 +1,12 @@
+#ifndef VMNOTIFY_GLOBAL_H
+#define VMNOTIFY_GLOBAL_H
+
+#include <QtCore/qglobal.h>
+
+#if defined(VMNOTIFY_LIBRARY)
+#  define VMNOTIFYSHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define VMNOTIFYSHARED_EXPORT Q_DECL_IMPORT
+#endif
+
+#endif // VMNOTIFY_GLOBAL_H

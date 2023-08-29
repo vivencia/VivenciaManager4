@@ -1,0 +1,12 @@
+#ifndef VMNUMBERS_GLOBAL_H
+#define VMNUMBERS_GLOBAL_H
+
+#include <QtCore/qglobal.h>
+
+#if defined(VMNUMBERS_LIBRARY)
+#  define VMNUMBERSSHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define VMNUMBERSSHARED_EXPORT Q_DECL_IMPORT
+#endif
+
+#endif // VMNUMBERS_GLOBAL_H

@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resources/def-Fold.png</file>
+        <file>resources/def-FoldOver.png</file>
+        <file>resources/def-Unfold.png</file>
+        <file>resources/def-UnfoldOver.png</file>
+        <file>resources/panelClose.png</file>
+        <file>resources/panelCloseOver.png</file>
+    </qresource>
+</RCC>

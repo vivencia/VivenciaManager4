@@ -1,0 +1,13 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resources/add.png</file>
+        <file>resources/bullet-list.png</file>
+        <file>resources/close-active-window.png</file>
+        <file>resources/close-all.png</file>
+        <file>resources/format-stroke-color.png</file>
+        <file>resources/format-text-color.png</file>
+        <file>resources/numbered-list.png</file>
+        <file>resources/remove.png</file>
+        <file>resources/report.png</file>
+    </qresource>
+</RCC>

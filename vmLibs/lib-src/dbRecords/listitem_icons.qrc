@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/">
+        <file>resources/listitem-add.png</file>
+        <file>resources/listitem-delete.png</file>
+        <file>resources/listitem-edit.png</file>
+    </qresource>
+</RCC>

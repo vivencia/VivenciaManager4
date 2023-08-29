@@ -1,0 +1,12 @@
+#ifndef VMWIDGETS_GLOBAL_H
+#define VMWIDGETS_GLOBAL_H
+
+#include <QtCore/qglobal.h>
+
+#if defined(VMWIDGETS_LIBRARY)
+#  define VMWIDGETSSHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define VMWIDGETSSHARED_EXPORT Q_DECL_IMPORT
+#endif
+
+#endif // VMWIDGETS_GLOBAL_H
