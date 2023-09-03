@@ -40,7 +40,6 @@ restoreManager* Sys_Init::restore_instance ( nullptr );
 
 void deleteInstances ()
 {
-	heap_del ( Sys_Init::mainwindow_instance );
 	heap_del ( Sys_Init::editor_instance );
 	heap_del ( Sys_Init::configdlg_instance );
 	heap_del ( Sys_Init::cp_instance );
@@ -49,11 +48,12 @@ void deleteInstances ()
 	heap_del ( Sys_Init::qp_instance );
 	heap_del ( Sys_Init::calc_instance );
 	heap_del ( Sys_Init::completers_instance );
-	heap_del ( Sys_Init::vdb_instance );
 	heap_del ( Sys_Init::backup_instance );
 	heap_del ( Sys_Init::restore_instance );
-	heap_del ( Sys_Init::notify_instance );
+	heap_del ( Sys_Init::vdb_instance );
+	heap_del ( Sys_Init::mainwindow_instance );
 	heap_del ( Sys_Init::config_instance );
+	heap_del ( Sys_Init::notify_instance );
 }
 //--------------------------------------STATIC-HELPER-FUNCTIONS---------------------------------------------
 

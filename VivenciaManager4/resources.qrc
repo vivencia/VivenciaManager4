@@ -1,12 +1,5 @@
 <RCC>
     <qresource prefix="/">
-        <file>resources/browse-controls/add.png</file>
-        <file>resources/browse-controls/edit.png</file>
-        <file>resources/browse-controls/first_rec.png</file>
-        <file>resources/browse-controls/last_rec.png</file>
-        <file>resources/browse-controls/next_rec.png</file>
-        <file>resources/browse-controls/prev_rec.png</file>
-        <file>resources/browse-controls/remove.png</file>
         <file>resources/appicon.png</file>
         <file>resources/application-pdf.png</file>
         <file>resources/arrow-down.png</file>
@@ -55,6 +48,7 @@
         <file>resources/project-nbr.png</file>
         <file>resources/replace-all.png</file>
         <file>resources/reports.png</file>
+        <file>resources/resources.qrc</file>
         <file>resources/run.png</file>
         <file>resources/search.png</file>
         <file>resources/separate_window.png</file>
@@ -66,7 +60,16 @@
         <file>resources/user_priv_ok.png</file>
         <file>resources/useradd.png</file>
         <file>resources/view-form-table.png</file>
+        <file>resources/vm-logo-22x22-new.png</file>
         <file>resources/vm-logo-22x22.png</file>
+        <file>resources/vm-logo-new.png</file>
         <file>resources/vm-logo.png</file>
+        <file>resources/browse-controls/add.png</file>
+        <file>resources/browse-controls/edit.png</file>
+        <file>resources/browse-controls/first_rec.png</file>
+        <file>resources/browse-controls/last_rec.png</file>
+        <file>resources/browse-controls/next_rec.png</file>
+        <file>resources/browse-controls/prev_rec.png</file>
+        <file>resources/browse-controls/remove.png</file>
     </qresource>
 </RCC>

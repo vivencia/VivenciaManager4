@@ -176,16 +176,8 @@ public:
 		return *this;
 	}
 	
-	inline void setRecordSeparationChar ( const QChar& chr )
-	{
-		table_sep = chr;
-		tablesep_matcher.setPattern ( table_sep );
-	}
-
-	inline void setRecordFieldSeparationChar ( const QChar& chr )
-	{
-		mRecord.setFieldSeparationChar ( chr );
-	}
+	void setRecordSeparationChar ( const QChar& chr );
+	void setRecordFieldSeparationChar ( const QChar& chr );
 
 	bool isOK () const;
 	void fromString ( const QString& str );

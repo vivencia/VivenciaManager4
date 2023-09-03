@@ -56,7 +56,7 @@ public:
 	static bool isSystem ( const QString& os_name );
 	static bool initSystem ( const QString& initName );
 
-	inline static const QString mainSectionName () { return QStringLiteral ( "MAIN_SECTION" ); }
+	inline static const QString foldersSectionName () { return QStringLiteral ( "FOLDERS_SECTION" ); }
 	inline static const QString appDefaultsSectionName () { return QStringLiteral ( "APP_DEFAULTS" ); }
 
 	static const QString homeDir ();
@@ -66,12 +66,12 @@ public:
 
 	inline const QString& loggedUser () const
 	{
-		return const_cast<configOps*>(this)->getValue ( mainSectionName (), configDefaultFieldsNames[LAST_LOGGED_USER] );
+		return const_cast<configOps*>(this)->getValue ( foldersSectionName (), configDefaultFieldsNames[LAST_LOGGED_USER] );
 	}
 
 	inline const QString& backupDir () const
 	{
-		return const_cast<configOps*>(this)->getValue ( mainSectionName (), configDefaultFieldsNames[BACKUP_DIR] );
+		return const_cast<configOps*>(this)->getValue ( foldersSectionName (), configDefaultFieldsNames[BACKUP_DIR] );
 	}
 
 	inline const QString& setBackupDir ( const QString& str )
@@ -81,7 +81,7 @@ public:
 
 	inline const QString& dropboxDir () const
 	{
-		return const_cast<configOps*>(this)->getValue ( mainSectionName (), configDefaultFieldsNames[DROPBOX_DIR] );
+		return const_cast<configOps*>(this)->getValue ( foldersSectionName (), configDefaultFieldsNames[DROPBOX_DIR] );
 	}
 
 	inline const QString& setDropboxDir ( const QString& str )

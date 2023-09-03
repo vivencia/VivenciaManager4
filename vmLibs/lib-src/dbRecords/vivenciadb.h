@@ -49,10 +49,10 @@ public:
 		return table_info[to];
 	}
 	
-	static inline QString backupApp () { return QStringLiteral ( "/usr/bin/mysqldump" ); }
+	static inline QString backupApp () { return QStringLiteral ( "mysqldump" ); }
 	static inline QString importApp () { return STR_MYSQL; }
-	static inline QString restoreApp () { return QStringLiteral ( "/usr/bin/mysqlimport" ); }
-	static inline QString adminApp () { return QStringLiteral ( "/usr/bin/mysqladmin" ); }
+	static inline QString restoreApp () { return QStringLiteral ( "mysqlimport" ); }
+	static inline QString adminApp () { return QStringLiteral ( "mysqladmin" ); }
 	//-----------------------------------------STATIC---------------------------------------------
 	
 	inline QSqlDatabase* database () const

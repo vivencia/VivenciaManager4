@@ -1844,9 +1844,11 @@ bool vmNumber::operator== ( const vmNumber& vmnumber ) const
 			case VMNT_DOUBLE:
 			case VMNT_PRICE:
 				return ( nbr_part[0] == vmnumber.nbr_part[0] && nbr_part[1] == vmnumber.nbr_part[1] );
+			case VMNT_TIME:
+				return ( nbr_part[0] == vmnumber.nbr_part[0] && nbr_part[1] == vmnumber.nbr_part[1]
+					 && nbr_part[2] == vmnumber.nbr_part[2] );
 			case VMNT_DATE:
 			case VMNT_PHONE:
-			case VMNT_TIME:
 				return ( nbr_upart[0] == vmnumber.nbr_upart[0] && nbr_upart[1] == vmnumber.nbr_upart[1]
 					 && nbr_upart[2] == vmnumber.nbr_upart[2] );
 		}

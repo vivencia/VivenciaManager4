@@ -54,7 +54,6 @@ public:
 	static triStateType isFile ( const QString& param );
 	static long int fileSize ( const QString& filepath );
 	static int fileCount ( const QString& path, const QStringList& name_filters = QStringList () );
-
 	static bool modifiedDateTime ( const QString& path, vmNumber& modDate, vmNumber& modTime );
 
 	static triStateType canRead ( const QString& path );

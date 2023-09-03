@@ -83,7 +83,7 @@ MainWindow::MainWindow ()
 	  mJobCurItem ( nullptr ), mPayCurItem ( nullptr ), mBuyCurItem ( nullptr ), dlgSaveEditItems ( nullptr )
 {
 	ui->setupUi ( this );
-	setWindowIcon ( ICON ( "vm-logo-22x22" ) );
+	setWindowIcon ( ICON ( APP_ICON ) );
 	setWindowTitle ( PROGRAM_NAME + QStringLiteral ( " - " ) + PROGRAM_VERSION );
 	createTrayIcon (); // create the icon for NOTIFY () use
 }
@@ -3870,19 +3870,25 @@ void MainWindow::reOrderTabSequence ()
 	setTabOrder ( ui->dteBuyDeliveryDate, ui->txtBuyDeliveryMethod );
 }
 
+void MainWindow::changeSchemeStyle ( const QString& style, const bool b_save )
+{
+	m_strStyle = style;
+	mainTaskPanel->setScheme ( m_strStyle );
+	if ( b_save )
+		return CONFIG ()->setValue ( Ui::mw_configSectionName, Ui::mw_configCategoryAppScheme, m_strStyle );
+}
+
 void MainWindow::setupWorkFlow ()
 {
 	mainTaskPanel = new vmTaskPanel;
 	CONFIG ()->addManagedSectionName ( Ui::mw_configSectionName );
-	CONFIG ()->addManagedSectionName ( configOps::mainSectionName () );
+	CONFIG ()->addManagedSectionName ( configOps::foldersSectionName () );
 	CONFIG ()->addManagedSectionName ( configOps::appDefaultsSectionName () );
-	mScheme = CONFIG ()->getValue ( Ui::mw_configSectionName, Ui::mw_configCategoryAppScheme, false );
-	if ( mScheme.isEmpty () )
-	{
-		mScheme = ActionPanelScheme::PanelStyleStr[0];
-		CONFIG ()->setValue ( Ui::mw_configSectionName, Ui::mw_configCategoryAppScheme, mScheme );
-	}
-	mainTaskPanel->setScheme ( mScheme );
+	QString strStyle ( CONFIG ()->getValue ( Ui::mw_configSectionName, Ui::mw_configCategoryAppScheme, false ) );
+	if ( strStyle.isEmpty () )
+		strStyle = ActionPanelScheme::PanelStyleStr[0];
+	changeSchemeStyle ( strStyle );
+
 	grpClients = mainTaskPanel->createGroup ( TR_FUNC ( "CLIENT INFORMATION" ), true, false );
 	grpClients->setMinimumHeight ( ui->frmClientInfo->sizeHint ().height () + 1 );
 	grpClients->addQEntry ( ui->frmClientInfo, new QHBoxLayout );
@@ -4533,7 +4539,7 @@ void MainWindow::on_btnSearchCancel_clicked ()
 void MainWindow::createTrayIcon ()
 {
 	trayIcon = new QSystemTrayIcon ();
-	trayIcon->setIcon ( ICON ( "vm-logo-22x22" ) );
+	trayIcon->setIcon ( ICON ( APP_ICON ) );
 	trayIcon->setToolTip ( windowTitle () );
 	static_cast<void>( connect ( trayIcon, &QSystemTrayIcon::activated, this,
 			  [&] ( QSystemTrayIcon::ActivationReason actReason ) { return trayActivated ( actReason ); } ) );
@@ -4550,15 +4556,15 @@ void MainWindow::createFloatToolBar ()
 {
 	mActionsToolBar = new QToolBar ( this );
 	
-	actionAdd = mActionsToolBar->addAction ( ICON ( "browse-controls/add.png" ), QStringLiteral ( "Add (CRTL+A)" ),
+	actionAdd = mActionsToolBar->addAction ( ICON ( "browse-controls/add.png" ), TR_FUNC ( "Add (CRTL+A)" ),
 							 this, [&] () { return execRecordAction ( Qt::Key_A ); } );
-	actionEdit = mActionsToolBar->addAction ( ICON ( "browse-controls/edit.png" ), QStringLiteral ( "Edit (CRTL+E)" ),
+	actionEdit = mActionsToolBar->addAction ( ICON ( "browse-controls/edit.png" ), TR_FUNC ( "Edit (CRTL+E)" ),
 							 this, [&] () { return execRecordAction ( Qt::Key_E ); } );
-	actionRemove = mActionsToolBar->addAction ( ICON ( "browse-controls/remove.png" ), QStringLiteral ( "Remove (CRTL+R)" ),
+	actionRemove = mActionsToolBar->addAction ( ICON ( "browse-controls/remove.png" ), TR_FUNC ( "Remove (CRTL+R)" ),
 							 this, [&] () { return execRecordAction ( Qt::Key_R ); } );
-	actionSave = mActionsToolBar->addAction ( ICON ( "document-save" ), QStringLiteral ( "Save (CRTL+S)" ), this,
+	actionSave = mActionsToolBar->addAction ( ICON ( "document-save" ), TR_FUNC ( "Save (CRTL+S)" ), this,
 							 [&] () { return execRecordAction ( Qt::Key_S ); } );
-	actionCancel = mActionsToolBar->addAction ( QIcon ( QStringLiteral ( ":resources/cancel.png" ) ), QStringLiteral ( "Cancel (Esc key)" ),
+	actionCancel = mActionsToolBar->addAction ( QIcon ( QStringLiteral ( ":resources/cancel.png" ) ), TR_FUNC ( "Cancel (Esc key)" ),
 							 this, [&] () { return execRecordAction ( Qt::Key_Escape ); } );
 	
 	mActionsToolBar->setFloatable ( true );

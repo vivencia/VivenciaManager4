@@ -14,31 +14,19 @@ static const QString HEADER_ID ( QStringLiteral ( "#!VMFILE" ) );
 static const QString CFG_TYPE_LINE ( QStringLiteral ( "@CFG\n" ) );
 static const QString DATA_TYPE_LINE ( QStringLiteral ( "@CSV\n" ) );
 
-pointersList<textFile::sharedResources*> textFile::sharedResList ( 3 );
-
-textFile::sharedResources* textFile::findSharedResource ( const QString& filename )
-{
-	for ( uint i ( 0 ); i < textFile::sharedResList.count (); ++i )
-	{
-		if ( textFile::sharedResList.at ( i )->filename == filename )
-			return textFile::sharedResList.at ( i );
-	}
-	return nullptr;
-}
-
-static void msleep ( unsigned long msecs )
+/*static void msleep ( unsigned long msecs )
 {
 	QMutex mutex;
 	mutex.lock ();
 	QWaitCondition waitCondition;
 	waitCondition.wait ( &mutex, msecs );
 	mutex.unlock ();
-}
+}*/
 
 //--------------------------------------------TEXT-FILE--------------------------------
 textFile::textFile ()
 	: m_open ( false ), m_needsaving ( false ), mb_needRechecking ( false ), m_headerSize ( 0 ),
-	  m_type ( TF_UNKNOWN ), m_filemonitor ( nullptr ), mb_IgnoreEvents ( false ), mUsedRes ( nullptr )
+	  m_type ( TF_UNKNOWN ), m_filemonitor ( nullptr ), mb_IgnoreEvents ( false ), m_readTime ( VMNT_TIME ), m_readDate ( VMNT_DATE )
 {}
 
 textFile::textFile ( const QString& filename )
@@ -53,11 +41,6 @@ textFile::~textFile ()
 	heap_del ( m_filemonitor );
 	close ();
 	clearData ();
-	if ( mUsedRes && ( --(mUsedRes->counter) == 0 ) )
-	{
-		sharedResList.removeOne ( mUsedRes, 0, true );
-		mUsedRes = nullptr;
-	}
 }
 
 bool textFile::isTextFile ( const QString& filename, const TF_TYPE type )
@@ -92,17 +75,7 @@ bool textFile::open ()
 		return true;
 
 	if ( m_file.fileName ().isEmpty () )
-	{
-		mUsedRes = findSharedResource ( m_filename );
-		if ( mUsedRes == nullptr )
-		{
-			mUsedRes = new sharedResources;
-			mUsedRes->filename = m_filename;
-			sharedResList.append ( mUsedRes );
-		}
-		mUsedRes->counter++;
 		m_file.setFileName ( m_filename );
-	}
 	else
 	{
 		if ( m_file.fileName () != m_filename )
@@ -161,7 +134,7 @@ void textFile::readType ()
 	}
 }
 
-triStateType textFile::load ()
+triStateType textFile::load ( const bool b_replaceBuffers )
 {
 	if ( m_open && !mb_needRechecking )
 		return TRI_ON;
@@ -190,18 +163,14 @@ triStateType textFile::load ()
 			return TRI_OFF;
 		}
 
-		if ( mUsedRes->counter > 1 )
-		{
-			if ( mUsedRes->b_inUse )
-			{
-				msleep ( 300 );
-				return load ();
-			}
-		}
-
-		const triStateType ret ( loadData () );
+		const triStateType ret ( loadData ( b_replaceBuffers, false ) );
 		mb_needRechecking = ( ret != TRI_ON );
 		setIgnoreEvents ( b_ignore );
+		if ( ret == TRI_ON )
+		{
+			fileOps::modifiedDateTime ( m_filename, m_readDate, m_readTime );
+			return TRI_ON;
+		}
 	}
 	return TRI_OFF;
 }
@@ -246,25 +215,14 @@ void textFile::commit ()
 {
 	if ( !m_needsaving ) return;
 
-	if ( mUsedRes->b_inUse )
-	{
-		msleep ( 300 );
-		commit ();
-		return;
-	}
+	vmNumber modTime ( VMNT_TIME ), modDate ( VMNT_DATE );
+	fileOps::modifiedDateTime ( m_filename, modDate, modTime );
 
-	if ( mUsedRes->modified_counter > 0 && mUsedRes->modifierInstance != this )
-		mb_needRechecking = true;
-	if ( mb_needRechecking )
-	{
-		if ( recheckData ( false, true ) )
-			mUsedRes->modified_counter--;
-	}
+	if ( m_readDate != modDate || m_readTime != modTime )
+		loadData ( true, true );
 
 	const bool b_ignore ( mb_IgnoreEvents );
 	setIgnoreEvents ( true );
-	mUsedRes->b_inUse = true;
-	mUsedRes->modifierInstance = this;
 
 	remove ();
 	if ( open () )
@@ -274,11 +232,9 @@ void textFile::commit ()
 		{
 			m_file.flush ();
 			m_needsaving = false;
+			fileOps::modifiedDateTime ( m_filename, m_readDate, m_readTime );
 		}
-		mUsedRes->modified_counter = mUsedRes->counter - 1;
 	}
-	mUsedRes->b_inUse = false;
-	msleep ( 400 );
 	setIgnoreEvents ( b_ignore );
 }
 
@@ -300,7 +256,7 @@ void textFile::setIgnoreEvents ( const bool b_ignore )
 	}
 }
 
-bool textFile::loadData ()
+bool textFile::loadData ( const bool, const bool )
 {
 	m_data = m_file.readAll ();
 	return ( !m_data.isEmpty () );
@@ -315,26 +271,6 @@ bool textFile::writeData ()
 void textFile::clearData ()
 {
 	m_data.clear ();
-}
-
-bool textFile::recheckData ( const bool b_userInteraction, const bool b_before_saving )
-{
-	if ( b_userInteraction )
-	{
-		const QString messageStr ( APP_TR_FUNC ( "The contents of the file %1 were modified by an external applicantion."
-											 "Load the new file contents? If not, on saving, data might be lost." ) );
-		if ( !vmNotify::questionBox ( nullptr, APP_TR_FUNC ( "Outside changes" ), messageStr.arg ( m_filename ) ) )
-			 return false;
-	}
-
-	if ( !b_before_saving )
-	{
-		close ();
-		if ( open () )
-			return load () == TRI_ON;
-		return false;
-	}
-	return true;
 }
 //--------------------------------------------TEXT-FILE--------------------------------
 
@@ -367,18 +303,6 @@ configFile::~configFile ()
 
 bool configFile::setWorkingSection ( const QString& section_name )
 {
-	if ( mUsedRes->b_inUse )
-	{
-		msleep ( 300 );
-		return setWorkingSection ( section_name );
-	}
-
-	/*if ( mUsedRes->modified_counter > 0 && mUsedRes->modifierInstance != this )
-	{
-		if ( recheckData () )
-			mUsedRes->modified_counter--;
-	}*/
-
 	const int i ( findSection ( section_name ) );
 	if ( i >= 0 )
 	{
@@ -390,21 +314,6 @@ bool configFile::setWorkingSection ( const QString& section_name )
 
 const QString& configFile::fieldValue ( const QString& field_name ) const
 {
-	if ( mUsedRes->b_inUse )
-	{
-		msleep ( 300 );
-		return fieldValue ( field_name );
-	}
-
-	if ( mUsedRes->modified_counter > 0 && mUsedRes->modifierInstance != this )
-		const_cast<configFile*>( this )->mb_needRechecking = true;
-
-	/*if ( mb_needRechecking )
-	{
-		if ( const_cast<configFile*>( this )->recheckData () )
-			mUsedRes->modified_counter--;
-	}*/
-
 	const int idx ( fieldIndex ( field_name ) );
 	if ( idx != -1 )
 		return cfgData.current ()->values.at ( idx );
@@ -413,21 +322,6 @@ const QString& configFile::fieldValue ( const QString& field_name ) const
 
 int configFile::fieldIndex ( const QString& field_name ) const
 {
-	if ( mUsedRes->b_inUse )
-	{
-		msleep ( 300 );
-		return fieldIndex ( field_name );
-	}
-
-	if ( mUsedRes->modified_counter > 0 && mUsedRes->modifierInstance != this )
-		const_cast<configFile*>( this )->mb_needRechecking = true;
-
-	/*if ( mb_needRechecking )
-	{
-		if ( const_cast<configFile*>( this )->recheckData () )
-			mUsedRes->modified_counter--;
-	}*/
-
 	int ret ( -1 );
 	if ( cfgData.currentIndex () != -1 )
 	{
@@ -495,6 +389,7 @@ void configFile::deleteField ( const QString& field_name )
 			{
 				section_info->fields.remove ( static_cast<int>(i) );
 				section_info->values.remove ( static_cast<int>(i) );
+				m_needsaving = true;
 				break;
 			}
 		}
@@ -503,21 +398,6 @@ void configFile::deleteField ( const QString& field_name )
 
 bool configFile::setFieldValue ( const QString& field_name, const QString& value )
 {
-	if ( mUsedRes->b_inUse )
-	{
-		msleep ( 300 );
-		return setFieldValue ( field_name, value );
-	}
-
-	if ( mUsedRes->modified_counter > 0 && mUsedRes->modifierInstance != this )
-		mb_needRechecking = true;
-
-	/*if ( mb_needRechecking )
-	{
-		if ( recheckData () )
-			mUsedRes->modified_counter--;
-	}*/
-
 	if ( cfgData.currentIndex () != -1 )
 	{
 		configFile_st* __restrict section_info ( cfgData.current () );
@@ -532,49 +412,7 @@ bool configFile::setFieldValue ( const QString& field_name, const QString& value
 	return false;
 }
 
-bool configFile::writeData ()
-{
-	QString line;
-	configFile_st* __restrict section_info ( nullptr );
-	uint n_fields ( 0 );
-	qint64 written_total ( 0 );
-
-	for ( uint i ( 0 ); i < cfgData.count (); ++i )
-	{
-		section_info = cfgData.at ( i );
-		line = CHR_NEWLINE + CHR_L_BRACKET + section_info->section_name + CHR_R_BRACKET + CHR_NEWLINE;
-		n_fields = section_info->fields.count ();
-		for ( uint x ( 0 ); x < n_fields; ++x )
-			line += section_info->fields.at ( x ) + CHR_EQUAL + section_info->values.at ( x ) + CHR_NEWLINE;
-
-		written_total += m_file.write ( line.toUtf8 ().constData (), line.size () );
-	}
-	return ( written_total > 0 );
-}
-
-void configFile::clearData ()
-{
-	cfgData.clear ( true );
-}
-
-bool configFile::recheckData ( const bool b_userInteraction, const bool b_before_saving )
-{
-	if ( textFile::recheckData ( b_userInteraction, b_before_saving ) )
-		return parseConfigFile ( !b_before_saving, b_before_saving );
-	return false;
-}
-
-int configFile::findSection ( const QString& section_name ) const
-{
-	for ( uint i ( 0 ); i < cfgData.count (); ++i )
-	{
-		if ( cfgData.at ( i )->section_name == section_name )
-			return static_cast<int>( i );
-	}
-	return -1;
-}
-
-bool configFile::parseConfigFile ( const bool b_reload, const bool b_load_non_managed )
+bool configFile::loadData ( const bool b_replaceBuffers, const bool b_includeNonManaged )
 {
 	close ();
 	if ( !open () )
@@ -606,12 +444,27 @@ bool configFile::parseConfigFile ( const bool b_reload, const bool b_load_non_ma
 				section_name = line.mid ( idx, idx2 - idx );
 
 				// This section is managed, therefore we check if it is already in memory. If it is not, we read it from the disk.
-				// If it is, we only read if b_reload is true. In this case, the memory contents will be overwritten with the disk contents
-				if ( mlst_managedSections.contains (  section_name ) || b_load_non_managed )
+				// If it is, we only read if b_replaceBuffers is true. In this case, the memory contents will be overwritten with the disk contents
+				if ( mlst_managedSections.contains ( section_name ) )
 				{
-					if ( !setWorkingSection ( section_name ) ) // managed information is not in memory
+					if ( b_replaceBuffers )
 					{
-						insertNewSection ( section_name );
+						if ( !setWorkingSection ( section_name ) ) // managed information is not in memory
+							insertNewSection ( section_name );
+					}
+						else
+						continue; //read it and ignore it
+				}
+				else
+				{
+					if ( b_includeNonManaged ) // Always b_replaceBuffers = true for non-managed
+					{
+						if ( !setWorkingSection ( section_name ) ) // non-managed information is not in memory
+							insertNewSection ( section_name );
+					}
+					else //First time read, skip non-managed sections
+					{
+						 continue;
 					}
 				}
 
@@ -628,7 +481,7 @@ bool configFile::parseConfigFile ( const bool b_reload, const bool b_load_non_ma
 							fld_value = line.mid ( idx + 1 ).simplified ();
 							if ( fieldIndex ( fld_name ) != -1 ) // field read from disk exists in memory
 							{
-								if ( b_reload || b_load_non_managed )
+								if ( b_replaceBuffers || b_includeNonManaged )
 									setFieldValue ( fld_name, fld_value );
 							}
 							else
@@ -655,6 +508,43 @@ bool configFile::parseConfigFile ( const bool b_reload, const bool b_load_non_ma
 	cfgData.setCurrent ( 0 );
 	return !( cfgData.isEmpty () );
 }
+
+bool configFile::writeData ()
+{
+	QString line;
+	configFile_st* __restrict section_info ( nullptr );
+	uint n_fields ( 0 );
+	qint64 written_total ( 0 );
+
+	for ( uint i ( 0 ); i < cfgData.count (); ++i )
+	{
+		section_info = cfgData.at ( i );
+		line = CHR_NEWLINE + CHR_L_BRACKET + section_info->section_name + CHR_R_BRACKET + CHR_NEWLINE;
+		n_fields = section_info->fields.count ();
+		for ( uint x ( 0 ); x < n_fields; ++x )
+		{
+			line += section_info->fields.at ( x ) + CHR_EQUAL + section_info->values.at ( x ) + CHR_NEWLINE;
+		}
+
+		written_total += m_file.write ( line.toLocal8Bit () );
+	}
+	return ( written_total > 0 );
+}
+
+void configFile::clearData ()
+{
+	cfgData.clear ( true );
+}
+
+int configFile::findSection ( const QString& section_name ) const
+{
+	for ( uint i ( 0 ); i < cfgData.count (); ++i )
+	{
+		if ( cfgData.at ( i )->section_name == section_name )
+			return static_cast<int>( i );
+	}
+	return -1;
+}
 //--------------------------------------------CONFIG-FILE--------------------------------
 
 //--------------------------------------------DATA-FILE--------------------------------
@@ -670,7 +560,10 @@ dataFile::dataFile ( const QString& filename )
 	m_type = TF_DATA;
 }
 
-dataFile::~dataFile () {}
+dataFile::~dataFile ()
+{
+	commit (); //save pending changes
+}
 
 void dataFile::insertRecord ( const int pos, const stringRecord& rec )
 {
@@ -683,18 +576,6 @@ void dataFile::insertRecord ( const int pos, const stringRecord& rec )
 
 void dataFile::changeRecord ( const int pos, const stringRecord& rec )
 {
-	if ( mUsedRes->b_inUse )
-	{
-		msleep ( 300 );
-		return changeRecord ( pos, rec );
-	}
-
-	/*if ( mUsedRes->modified_counter > 0 && mUsedRes->modifierInstance != this )
-	{
-		if ( recheckData () )
-			mUsedRes->modified_counter--;
-	}*/
-
 	if ( pos >= 0 && pos < static_cast<int>( recData.countRecords () ) )
 	{
 		recData.changeRecord ( static_cast<uint>( pos ), rec );
@@ -721,17 +602,6 @@ void dataFile::appendRecord ( const stringRecord& rec )
 
 bool dataFile::getRecord ( stringRecord& rec, const int pos ) const
 {
-	if ( mUsedRes->b_inUse )
-	{
-		msleep ( 300 );
-		return getRecord ( rec, pos );
-	}
-
-	/*if ( mUsedRes->modified_counter > 0 && mUsedRes->modifierInstance != this )
-	{
-		if ( const_cast<dataFile*>( this )->recheckData () )
-			mUsedRes->modified_counter--;
-	}*/
 
 	if ( pos >= 0 && static_cast<uint>( pos ) < recData.countRecords () )
 	{
@@ -751,12 +621,12 @@ void dataFile::clearData ()
 	recData.clear ();
 }
 
-bool dataFile::loadData ()
+bool dataFile::loadData ( const bool, const bool )
 {
 	QString buf ( m_file.readAll () );
 	if ( buf.length () > 1 )
 	{
-		// buf.remove ( 0, m_headerSize );
+		buf.remove ( 0, buf.indexOf ( CHR_NEWLINE, 0 ) + 1 ); //remove header info
 		recData.fromString ( buf );
 	}
 	return recData.isOK ();
@@ -771,9 +641,4 @@ bool dataFile::writeData ()
 		written = m_file.write ( data, static_cast<qint64>( data.size () ) );
 	}
 	return ( written > 0 );
-}
-
-bool dataFile::recheckData ( const bool b_userInteraction, const bool b_before_saving )
-{
-	return textFile::recheckData ( b_userInteraction, b_before_saving );
 }

@@ -537,6 +537,17 @@ stringTable::stringTable ( const QString& str, const QChar sep )
 	fromString ( str );
 }
 
+void stringTable::setRecordSeparationChar ( const QChar& chr )
+{
+	table_sep = chr;
+	tablesep_matcher.setPattern ( table_sep );
+}
+
+void stringTable::setRecordFieldSeparationChar ( const QChar& chr )
+{
+	mRecord.setFieldSeparationChar ( chr );
+}
+
 bool stringTable::isOK () const
 {
 	return mRecords.endsWith ( table_sep );

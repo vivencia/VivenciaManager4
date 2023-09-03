@@ -236,7 +236,6 @@ public:
 	void restoreLastSession ();
 	void searchCallbackSelector ( const QKeyEvent* ke );
 	void reOrderTabSequence ();
-	inline const QString& appMainScheme () const { return mScheme; }
 	void setupWorkFlow ();
 	void setupSectionNavigation ();
 	void findSectionByScrollPosition ( const int scrollBar_value );
@@ -244,7 +243,9 @@ public:
 	void updateActionButtonsState ();
 	bool execRecordAction ( const int key );
 	void setupTabNavigationButtons ();
-	inline void changeSchemeStyle ( const QString& style ) { mainTaskPanel->setScheme ( style ); }
+
+	inline const QString& appMainStyle () const { return m_strStyle; }
+	void changeSchemeStyle ( const QString& style, const bool b_save = false );
 	
 //----------------------------------SETUP-CUSTOM-CONTROLS-NAVIGATION--------------------------------------
 
@@ -323,7 +324,7 @@ private:
 	vmActionGroup* grpPays;
 	vmActionGroup* grpBuys;
 
-	QString mScheme;
+	QString m_strStyle;
 
 	int clientSectionPos, jobSectionPos, paySectionPos, buySectionPos;
 	dbListItem* activeRecord;

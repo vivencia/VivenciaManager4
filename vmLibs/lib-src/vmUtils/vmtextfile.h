@@ -5,6 +5,7 @@
 #include "tristatetype.h"
 
 #include <vmStringRecord/stringrecord.h>
+#include <vmNumbers/vmnumberformats.h>
 
 #include <QtCore/QFile>
 
@@ -33,7 +34,7 @@ public:
 	inline bool isEmpty () const { return m_file.size () <= 0; }
 
 	void close ();
-	triStateType load ();
+	triStateType load ( const bool b_replaceBuffers = true );
 	void commit ();
 
 	void setText ( const QString& new_file_text );
@@ -49,10 +50,9 @@ protected:
 	void writeHeader ();
 	void fileExternallyAltered ( const QString&, const uint event );
 
-	virtual bool loadData ();
+	virtual bool loadData ( const bool b_replaceBuffers = true, const bool b_includeNonManaged = false );
 	virtual bool writeData();
 	virtual void clearData ();
-	virtual bool recheckData ( const bool b_userInteraction = false, const bool b_before_saving = false );
 
 	bool m_open;
 	bool m_needsaving;
@@ -64,23 +64,8 @@ protected:
 	QFile m_file;
 	vmFileMonitor* m_filemonitor;
 	bool mb_IgnoreEvents;
-
-	struct sharedResources
-	{
-		QString filename;
-		bool b_inUse;
-		uint modified_counter;
-		uint counter;
-		textFile* modifierInstance;
-
-		sharedResources () : b_inUse ( false ), modified_counter ( 0 ),
-								counter ( 0 ), modifierInstance ( nullptr ) {}
-	};
-
-	static pointersList<sharedResources*> sharedResList;
-	sharedResources* mUsedRes;
-
-	sharedResources* findSharedResource ( const QString& filename );
+	vmNumber m_readTime;
+	vmNumber m_readDate;
 };
 //--------------------------------------------TEXT-FILE--------------------------------
 
@@ -113,10 +98,9 @@ public:
 	inline uint sectionCount () const { return cfgData.count (); }
 
 protected:
-	inline bool loadData () { return parseConfigFile (); }
+	bool loadData ( const bool b_replaceBuffers = true, const bool b_onlyNonManaged = false );
 	bool writeData ();
 	void clearData ();
-	bool recheckData ( const bool b_userInteraction = false, const bool b_before_saving = false );
 
 	int findSection ( const QString& section_name ) const;
 	bool parseConfigFile ( const bool b_reload = false, const bool b_load_non_managed = false );
@@ -154,9 +138,8 @@ public:
 
 protected:
 	void clearData ();
-	bool loadData();
+	bool loadData ( const bool b_replaceBuffers = true, const bool b_includeNonManaged = false );
 	bool writeData ();
-	bool recheckData ( const bool b_userInteraction = false, const bool b_before_saving = false );
 
 private:
 	stringTable recData;

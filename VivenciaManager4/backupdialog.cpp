@@ -28,6 +28,8 @@
 const uint BACKUP_IDX ( 0 );
 const uint RESTORE_IDX ( 1 );
 
+auto backupFileList = [] () ->QString  { return CONFIG ()->appDataDir () + QStringLiteral ( "/backups.db" ); };
+
 BackupDialog::BackupDialog ()
 	: QDialog ( nullptr ), ui ( new Ui::BackupDialog ), tdb ( nullptr ),
 	  b_IgnoreItemListChange ( false ), mb_success ( false ), mb_nodb ( false ),
@@ -35,7 +37,7 @@ BackupDialog::BackupDialog ()
 {
 	ui->setupUi ( this );
 	setWindowTitle ( TR_FUNC ( "Backup/Restore - " ) + PROGRAM_NAME );
-	setWindowIcon ( ICON ( "vm-logo-22x22" ) );
+	setWindowIcon ( ICON ( APP_ICON ) );
 
 	setupConnections ();
 	fillTable ();
@@ -338,6 +340,7 @@ bool BackupDialog::doRestore ( const QString& files )
 	} );
 
 	bool ok ( false );
+	bool success ( false );
 
 	QStringList::const_iterator itr ( files_list.constBegin () );
 	const QStringList::const_iterator itr_end ( files_list.constEnd () );
@@ -349,22 +352,18 @@ bool BackupDialog::doRestore ( const QString& files )
 			NOTIFY ()->notifyMessage ( TR_FUNC ( "Restore - Error " ), filepath + TR_FUNC ( "is an invalid file" ) );
 			continue;
 		}
-
-		if ( fileOps::exists ( filepath ).isOn () )
+		if ( textFile::isTextFile ( filepath, textFile::TF_DATA ) )
+			ok = VDB ()->importFromCSV ( filepath );
+		else
 		{
-			if ( textFile::isTextFile ( filepath, textFile::TF_DATA ) )
-				ok |= VDB ()->importFromCSV ( filepath );
-			else
-			{
-				ok |= VDB ()->doRestore ( filepath );
-			}
+			ok = VDB ()->doRestore ( filepath );
 		}
+		if ( ok )
+			addToRestoreList ( filepath, this );
+		success |= ok;
 	}
-	if ( ok )
+	if ( success )
 	{
-		if ( files_list.count () == 1 )
-			addToRestoreList ( files, this );
-
 		/* Force rescan of all tables, which is done in updateGeneralTable (called by VivenciaDB
 		 * when general table cannot be found or there is a version mismatch
 		 */
@@ -390,14 +389,12 @@ void BackupDialog::addToRestoreList ( const QString& filepath, BackupDialog* bDl
 			if ( bDlg->ui->restoreList->item ( i )->text () == filepath ) return;
 		bDlg->ui->restoreList->addItem ( filepath );
 		bDlg->tdb->appendRecord ( filepath );
-		bDlg->tdb->commit ();
 	}
 	else
 	{
-		dataFile* df ( new dataFile ( CONFIG ()->appDataDir () + QStringLiteral ( "/backups.db" ) ) );
+		dataFile* df ( new dataFile ( backupFileList () ) );
 		df->load ();
 		df->appendRecord ( filepath );
-		df->commit ();
 		delete df;
 	}
 }
@@ -405,7 +402,7 @@ void BackupDialog::addToRestoreList ( const QString& filepath, BackupDialog* bDl
 void BackupDialog::readFromBackupList ()
 {
 	if ( !tdb )
-		tdb = new dataFile ( CONFIG ()->appDataDir () + QStringLiteral ( "/backups.db" ) );
+		tdb = new dataFile ( backupFileList () );
 	if ( tdb->load ().isOn () )
 	{
 		stringRecord files;
@@ -423,7 +420,6 @@ void BackupDialog::readFromBackupList ()
 						tdb->changeRecord ( 0, files );
 					}
 				} while ( files.next () );
-				tdb->commit ();
 			}
 		}
 	}
@@ -436,7 +432,7 @@ int BackupDialog::showNoDatabaseOptionsWindow ()
 	if ( dlgNoDB == nullptr )
 	{
 		dlgNoDB = new QDialog ( this );
-		dlgNoDB->setWindowIcon ( ICON ( "vm-logo-22x22" ) );
+		dlgNoDB->setWindowIcon ( ICON ( APP_ICON ) );
 		dlgNoDB->setWindowTitle ( TR_FUNC ( "Database inexistent" ) );
 
 		QLabel* lblExplanation ( new QLabel ( TR_FUNC (
@@ -567,7 +563,7 @@ void BackupDialog::btnApply_clicked ()
 			mb_success = doExport ( ui->txtExportPrefix->text (), ui->txtExportFolder->text (), true );
 	}
 	else
-	{ // restore
+	{ //restore
 		QString selected;
 		if ( ui->rdChooseKnownFile->isChecked () )
 		{
@@ -738,7 +734,6 @@ void BackupDialog::btnRemoveFromList_clicked ()
 		{
 			files.removeField ( static_cast<uint>(ui->restoreList->currentRow ()) );
 			tdb->changeRecord ( 0, files );
-			tdb->commit ();
 		}
 		ui->restoreList->removeItemWidget ( item );
 		delete item;

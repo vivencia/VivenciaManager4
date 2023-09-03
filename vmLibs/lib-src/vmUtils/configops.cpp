@@ -102,10 +102,10 @@ const QString& configOps::setDir ( const CFG_FIELDS field, const QString& dir )
 	const QString fieldName ( configDefaultFieldsNames[field ] );
 	if ( fileOps::isDir ( dir ).isOn () )
 	{
-		setValue ( mainSectionName (), fieldName, dir.endsWith ( CHR_F_SLASH ) ? dir : dir + CHR_F_SLASH );
+		setValue ( foldersSectionName (), fieldName, dir.endsWith ( CHR_F_SLASH ) ? dir : dir + CHR_F_SLASH );
 		return dir;
 	}
-	return getValue ( mainSectionName (), fieldName );
+	return getValue ( foldersSectionName (), fieldName );
 }
 
 const QString& configOps::getValue ( const QString& section_name, const QString& category_name, const bool b_save_if_not_in_file )
@@ -228,7 +228,7 @@ bool configOps::initSystem ( const QString& initName )
 
 const QString& configOps::projectsBaseDir_init ()
 {
-	getValue ( mainSectionName (), configDefaultFieldsNames[BASE_PROJECT_DIR] );
+	getValue ( foldersSectionName (), configDefaultFieldsNames[BASE_PROJECT_DIR] );
 	mStrBaseDir = mRetString;
 	projectsBaseDir = [&] ()->const QString& { return projectsBaseDir_fast (); };
 	return mStrBaseDir;
@@ -244,7 +244,7 @@ const QString& configOps::getProjectBasePath ( const QString& client_name )
 
 const QString& configOps::estimatesDir ( const QString& client_name )
 {
-	getValue ( mainSectionName (), configDefaultFieldsNames[ESTIMATE_DIR], false );
+	getValue ( foldersSectionName (), configDefaultFieldsNames[ESTIMATE_DIR], false );
 	if ( !mRetString.isEmpty () )
 		mRetString.replace ( QStringLiteral ( "%1" ), client_name );
 	return mRetString;
@@ -260,7 +260,7 @@ const QString& configOps::setEstimatesDir ( const QString& str, const bool full_
 
 const QString& configOps::reportsDir ( const QString& client_name )
 {
-	getValue ( mainSectionName (), configDefaultFieldsNames[REPORT_DIR], false );
+	getValue ( foldersSectionName (), configDefaultFieldsNames[REPORT_DIR], false );
 	if ( !mRetString.isEmpty () )
 		mRetString.replace ( QStringLiteral ( "%1" ), client_name );
 	return mRetString;

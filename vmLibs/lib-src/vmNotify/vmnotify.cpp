@@ -119,7 +119,8 @@ void vmNotify::addMessage ( Message* message )
 	message->mbAutoRemove = ( message->timeout != -1 || !message->isModal );
 	setupWidgets ( message );
 	messageStack.append ( message );
-	mPanel->setScheme ( Sys_Init::mainwindow_instance->appMainScheme () );
+	if ( MAINWINDOW () != nullptr )
+		mPanel->setScheme ( MAINWINDOW ()->appMainStyle () );
 	adjustSizeAndPosition ();
 	setWindowOpacity ( 0.9 );
 

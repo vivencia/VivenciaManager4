@@ -1102,9 +1102,9 @@ bool VivenciaDB::doRestore ( const QString& filepath )
 	QStringList restoreapp_args;
 	restoreapp_args <<
 					   QStringLiteral ( "--user=") + USER_NAME <<
-					   QStringLiteral ( " --password=" ) + PASSWORD <<
-					   QStringLiteral ( " --default_character_set=utf8mb4 " ) <<
-					   DB_NAME;
+					   QStringLiteral ( "--password=" ) + PASSWORD <<
+					   QStringLiteral ( "--default_character_set=utf8mb4" ) <<
+					   QStringLiteral ( "--databases" ) << DB_NAME;
 	bool ret ( true );
 
 	//hopefully, by now, Data will have intermediated well the situation, having all the pieces of the program
@@ -1118,8 +1118,6 @@ bool VivenciaDB::doRestore ( const QString& filepath )
 	{
 		// some table version mismatch
 		ret = fileOps::executeWithFeedFile ( restoreapp_args, importApp (), uncompressed_file, true, true );
-		restoreapp_args.removeAt ( 2 );
-		restoreapp_args.removeAt ( 2 );
 	}
 	// use a previous dump from mysqldump to update or replace one or more tables in an existing database
 	// Tables will be overwritten or created. Note that DB_NAME must refer to an existing database
@@ -1127,17 +1125,17 @@ bool VivenciaDB::doRestore ( const QString& filepath )
 	{
 		restoreapp_args.append ( uncompressed_file );
 		ret = fileOps::executeWait ( restoreapp_args, restoreApp (), true );
-		restoreapp_args.removeAt ( 2 );
-		restoreapp_args.removeAt ( 2 );
-		restoreapp_args.removeAt ( 2 );
 	}
 	// Repair the tables for any problems that we have faced or would face
 
-	restoreapp_args <<
-					   QStringLiteral ( "--auto-repair" ) <<
-					   QStringLiteral ( "--optimize" ) <<
-					   QStringLiteral ( " --all-databases" );
-	fileOps::executeWait ( restoreapp_args, QStringLiteral ( "mysqlcheck" ) );
+	QStringList repairapp_args;
+	repairapp_args <<
+					QStringLiteral ( "--user=") + USER_NAME <<
+					QStringLiteral ( "--password=" ) + PASSWORD <<
+					QStringLiteral ( "--auto-repair" ) <<
+					QStringLiteral ( "--optimize" ) <<
+					QStringLiteral ( "databases" ) << DB_NAME;
+	fileOps::executeWait ( repairapp_args, QStringLiteral ( "mysqlcheck" ) );
 
 	m_progressStepUp_func ();
 

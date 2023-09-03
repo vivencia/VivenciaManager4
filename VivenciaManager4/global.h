@@ -9,8 +9,9 @@ const QString PROGRAM_NAME ( QStringLiteral ( "VivenciaManager4" ) );
 #define VERSION_MAJOR 3
 #define VERSION_MINOR 10
 #define VERSION_REVISION 0
-const QString VERSION_APPEND ( QStringLiteral ( "Was gefunden!" ) );
-const QString VERSION_DATE ( QStringLiteral ( "2018-09-26") );
+const QString VERSION_APPEND ( QStringLiteral ( "Reborn" ) );
+const QString VERSION_DATE ( QStringLiteral ( "2023-08-18") );
+const QString APP_ICON ( QStringLiteral ( "vm-logo-new" ) );
 
 #define QUOTEME_(x) #x
 #define QUOTEME(x) QUOTEME_(x)
