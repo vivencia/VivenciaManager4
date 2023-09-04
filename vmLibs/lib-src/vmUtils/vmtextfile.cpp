@@ -7,21 +7,25 @@
 #include <vmNotify/vmnotify.h>
 
 #include <QtCore/QStringList>
-#include <QtCore/QMutex>
-#include <QtCore/QWaitCondition>
 
 static const QString HEADER_ID ( QStringLiteral ( "#!VMFILE" ) );
 static const QString CFG_TYPE_LINE ( QStringLiteral ( "@CFG\n" ) );
 static const QString DATA_TYPE_LINE ( QStringLiteral ( "@CSV\n" ) );
 
-/*static void msleep ( unsigned long msecs )
+/*
+ *
+#include <QtCore/QMutex>
+#include <QtCore/QWaitCondition>
+
+ static void msleep ( unsigned long msecs )
 {
 	QMutex mutex;
 	mutex.lock ();
 	QWaitCondition waitCondition;
 	waitCondition.wait ( &mutex, msecs );
 	mutex.unlock ();
-}*/
+}
+*/
 
 //--------------------------------------------TEXT-FILE--------------------------------
 textFile::textFile ()

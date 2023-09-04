@@ -6,12 +6,13 @@
 #include <QtCore/QString>
 const QString PROGRAM_NAME ( QStringLiteral ( "VivenciaManager4" ) );
 
-#define VERSION_MAJOR 3
-#define VERSION_MINOR 10
+#define VERSION_MAJOR 4
+#define VERSION_MINOR 0
 #define VERSION_REVISION 0
 const QString VERSION_APPEND ( QStringLiteral ( "Reborn" ) );
 const QString VERSION_DATE ( QStringLiteral ( "2023-08-18") );
-const QString APP_ICON ( QStringLiteral ( "vm-logo-new" ) );
+
+#define APP_ICON "vm-logo-new"
 
 #define QUOTEME_(x) #x
 #define QUOTEME(x) QUOTEME_(x)

@@ -141,13 +141,6 @@ void vmNotify::removeMessage ( Message* message )
 {
 	if ( message != nullptr )
 	{
-		messageStack.removeOne ( message );
-		if ( messageStack.isEmpty () )
-		{
-			fadeTimer->start ( FADE_TIMER_TIMEOUT );
-			if ( mbDeleteWhenStackIsEmpty )
-				this->deleteLater ();
-		}
 		/* A modal notification will block the main thread and only return when a button is explicitly clicked (specially because we
 		   prevent the dialog to close based on key events by overriding reject() and accept () slots ). But when the notification
 		   is non modal (i.e. time based) the calling thread will regain control before we have a result for the dialog. The callback method
@@ -155,8 +148,15 @@ void vmNotify::removeMessage ( Message* message )
 		   for the sake of consistency */
 		if ( message->buttonClickedfunc )
 			message->buttonClickedfunc ( message->mBtnID );
-		if ( message->mbAutoRemove )
-			delete message;
+
+		messageStack.removeOne ( message );
+		if ( messageStack.isEmpty () )
+		{
+			fadeTimer->start ( FADE_TIMER_TIMEOUT );
+			if ( mbDeleteWhenStackIsEmpty )
+				this->deleteLater ();
+		}
+
 		adjustSizeAndPosition ();
 		if ( mEventLoop )
 			mEventLoop->exit ();
@@ -496,7 +496,7 @@ bool vmNotify::inputBox ( QString& result, QWidget* const referenceWidget, const
 	btn0->setProperty ( PROPERTY_BUTTON_ID, MESSAGE_BTN_OK );
 	btn0->setProperty ( PROPERTY_BUTTON_RESULT, QDialog::Accepted );
 	message->addWidget ( btn0, ++row, Qt::AlignCenter, true );
-	auto btn1 ( new QPushButton ( QApplication::tr ( "Cancel" ) ) );
+	auto btn1 ( new QPushButton ( APP_TR_FUNC ( "Cancel" ) ) );
 	btn1->setProperty ( PROPERTY_BUTTON_ID, MESSAGE_BTN_CANCEL );
 	btn1->setProperty ( PROPERTY_BUTTON_RESULT, QDialog::Rejected );
 	message->addWidget ( static_cast<QWidget*> ( btn1 ), row, Qt::AlignCenter, true );
@@ -526,6 +526,7 @@ bool vmNotify::passwordBox ( QString& result, QWidget* const referenceWidget, co
 	inputForm->setMinimumWidth ( 200 );
 	inputForm->setEchoMode ( QLineEdit::Password );
 	inputForm->setCallbackForRelevantKeyPressed ( [&, message] ( const QKeyEvent* ke, const vmWidget* const ) { return message->inputFormKeyPressed ( ke ); } );
+	inputForm->setCallbackForContentsAltered ([&] ( const vmWidget* const form ) { result = dynamic_cast<vmLineEdit*>(const_cast<vmWidget*>(form))->text (); } );
 	message->setMessageFinishedCallback ( [&newNotify ] ( Message* msg ) { return newNotify->buttonClicked ( nullptr, msg ); } );
 	message->addWidget ( inputForm, row );
 
@@ -533,67 +534,59 @@ bool vmNotify::passwordBox ( QString& result, QWidget* const referenceWidget, co
 	btn0->setProperty ( PROPERTY_BUTTON_ID, MESSAGE_BTN_OK );
 	btn0->setProperty ( PROPERTY_BUTTON_RESULT, QDialog::Accepted );
 	message->addWidget ( btn0, ++row, Qt::AlignCenter, true );
-	auto btn1 ( new QPushButton ( QApplication::tr ( "Cancel" ) ) );
+	auto btn1 ( new QPushButton ( APP_TR_FUNC ( "Cancel" ) ) );
 	btn1->setProperty ( PROPERTY_BUTTON_ID, MESSAGE_BTN_CANCEL );
 	btn1->setProperty ( PROPERTY_BUTTON_RESULT, QDialog::Rejected );
 	message->addWidget ( static_cast<QWidget*> ( btn1 ), row, Qt::AlignCenter, true );
 
 	newNotify->addMessage ( message );
-	bool b_ok ( message->mBtnID == MESSAGE_BTN_OK );
 
-	if ( b_ok )
-	{
-		result = inputForm->text ();
-		b_ok = !result.isEmpty ();
-	}
-	delete message;
-	delete newNotify;
-	return b_ok;
+	return ( message->mBtnID == MESSAGE_BTN_OK );
 }
 
-vmNotify* vmNotify::progressBox ( vmNotify* box, QWidget* parent, const uint max_value, uint next_value,
-										 const QString& title, const QString& label )
+bool vmNotify::logProgress ( const uint max_value, const uint value, const QString& label )
 {
-	const bool bNewDlg ( box == nullptr );
-	Message* message ( nullptr );
-	QProgressBar* pBar ( nullptr );
-
-	if ( bNewDlg )
+	Message* message ( messageStack.at ( 0 ) );
+	if ( message )
 	{
-		box = new vmNotify ( QStringLiteral ( "C" ), parent );
-		message = new Message ( box );
-		message->title = title;
-		message->bodyText = label;
-		message->timeout = -1;
-		message->isModal = false;
-		message->mbAutoRemove = false;
-
-		pBar = new QProgressBar ();
-		pBar->setTextVisible ( true );
-		pBar->setMinimumWidth ( 200 );
-		pBar->setMaximum ( static_cast<int>(max_value) );
-		message->addWidget ( pBar, 1 );
-		auto btnCancel ( new QPushButton ( QApplication::tr ( "Cancel" ) ) );
-		btnCancel->setProperty ( PROPERTY_BUTTON_ID, MESSAGE_BTN_CANCEL );
-		btnCancel->setProperty ( PROPERTY_BUTTON_RESULT, QDialog::Rejected );
-		message->addWidget ( btnCancel, 2, Qt::AlignCenter, true );
-		box->addMessage ( message );
-	}
-	else
-	{
-		message = box->messageStack.at ( 0 );
 		auto labelWdg ( dynamic_cast<QLabel*>( message->widgets.at ( 0 )->widget ) );
 		labelWdg->setText ( label );
-		pBar = dynamic_cast<QProgressBar*>( message->widgets.at ( 1 )->widget );
-		pBar->setValue ( static_cast<int>(next_value) );
-		box->enterEventLoop ();
-	}
+		QProgressBar* pBar ( dynamic_cast<QProgressBar*>( message->widgets.at ( 1 )->widget ) );
+		pBar->setValue ( static_cast<int>(value) );
+		enterEventLoop ();
 
-	if ( next_value >= max_value || message->mBtnID == MESSAGE_BTN_CANCEL )
-	{
-		box->removeMessage ( message );
-		box->deleteLater ();
-		return nullptr;
+		if ( value >= max_value || message->mBtnID == MESSAGE_BTN_CANCEL )
+		{
+			removeMessage ( message );
+			this->deleteLater ();
+		}
+		else
+			return true;
 	}
+	return false;
+}
+
+vmNotify* vmNotify::progressBox ( QWidget* parent, const uint max_value, const QString& title )
+{
+	auto box ( new vmNotify ( QStringLiteral ( "C" ), parent ) );
+	box->mbDeleteWhenStackIsEmpty = true;
+	auto message ( new Message ( box ) );
+	message->title = title;
+	message->timeout = -1;
+	message->bodyText = QStringLiteral ( "   " );
+	message->isModal = false;
+	message->mbAutoRemove = false;
+
+	auto pBar ( new QProgressBar () );
+	pBar->setTextVisible ( true );
+	pBar->setMinimumWidth ( 200 );
+	pBar->setMaximum ( static_cast<int>(max_value) );
+	message->addWidget ( pBar, 1 );
+	auto btnCancel ( new QPushButton ( APP_TR_FUNC ( "Cancel" ) ) );
+	btnCancel->setProperty ( PROPERTY_BUTTON_ID, MESSAGE_BTN_CANCEL );
+	btnCancel->setProperty ( PROPERTY_BUTTON_RESULT, QDialog::Rejected );
+	//message->setMessageFinishedCallback ( [&] ( Message* msg ) { return buttonClicked ( nullptr, msg ); } );
+	message->addWidget ( btnCancel, 2, Qt::AlignCenter, true );
+	box->addMessage ( message );
 	return box;
 }

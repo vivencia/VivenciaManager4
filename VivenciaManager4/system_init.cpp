@@ -72,8 +72,8 @@ DB_ERROR_CODES Sys_Init::checkSystem ( const bool bFirstPass )
 	if ( !fileOps::exists ( MYSQL_INIT_SCRIPT ).isOn () )
 	{
 		NOTIFY ()->criticalBox ( APP_TR_FUNC ( "MYSQL is not installed - Exiting" ),
-			QApplication::tr ( "Could not find mysql init script at " ) + MYSQL_INIT_SCRIPT +
-			QApplication::tr ( ". Please check if mysql-client and mysql-server are installed." ) );
+			APP_TR_FUNC ( "Could not find mysql init script at " ) + MYSQL_INIT_SCRIPT +
+			APP_TR_FUNC ( ". Please check if mysql-client and mysql-server are installed." ) );
 		return ERR_MYSQL_NOT_FOUND;
 	}
 
@@ -82,11 +82,10 @@ DB_ERROR_CODES Sys_Init::checkSystem ( const bool bFirstPass )
 	bool ret ( groups.contains ( QRegExp ( QStringLiteral ( "mysql|root" ) ) ) );
 	if ( !ret && bFirstPass )
 	{
-        QString passwd ( QStringLiteral( "gawain" ) );
-        static_cast<void>( fileOps::sysExec ( sudoCommand.arg ( passwd, QStringLiteral ( "adduser " ) + fileOps::currentUser () + QStringLiteral ( " mysql" ) ) ) );
-        ret = checkSystem ( false );
-        if ( !ret )
-            return ERR_USER_NOT_ADDED_TO_MYSQL_GROUP;
+		static_cast<void>( fileOps::sysExec ( QStringLiteral ( "usermod -a -G " ) + QStringLiteral ( "mysql " ) + fileOps::currentUser () ) );
+		ret = checkSystem ( false );
+		if ( !ret )
+			return ERR_USER_NOT_ADDED_TO_MYSQL_GROUP;
 	}
 	return NO_ERR;
 }

@@ -72,9 +72,10 @@ public:
 	bool openDataBase ();
 	bool restart ();
 	void doPreliminaryWork ();
-	bool createDatabase ();
+	bool createDatabase ( const bool bCreateTables );
+	bool checkRootPasswordForMySQL ( QString& password );
 	bool changeRootPassword ( const QString& oldpasswd, const QString& newpasswd );
-	bool createUser ();
+	bool createUser ( const QString& root_passwd );
 	bool createAllTables ();
 	bool createTable ( const TABLE_INFO* t_info );
 	bool insertColumn ( const uint column, const TABLE_INFO* t_info );

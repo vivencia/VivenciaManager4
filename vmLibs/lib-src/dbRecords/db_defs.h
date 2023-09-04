@@ -3,6 +3,16 @@
 
 #include <QtCore/QString>
 
+static const QString STR_MYSQL ( QStringLiteral ( "mysql" ) );
+static const QString SYSTEMD ( QStringLiteral ( "systemd" ) );
+static const QString SYSTEM_ROOT_SERVICE ( QStringLiteral ( "SYSTEM_ROOT_SERVICE" ) );
+static const QString SYSTEM_ROOT_PASSWORD_ID ( QStringLiteral ( "SYSTEM_ROOT_PASSWORD_ID" ) );
+
+static const QString DB_NAME ( QStringLiteral ( "VivenciaDatabase4" ) );
+static const QString USER_NAME ( QStringLiteral ( "vivenciamngr4" ) );
+static const QString PASSWORD ( QStringLiteral ( "fenixfenix4" ) ) ;
+static const QString DB_ROOT ( QStringLiteral ( "root" ) );
+
 struct RECORD_FIELD
 {
 

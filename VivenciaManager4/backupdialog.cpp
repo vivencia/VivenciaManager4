@@ -28,7 +28,7 @@
 const uint BACKUP_IDX ( 0 );
 const uint RESTORE_IDX ( 1 );
 
-auto backupFileList = [] () ->QString  { return CONFIG ()->appDataDir () + QStringLiteral ( "/backups.db" ); };
+auto backupFileList = [] () ->QString  { return CONFIG ()->appDataDir () + QStringLiteral ( "backups.db" ); };
 
 BackupDialog::BackupDialog ()
 	: QDialog ( nullptr ), ui ( new Ui::BackupDialog ), tdb ( nullptr ),
@@ -435,7 +435,7 @@ int BackupDialog::showNoDatabaseOptionsWindow ()
 		dlgNoDB->setWindowIcon ( ICON ( APP_ICON ) );
 		dlgNoDB->setWindowTitle ( TR_FUNC ( "Database inexistent" ) );
 
-		QLabel* lblExplanation ( new QLabel ( TR_FUNC (
+		auto lblExplanation ( new QLabel ( TR_FUNC (
 				"There is no database present. This either means that this is the first time this program "
 				"is used or the current database was deleted. You must choose one of the options below:" ) ) );
 		lblExplanation->setAlignment ( Qt::AlignJustify );
@@ -484,24 +484,22 @@ void BackupDialog::btnNoDBProceed_clicked ()
 		ui->toolBox->widget ( 0 )->setEnabled ( false );
 		crashRestore::setNewDatabaseSession ( true );
 
-        if ( VDB ()->createUser () )
+		//Instruct VivenciaDB::createDatabase to create the tables when not importing from a file. The importing process creates the tables
+		//based on the information contained in the file
+		mb_success = VDB ()->createDatabase ( !rdImport->isChecked () );
+		if ( actionSuccess () )
 		{
-            if ( VDB ()->createDatabase () )
+			if ( rdImport->isChecked () )
 			{
-				if ( rdImport->isChecked ( ) )
-				{
-					dlgNoDB->hide ();
-					exec ();
-				}
-				else
-					mb_success = VDB ()->createAllTables ();
-				if ( actionSuccess () )
-				{
-					mb_nodb = false;
-					dlgNoDB->done ( QDialog::Accepted );
-					mErrorCode =  NO_ERR;
-					return;
-				}
+				dlgNoDB->hide ();
+				exec ();
+			}
+			if ( actionSuccess () )
+			{
+				mb_nodb = false;
+				dlgNoDB->done ( QDialog::Accepted );
+				mErrorCode =  NO_ERR;
+				return;
 			}
 		}
 		dlgNoDB->done ( QDialog::Rejected );

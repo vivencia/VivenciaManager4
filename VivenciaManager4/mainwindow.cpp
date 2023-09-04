@@ -4499,18 +4499,42 @@ inline void MainWindow::btnExitProgram_clicked () { Sys_Init::deInit (); }
 //--------------------------------------------SLOTS------------------------------------------------------------
 
 //--------------------------------------------SEARCH------------------------------------------------------------
+#include <QtCore/QMutex>
+#include <QtCore/QWaitCondition>
+static void msleep ( unsigned long msecs )
+{
+	QMutex mutex;
+	mutex.lock ();
+	QWaitCondition waitCondition;
+	waitCondition.wait ( &mutex, msecs );
+	mutex.unlock ();
+}
+
 void MainWindow::on_txtSearch_textEdited ( const QString& text )
 {
 	if ( text.length () >= 5 )
 	{
-		//QStringList btns ( QStringList () << "Button 1" << "Button 2" << "Button 3" << "Button 4" );
-		//NOTIFY ()->messageBox ( text, "This is an example", vmNotify::CRITICAL, btns, 10000, [&] ( const int btn_idx ) { qDebug() << "Button pressed: " << btn_idx; } );
-		//QString result;
-		//NOTIFY ()->inputBox ( result, this, text, "This is an example" );
-		//qDebug () << result;
-		NOTIFY()->notifyMessage( text, "This an example" );
+		ui->btnSearchStart->setEnabled ( text.length () >= 2 );
+		/*vmNotify* pBox ( nullptr );
+		const uint max_steps ( 100 );
+		pBox = vmNotify::progressBox ( this, max_steps,
+			QStringLiteral ( "Updating the Completers database. This might take a while..." )
+		);
+
+		for ( uint step ( 0 ); step <= max_steps; step++ )
+		{
+			if ( pBox->logProgress( max_steps, step, text + "   " + QString::number( step ) ) )
+				msleep ( 100 );
+			else
+				break;
+		}
+		QStringList btns ( QStringList () << "Button 1" << "Button 2" << "Button 3" << "Button 4" );
+		NOTIFY ()->messageBox ( text, "This is an example", vmNotify::CRITICAL, btns, 10000, [&] ( const int btn_idx ) { qDebug() << "Button pressed: " << btn_idx; } );
+		QString result;
+		NOTIFY ()->inputBox ( result, this, text, "This is an example" );
+		qDebug () << result;
+		NOTIFY()->notifyMessage( text, "This an example" );*/
 	}
-	//ui->btnSearchStart->setEnabled ( text.length () >= 2 );
 }
 
 void MainWindow::on_btnSearchStart_clicked ()
@@ -4564,7 +4588,7 @@ void MainWindow::createFloatToolBar ()
 							 this, [&] () { return execRecordAction ( Qt::Key_R ); } );
 	actionSave = mActionsToolBar->addAction ( ICON ( "document-save" ), TR_FUNC ( "Save (CRTL+S)" ), this,
 							 [&] () { return execRecordAction ( Qt::Key_S ); } );
-	actionCancel = mActionsToolBar->addAction ( QIcon ( QStringLiteral ( ":resources/cancel.png" ) ), TR_FUNC ( "Cancel (Esc key)" ),
+	actionCancel = mActionsToolBar->addAction ( ICON ( "cancel.png" ), TR_FUNC ( "Cancel (Esc key)" ),
 							 this, [&] () { return execRecordAction ( Qt::Key_Escape ); } );
 	
 	mActionsToolBar->setFloatable ( true );

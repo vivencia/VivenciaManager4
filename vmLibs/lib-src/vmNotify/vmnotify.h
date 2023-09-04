@@ -100,8 +100,9 @@ public:
 	static bool passwordBox ( QString& result, QWidget* const referenceWidget, const QString& title,
 					const QString& label_text, const QString& icon = QString () );
 
-	static vmNotify* progressBox ( vmNotify* box = nullptr, QWidget* parent = nullptr, const uint max_value = 10, uint next_value = 0,
-								   const QString& title = QString (), const QString& label = QString () );
+	static vmNotify* progressBox ( QWidget* parent, const uint max_value, const QString& title );
+
+	bool logProgress ( const uint max_value, const uint value, const QString& label );
 
 public slots:
 	virtual void accept () override;

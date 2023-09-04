@@ -358,43 +358,22 @@ void VivenciaDB::doPreliminaryWork ()
 //-----------------------------------------READ-OPEN-LOAD-------------------------------------------
 
 //-----------------------------------------CREATE-DESTROY-MODIFY-------------------------------------
-bool VivenciaDB::createDatabase ()
+bool VivenciaDB::createDatabase ( const bool bCreateTables )
 {
-	QString passwd ( QStringLiteral ( "percival") );
 	if ( !openDataBase () )
 	{
-		/*const QString mysqladmin_args ( QStringLiteral ( "status -u root -p'" ) + passwd + CHR_CHRMARK );
-		const QString mysqladmin_output ( fileOps::executeAndCaptureOutput ( mysqladmin_args, adminApp () ) );
-        if ( mysqladmin_output.contains ( QStringLiteral ( "error: 'Access denied for user 'root'@'localhost'" ) ) )
-        {
-            m_ok = false;
-            const QString btns_text[3] = {
-                APP_TR_FUNC ( "Try another password" ), APP_TR_FUNC ( "Try to set as default" ), APP_TR_FUNC ( "Cancel" ) };
-            const int answer ( vmNotify::notifyBox ( nullptr,  APP_TR_FUNC ( "Wrong password" ), APP_TR_FUNC ( "The provided password is wrong. Try again or"
-                " attempt to use it as the default root password for the mysql server?" ), vmNotify::QUESTION, btns_text ) );
-            switch ( answer )
-            {
-                case MESSAGE_BTN_OK:
-                    return createDatabase ();
-                case MESSAGE_BTN_CUSTOM:
-                    m_ok = changeRootPassword ( QString (), passwd );
-                break;
-                case MESSAGE_BTN_CANCEL:
-                break;
-            }
-        }*/
-
-        //if ( m_ok )
-        //{
+		QString workingRootPswd;
+		if ( checkRootPasswordForMySQL ( workingRootPswd ) )
+		{
             QSqlDatabase dbRoot ( QSqlDatabase::addDatabase ( DB_DRIVER_NAME, ROOT_CONNECTION ) );
             dbRoot.setDatabaseName ( STR_MYSQL );
             dbRoot.setHostName ( HOST );
-            dbRoot.setUserName ( QStringLiteral ( "root" ) );
-			dbRoot.setPassword ( passwd );
+			dbRoot.setUserName ( DB_ROOT );
+			dbRoot.setPassword ( workingRootPswd );
             if ( dbRoot.open () )
             {
                 const QString str_query ( QLatin1String ( "CREATE DATABASE " ) + DB_NAME +
-                                      QLatin1String ( " DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci" ) );
+											QLatin1String ( " DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci" ) );
                 QSqlQuery rootQuery ( dbRoot );
                 m_ok = rootQuery.exec ( str_query );
                 rootQuery.finish ();
@@ -403,23 +382,56 @@ bool VivenciaDB::createDatabase ()
                 rootQuery.clear ();
             }
             QSqlDatabase::removeDatabase ( ROOT_CONNECTION );
-        //}
+			if ( createUser ( workingRootPswd ) )
+			{
+				if ( bCreateTables )
+					return createAllTables ();
+				return true;
+			}
+		}
 	}
-	if ( !m_ok )
-		vmNotify::notifyMessage ( nullptr, APP_TR_FUNC ( "Database error" ), APP_TR_FUNC ( "MYSQL could create the database. Exiting..." ), 5000, true );
-	return m_ok;
+	vmNotify::notifyMessage ( nullptr, APP_TR_FUNC ( "Database error" ), APP_TR_FUNC ( "MYSQL could create the database. Exiting..." ), 5000, true );
+	return false;
+}
+
+//The root password is not stored by the application
+bool VivenciaDB::checkRootPasswordForMySQL ( QString& password )
+{
+	if ( vmNotify::passwordBox ( password, nullptr, APP_TR_FUNC ( "Root password" ),
+								 APP_TR_FUNC ( "Please enter the current mysql root password. Or, if it isn't set yet, provide a new root password" ) ) )
+	{
+
+		QStringList mysqladmin_args ( QStringList () <<
+									QStringLiteral ( "status" ) <<
+									QStringLiteral ( "-u" ) <<
+									DB_ROOT <<
+									QStringLiteral ( "-p'" ) + password + CHR_CHRMARK );
+
+		const QString mysqladmin_output ( fileOps::executeAndCaptureOutput ( mysqladmin_args, adminApp () ) );
+		//The entered password is either new or incorrect
+		if ( mysqladmin_output.contains ( QStringLiteral ( "Access denied" ) ) ) //"error: 'Access denied for user 'root'@'localhost'"
+		{
+			//Maybe root password is not set yet. Assume the root password given is new
+			if ( !changeRootPassword ( emptyString, password ) )
+			{
+				vmNotify::notifyMessage ( nullptr, APP_TR_FUNC ( "Incorrect root password. Try again!" ),
+										  APP_TR_FUNC ( "Please provide the correct password for the current mysql setup" ), 6000, true );
+				return checkRootPasswordForMySQL ( password );
+			}
+		}
+		return true;
+	}
+	return false;
 }
 
 bool VivenciaDB::changeRootPassword ( const QString& oldpasswd, const QString& newpasswd )
 {
-	QStringList mysqladmin_args;
-	mysqladmin_args <<
-		QStringLiteral ( "-u" ) <<
-		QStringLiteral ( "root" ) <<
-		QStringLiteral ( "-p" ) <<
-		oldpasswd <<
-		QStringLiteral ( "password" ) <<
-		newpasswd;
+	QStringList mysqladmin_args ( QStringList ()  <<
+								QStringLiteral ( "-u" ) <<
+								DB_ROOT <<
+								QStringLiteral ( "-p'" ) + oldpasswd + CHR_CHRMARK <<
+								QStringLiteral ( "password" ) <<
+								newpasswd );
 	int e_code;
 
 	const QString mysqladmin_output ( fileOps::executeAndCaptureOutput ( mysqladmin_args, adminApp (), true, &e_code ) );
@@ -427,15 +439,14 @@ bool VivenciaDB::changeRootPassword ( const QString& oldpasswd, const QString& n
 	return e_code == 0;
 }
 
-bool VivenciaDB::createUser ()
+bool VivenciaDB::createUser ( const QString& root_passwd )
 {
 	m_ok = false;
-	QString passwd ( QStringLiteral ( "percival" ) );
     QSqlDatabase dbRoot ( QSqlDatabase::addDatabase ( DB_DRIVER_NAME, ROOT_CONNECTION ) );
     dbRoot.setDatabaseName ( STR_MYSQL );
     dbRoot.setHostName ( HOST );
-    dbRoot.setUserName ( QStringLiteral ( "root" ) );
-    dbRoot.setPassword ( passwd );
+	dbRoot.setUserName ( DB_ROOT );
+	dbRoot.setPassword ( root_passwd );
 
     if ( dbRoot.open () )
     {
@@ -453,7 +464,7 @@ bool VivenciaDB::createUser ()
 
 	if ( !m_ok )
 		vmNotify::notifyMessage ( nullptr, APP_TR_FUNC ( "Database error" ),
-								APP_TR_FUNC ( "MYSQL could create the user for the application's database. Exiting..." ), 5000, true );
+								APP_TR_FUNC ( "MYSQL could create the user for the application's database." ), 5000, true );
 	return m_ok;
 }
 
