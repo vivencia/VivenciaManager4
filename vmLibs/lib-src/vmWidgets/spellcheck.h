@@ -14,6 +14,7 @@
 class configOps;
 class QMenu;
 class QAction;
+class QTextCodec;
 
 class spellCheck : public QObject
 {
@@ -27,11 +28,7 @@ public:
 	void addWord ( const QString& word, const bool b_add );
 
 	// Refer to comment before suggestionsList () in the cpp file
-	inline triStateType checkWord ( const QString& word )
-	{
-		return ( mChecker ? static_cast<TRI_STATE>( mChecker->spell ( word.toLatin1 ().toStdString () ) ) : TRI_UNDEF );
-	}
-
+	bool checkWord ( const QString& word );
 	inline void setCallbackForMenuEntrySelected ( const std::function<void ( const bool )>& func ) { menuEntrySelected_func = func; }
 
 	QMenu* menuAvailableDicts ();
@@ -50,6 +47,7 @@ private:
 	QString mDictionary;
 
 	Hunspell* __restrict mChecker;
+	QTextCodec* mCodec;
 	configOps* m_config;
 	QMenu* mMenu;
 

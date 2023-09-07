@@ -134,7 +134,8 @@ void Sys_Init::checkSetup ()
 
 	switch ( err_code )
 	{
-		case NO_ERR: break;
+		case NO_ERR:
+		break;
 		case ERR_NO_DB:
 		case ERR_DB_EMPTY:
 			err_code = static_cast<DB_ERROR_CODES>( BACKUP ()->showNoDatabaseOptionsWindow () );

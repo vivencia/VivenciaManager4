@@ -449,14 +449,14 @@ void searchUI::setupUI ()
 	
 	auto hLayout ( new QHBoxLayout );
 	hLayout->setSpacing ( 1 );
-	hLayout->setMargin ( 0 );
+	hLayout->setContentsMargins ( 0, 0, 0, 0 );
 	hLayout->addWidget ( mBtnPrev, 0, Qt::AlignLeft );
 	hLayout->addWidget ( mBtnNext, 0, Qt::AlignLeft );
 	hLayout->addStretch ( 2 );
 	hLayout->addWidget ( mBtnClose, 1, Qt::AlignRight );
 
 	auto vLayout ( new QVBoxLayout );
-	vLayout->setMargin ( 2 );
+	vLayout->setContentsMargins ( 2, 2, 2, 2 );
 	vLayout->setSpacing ( 2 );
 	vLayout->addWidget ( mFoundList, 2 );
 	vLayout->addLayout ( hLayout );

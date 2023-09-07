@@ -21,7 +21,7 @@ class wordHighlighter : public QSyntaxHighlighter
 {
 
 public:
-	explicit wordHighlighter (QTextDocument* parent, spellCheck* const spellchecker );
+	explicit wordHighlighter ( QTextDocument* parent, spellCheck* const spellchecker );
 	virtual ~wordHighlighter ();
 
 	inline bool spellCheckingEnbled () const { return mb_spellCheckEnabled; }
@@ -36,7 +36,7 @@ public:
 
 	inline bool inPreview () const { return property ( PROPERTY_PRINT_PREVIEW ).toBool (); }
 	inline void setInPreview ( const bool b_preview ) { setProperty ( PROPERTY_PRINT_PREVIEW, b_preview ); }
-	
+
 protected:
 	void highlightBlock ( const QString& ) override;
 
@@ -45,7 +45,7 @@ private:
 	bool mb_spellCheckEnabled, mb_HighlightEnabled;
 	spellCheck* mSpellChecker;
 
-	static QTextCharFormat* __restrict m_spellCheckFormat, * __restrict m_HighlightFormat;
+	QTextCharFormat* __restrict__ m_spellCheckFormat, * __restrict__ m_HighlightFormat;
 };
 
 #endif // WORDHIGHLIGHTER_H

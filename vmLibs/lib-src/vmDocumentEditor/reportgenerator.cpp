@@ -154,12 +154,13 @@ reportGenerator::reportGenerator ( documentEditor* mdiParent )
 	//----------------------------------------------------------------------------------------
 
 	//----------------------------------------------------------------------------------------
-	QLabel* lblClientID ( new QLabel ( TR_FUNC ( "Client ID:" ) ) );
+	auto lblClientID ( new QLabel ( TR_FUNC ( "Client ID:" ) ) );
 	lblClientID->setMaximumHeight ( 30 );
 
 	txtClientsIDs = new vmLineEdit;
 	txtClientsIDs->setCompleter ( parentEditor ()->completerManager ()->getCompleter ( CLIENT_NAME ) );
 	connect ( txtClientsIDs, &vmLineEdit::textEdited, this, [&] ( const QString& text ) { return updateJobIDsAndQPs ( text ); } );
+	txtClientsIDs->setEditable ( true );
 
 	btnInsertClientAddress = new QPushButton ( TR_FUNC ( "Address" ) );
 	btnInsertClientAddress->setMinimumSize ( 80, 30 );
@@ -173,12 +174,12 @@ reportGenerator::reportGenerator ( documentEditor* mdiParent )
 	layoutClientID->addWidget ( txtClientsIDs, 1 );
 	layoutClientID->addWidget ( btnInsertClientAddress, 1 );
 
-	auto *vLine1 ( new QFrame );
+	auto vLine1 ( new QFrame );
 	vLine1->setFrameStyle ( QFrame::VLine|QFrame::Raised );
 	//----------------------------------------------------------------------------------------
 
 	//----------------------------------------------------------------------------------------
-	auto* lblQPID ( new QLabel ( TR_FUNC ( "Quick Project:" ) ) );
+	auto lblQPID ( new QLabel ( TR_FUNC ( "Quick Project:" ) ) );
 
 	cboQPIDs = new vmComboBox;
 	cboQPIDs->setCallbackForIndexChanged ( [&] ( const int idx ) { return showProjectID ( idx ); } );
@@ -200,15 +201,16 @@ reportGenerator::reportGenerator ( documentEditor* mdiParent )
 	layoutQPID->addWidget ( btnCopyTableRow, 1 );
 	layoutQPID->addWidget ( btnCopyEntireTable, 1 );
 
-	QFrame *vLine2 ( new QFrame );
+	auto vLine2 ( new QFrame );
 	vLine2->setFrameStyle ( QFrame::VLine|QFrame::Raised );
 	//----------------------------------------------------------------------------------------
 
 	//----------------------------------------------------------------------------------------
-	QLabel* lblJobID ( new QLabel ( TR_FUNC ( "Job ID:" ) ) );
+	auto lblJobID ( new QLabel ( TR_FUNC ( "Job ID:" ) ) );
 
 	cboJobIDs = new vmComboBox;
 	cboJobIDs->setCallbackForIndexChanged ( [&] ( const int idx ) { return changeJobBriefInfo ( idx ); } );
+	cboJobIDs->setEditable ( true );
 
 	btnViewJob = new QToolButton;
 	btnViewJob->setCheckable ( true );
@@ -773,7 +775,8 @@ void reportGenerator::btnInsertJobReport_clicked ()
 	if ( recIntValue ( rgJob, FLD_JOB_ID ) > 0 )
 	{
 		TEXT_EDITOR_TOOLBAR ()->btnAlignJustify_clicked ();
-		mCursor.insertText ( recStrValue ( rgJob, FLD_JOB_REPORT ) );
+		stringRecord report ( recStrValue ( rgJob, FLD_JOB_REPORT ) );
+		mCursor.insertText ( report.fieldValue ( Job::JRF_REPORT ) );
 		mCursor.insertBlock ();
 	}
 }
@@ -1312,7 +1315,8 @@ void dockBJ::fillControls ( const Job *job )
 		txtBriefJobType->setText ( recStrValue ( job, FLD_JOB_TYPE ) );
 		txtBriefJobDate->setText ( recStrValue ( job, FLD_JOB_STARTDATE ) );
 		txtBriefJobPrice->setText ( recStrValue ( job, FLD_JOB_PRICE ) );
-		txtBriefJobReport->setPlainText ( recStrValue ( job, FLD_JOB_REPORT ) );
+		stringRecord report ( recStrValue ( job, FLD_JOB_REPORT ) );
+		txtBriefJobReport->setPlainText ( report.fieldValue ( Job::JRF_REPORT ) );
 	}
 	else
 	{

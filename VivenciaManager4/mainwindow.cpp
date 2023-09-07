@@ -44,6 +44,19 @@
 #include <QtWidgets/QScrollBar>
 #include <QtWidgets/QToolBar>
 
+#ifdef DEBUG
+#include <QtCore/QMutex>
+#include <QtCore/QWaitCondition>
+static void msleep ( unsigned long msecs )
+{
+	QMutex mutex;
+	mutex.lock ();
+	QWaitCondition waitCondition;
+	waitCondition.wait ( &mutex, msecs );
+	mutex.unlock ();
+}
+#endif
+
 enum JOB_INFO_LIST_USER_ROLES
 {
 	JILUR_DATE = Qt::UserRole + Job::JRF_DATE,
@@ -1050,7 +1063,6 @@ void MainWindow::setupJobPictureControl ()
 {
 	auto menuJobClientsYearPictures ( new QMenu );
 	vmAction* action ( nullptr );
-	QStringList args;
 
 	for ( int i ( 2008 ); static_cast<uint>(i) <= vmNumber::currentDate ().year (); ++i )
 	{
@@ -1065,34 +1077,80 @@ void MainWindow::setupJobPictureControl ()
 	menuJobClientsYearPictures->addAction ( action );
 	jobsPicturesMenuAction = action;
 
-	connect ( menuJobClientsYearPictures, &QMenu::triggered, this, [&] ( QAction* act ) {
-		return showClientsYearPictures ( act ); } );
+	connect ( menuJobClientsYearPictures, &QMenu::triggered, this, [&] ( QAction* act )
+		{
+			return showClientsYearPictures ( act );
+		} );
 	
-	connect ( ui->btnJobAddPictures, &QToolButton::clicked, this, [&] () { return addJobPictures (); } );
-	ui->btnJobClientsYearPictures->setMenu ( menuJobClientsYearPictures );
-	connect ( ui->btnJobClientsYearPictures, &QToolButton::clicked, ui->btnJobClientsYearPictures, [&] () { return
-				ui->btnJobClientsYearPictures->showMenu (); } );
-	connect ( ui->btnJobPrevPicture, &QToolButton::clicked, this, [&] () { return
-			showJobImageRequested ( ui->jobImageViewer->showPrevImage () ); } );
-	connect ( ui->btnJobNextPicture, &QToolButton::clicked, this, [&] () { return
-			showJobImageRequested ( ui->jobImageViewer->showNextImage () ); } );
-	connect ( ui->btnJobOpenPictureFolder, &QToolButton::clicked, this, [&] () { args << ui->txtJobPicturesPath->text (); return
-			fileOps::executeFork ( args, CONFIG ()->fileManager () ); } );
-	connect ( ui->btnJobOpenPictureViewer, &QToolButton::clicked, this, [&] () { args << ui->jobImageViewer->imageCompletePath (); return
-			fileOps::executeFork ( args, CONFIG ()->pictureViewer () ); } );
-	connect ( ui->btnJobOpenPictureEditor, &QToolButton::clicked, this, [&] () { args << ui->jobImageViewer->imageCompletePath (); return
-			fileOps::executeFork ( args, CONFIG ()->pictureEditor () ); } );
-	connect ( ui->btnJobOpenFileFolder, &QToolButton::clicked, this, [&] () -> void { if ( fileOps::exists ( ui->txtJobProjectPath->text () ).isOn () ) {
-				args << fileOps::dirFromPath ( ui->txtJobProjectPath->text () ); (void) fileOps::executeFork ( args, CONFIG ()->fileManager () ); } } );
-	connect ( ui->btnJobReloadPictures, &QToolButton::clicked, this, [&] () { return btnJobReloadPictures_clicked (); } );
-	connect ( ui->btnJobRenamePicture, static_cast<void (QToolButton::*)(bool)>( &QToolButton::clicked ), this, [&] ( bool checked ) { return
-				btnJobRenamePicture_clicked ( checked ); } );
-	connect ( ui->btnJobSeparatePicture, static_cast<void (QToolButton::*)(bool)>( &QToolButton::clicked ), this, [&] ( bool checked ) { return
-			checked ? showJobImageInWindow ( false ) : sepWin_JobPictures->returnToParent (); } );
-	connect ( ui->btnJobSeparateReportWindow, static_cast<void (QToolButton::*)(bool)>( &QToolButton::clicked ), this, [&] ( bool checked ) { return
-		btnJobSeparateReportWindow_clicked ( checked ); } );
+	connect ( ui->btnJobAddPictures, &QToolButton::clicked, this, [&] ()
+		{
+			return addJobPictures ();
+		} );
 
-	//ui->cboJobPictures->setCallbackForActivated ( [&] ( const int idx ) { return showJobImage ( idx ); } );
+	ui->btnJobClientsYearPictures->setMenu ( menuJobClientsYearPictures );
+	connect ( ui->btnJobClientsYearPictures, &QToolButton::clicked, ui->btnJobClientsYearPictures, [&] ()
+		{
+			return ui->btnJobClientsYearPictures->showMenu ();
+		} );
+
+	connect ( ui->btnJobPrevPicture, &QToolButton::clicked, this, [&] ()
+		{
+			return showJobImageRequested ( ui->jobImageViewer->showPrevImage () );
+		} );
+
+	connect ( ui->btnJobNextPicture, &QToolButton::clicked, this, [&] ()
+		{
+			return showJobImageRequested ( ui->jobImageViewer->showNextImage () );
+		} );
+
+	connect ( ui->btnJobOpenPictureFolder, &QToolButton::clicked, this, [&] ()
+		{
+			QStringList args ( QStringList () << ui->txtJobPicturesPath->text () );
+			return fileOps::executeFork ( args, CONFIG ()->fileManager () );
+		} );
+
+	connect ( ui->btnJobOpenPictureViewer, &QToolButton::clicked, this, [&] ()
+		{
+			QStringList args ( QStringList () << ui->jobImageViewer->imageCompletePath () );
+			return fileOps::executeFork ( args, CONFIG ()->pictureViewer () );
+		} );
+
+	connect ( ui->btnJobOpenPictureEditor, &QToolButton::clicked, this, [&] ()
+		{
+			QStringList args ( QStringList () << ui->jobImageViewer->imageCompletePath () );
+			return fileOps::executeFork ( args, CONFIG ()->pictureEditor () );
+		} );
+
+	connect ( ui->btnJobOpenFileFolder, &QToolButton::clicked, this, [&] () -> void
+		{
+			if ( fileOps::exists ( ui->txtJobProjectPath->text () ).isOn () )
+			{
+				QStringList args ( QStringList () << fileOps::dirFromPath ( ui->txtJobProjectPath->text () ) );
+				(void) fileOps::executeFork ( args, CONFIG ()->fileManager () );
+			}
+		} );
+
+	connect ( ui->btnJobReloadPictures, &QToolButton::clicked, this, [&] ()
+		{
+			return btnJobReloadPictures_clicked ();
+		} );
+
+	connect ( ui->btnJobRenamePicture, static_cast<void (QToolButton::*)(bool)>( &QToolButton::clicked ), this, [&] ( bool checked )
+		{
+			return btnJobRenamePicture_clicked ( checked );
+		} );
+
+	connect ( ui->btnJobSeparatePicture, static_cast<void (QToolButton::*)(bool)>( &QToolButton::clicked ), this, [&] ( bool checked )
+		{
+			return checked ? showJobImageInWindow ( false ) : sepWin_JobPictures->returnToParent ();
+		} );
+
+	connect ( ui->btnJobSeparateReportWindow, static_cast<void (QToolButton::*)(bool)>( &QToolButton::clicked ), this, [&] ( bool checked )
+		{
+			return btnJobSeparateReportWindow_clicked ( checked );
+		} );
+
+
 	ui->cboJobPictures->setCallbackForIndexChanged ( [&] ( const int idx ) { return showJobImage ( idx ); } );
 	ui->jobImageViewer->setCallbackForshowImageRequested ( [&] ( const int idx ) { return showJobImageRequested ( idx ); } );
 	ui->jobImageViewer->setCallbackForshowMaximized ( [&] ( const bool maximized ) { return showJobImageInWindow ( maximized ); } );
@@ -4135,7 +4193,7 @@ void MainWindow::setupTabNavigationButtons ()
 	static_cast<void>( connect ( mBtnNavNext, &QToolButton::clicked, this, [&] () { return navigateNext (); } ) );
 
 	auto lButtons ( new QHBoxLayout );
-	lButtons->setMargin ( 1 );
+	lButtons->setContentsMargins ( 1, 1, 1, 1 );
 	lButtons->setSpacing ( 1 );
 	lButtons->addWidget ( mBtnNavPrev );
 	lButtons->addWidget ( mBtnNavNext );
@@ -4417,7 +4475,7 @@ void MainWindow::saveEditItems ()
 	auto btnOK ( new QPushButton ( TR_FUNC ( "Continue" ) ) );
 	static_cast<void>( connect ( btnOK, &QPushButton::clicked, this, [&] () { return dlgSaveEditItems->done ( 0 ); } ) );
 	auto vLayout ( new QVBoxLayout );
-	vLayout->setMargin ( 2 );
+	vLayout->setContentsMargins ( 2, 2, 2, 2 );
 	vLayout->setSpacing ( 2 );
 	vLayout->addWidget ( editItemsTable, 2 );
 	vLayout->addWidget ( btnOK, 0, Qt::AlignCenter );
@@ -4499,16 +4557,6 @@ inline void MainWindow::btnExitProgram_clicked () { Sys_Init::deInit (); }
 //--------------------------------------------SLOTS------------------------------------------------------------
 
 //--------------------------------------------SEARCH------------------------------------------------------------
-#include <QtCore/QMutex>
-#include <QtCore/QWaitCondition>
-static void msleep ( unsigned long msecs )
-{
-	QMutex mutex;
-	mutex.lock ();
-	QWaitCondition waitCondition;
-	waitCondition.wait ( &mutex, msecs );
-	mutex.unlock ();
-}
 
 void MainWindow::on_txtSearch_textEdited ( const QString& text )
 {

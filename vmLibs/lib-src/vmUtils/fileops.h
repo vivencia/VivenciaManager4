@@ -6,6 +6,7 @@
 #include <vmNumbers/vmnumberformats.h>
 
 #include <QtCore/QString>
+#include <QtCore/QStringList>
 
 class fileOps
 {

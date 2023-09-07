@@ -11,7 +11,7 @@ vmTaskPanel::vmTaskPanel ( const QString& title, QWidget* parent )
 	setSizePolicy ( QSizePolicy::Expanding, QSizePolicy::Expanding );
 
 	mLayout = new QVBoxLayout;
-	mLayout->setMargin ( 5 );
+	mLayout->setContentsMargins ( 5, 5, 5, 5 );
 	mLayout->setSpacing ( 5 );
 	mLayout->setSizeConstraint ( QLayout::SetMinAndMaxSize );
 	setLayout ( mLayout );

@@ -53,8 +53,8 @@ void contactsManagerWidget::initInterface ()
 	btnDel->setIcon ( ICON ( "browse-controls/remove.png" ) );
 	connect ( btnDel, &QToolButton::clicked, this, [&] () { return btnDel_clicked (); } );
 
-	QHBoxLayout* mainLayout ( new QHBoxLayout );
-	mainLayout->setMargin ( 0 );
+	auto mainLayout ( new QHBoxLayout );
+	mainLayout->setContentsMargins ( 0, 0, 0, 0 );
 	mainLayout->setSpacing ( 1 );
 	mainLayout->addWidget ( cboInfoData, 1 );
 	mainLayout->addWidget ( btnAdd );

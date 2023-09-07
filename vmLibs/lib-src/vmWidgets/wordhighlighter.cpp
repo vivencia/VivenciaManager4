@@ -12,13 +12,18 @@
 
 static const QRegExp word_split_syntax ( QStringLiteral ( "([^\\w,^\\\\]|(?=\\\\))+" ) );
 
-QTextCharFormat* __restrict wordHighlighter::m_spellCheckFormat ( nullptr );
-QTextCharFormat* __restrict wordHighlighter::m_HighlightFormat ( nullptr );
+//QTextCharFormat* __restrict__ wordHighlighter::m_spellCheckFormat ( nullptr );
+//QTextCharFormat* __restrict__ wordHighlighter::m_HighlightFormat ( nullptr );
 
 wordHighlighter::wordHighlighter ( QTextDocument* parent, spellCheck* const spellchecker )
 	: QSyntaxHighlighter ( parent ), mb_spellCheckEnabled ( false ), mb_HighlightEnabled ( false ),
-	  mSpellChecker ( spellchecker )
-{}
+	  mSpellChecker ( spellchecker ), m_spellCheckFormat ( nullptr ), m_HighlightFormat ( nullptr )
+{
+	m_spellCheckFormat = new QTextCharFormat;
+	m_spellCheckFormat->setForeground ( Qt::red );
+	m_spellCheckFormat->setUnderlineColor ( QColor ( Qt::red ) );
+	m_spellCheckFormat->setUnderlineStyle ( QTextCharFormat::SpellCheckUnderline );
+}
 
 wordHighlighter::~wordHighlighter ()
 {
@@ -30,7 +35,7 @@ void wordHighlighter::enableHighlighting ( const bool enable )
 {
 	if ( enable )
 	{
-		if ( !mb_HighlightEnabled && !m_HighlightFormat )
+		if ( !m_HighlightFormat )
 		{
 			m_HighlightFormat = new QTextCharFormat;
 			m_HighlightFormat->setBackground ( Qt::yellow );
@@ -43,18 +48,11 @@ void wordHighlighter::enableHighlighting ( const bool enable )
 
 void wordHighlighter::enableSpellChecking ( const bool enable )
 {
-	if ( enable )
+	if ( m_spellCheckFormat )
 	{
-		if ( !mb_spellCheckEnabled && m_spellCheckFormat == nullptr )
-		{
-			m_spellCheckFormat = new QTextCharFormat;
-			m_spellCheckFormat->setForeground ( Qt::red );
-			m_spellCheckFormat->setUnderlineColor ( QColor ( Qt::red ) );
-			m_spellCheckFormat->setUnderlineStyle ( QTextCharFormat::SpellCheckUnderline );
-		}
+		mb_spellCheckEnabled = enable;
+		rehighlight ();
 	}
-	mb_spellCheckEnabled = enable;
-	rehighlight ();
 }
 
 void wordHighlighter::unHighlightWord ( const QString& word )
@@ -113,7 +111,7 @@ void wordHighlighter::highlightBlock ( const QString& text )
 				{
 					if ( m_spellCheckFormat != nullptr )
 					{
-						if ( mSpellChecker->checkWord ( str ).isFalse () )
+						if ( !mSpellChecker->checkWord ( str ) )
 						{
 							number = text.count ( QRegExp ( QLatin1String ("\\b" ) + str + QLatin1String ("\\b" ) ) );
 							// underline all incorrect occurences of misspelled word
@@ -123,7 +121,7 @@ void wordHighlighter::highlightBlock ( const QString& text )
 								l = str_match.indexIn ( text, l + 1 );
 								if ( l >= 0 )
 									setFormat ( l, str.length (), *m_spellCheckFormat );
-							} // for j
+							}
 						}
 					}
 					if ( m_HighlightFormat != nullptr )

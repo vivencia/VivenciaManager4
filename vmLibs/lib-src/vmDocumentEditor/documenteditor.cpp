@@ -32,12 +32,6 @@ inline static const QString buildFilter () { return	documentEditorWindow::filter
 static heapManager<reportGenerator> heap_mngr;
 vmCompleters* documentEditor::completer_manager ( new vmCompleters ( false ) );
 
-inline const QString configFileName ()
-{
-	configOps config;
-	return (config.defaultConfigDir () + QLatin1String ( "doc_editor.conf" ));
-}
-
 documentEditor::~documentEditor ()
 {
 	static_cast<void>( disconnect () );
@@ -46,7 +40,7 @@ documentEditor::~documentEditor ()
 
 documentEditor::documentEditor ( QWidget* parent )
 	: QMainWindow ( parent ), mb_ClosingAllTabs ( false ), recentFilesList ( QString (), MAX_RECENT_FILES ),
-	  m_config ( nullptr )
+	  m_config ( new configOps ( configOps::appConfigFile (), "DocumentEditorConfig" ) )
 {
 	editorWindowClosed_func = [] () { return; };
 	setDockNestingEnabled ( true );
@@ -59,8 +53,6 @@ documentEditor::documentEditor ( QWidget* parent )
 	static_cast<void>( connect ( tabDocuments, &QTabWidget::currentChanged, this, [&] ( const int index ) { return updateMenus ( index ); } ) );
 	static_cast<void>( connect ( tabDocuments, &QTabWidget::tabCloseRequested, this, [&] ( const int index ) { return closeTab ( index ); } ) );
 
-	m_config = new configOps;
-
 	createActions ();
 	createMenus ();
 	createToolBars ();
@@ -70,6 +62,7 @@ documentEditor::documentEditor ( QWidget* parent )
 	setWindowTitle ( configOps::appName () + TR_FUNC ( " - Document Editor" ) );
 	setWindowIcon ( ICON ( "report" ) );
 
+	m_config->addManagedSectionName ( de_configSectionName );
 	m_config->getWindowGeometry ( this, de_configSectionName, de_configCategoryWindowGeometry );
 }
 
@@ -84,7 +77,7 @@ void documentEditor::addDockWindow ( Qt::DockWidgetArea area, QDockWidget* dockw
 		dockwidget->setFloating ( true );
 }
 
-void documentEditor::removeDockWindow ( QDockWidget *dockwidget )
+void documentEditor::removeDockWindow ( QDockWidget* dockwidget )
 {
 	removeDockWidget ( dockwidget );
 }
@@ -306,15 +299,9 @@ void documentEditor::changeTabText ( documentEditorWindow* window )
 	saveAct->setEnabled ( window->isModified () );
 }
 
-void documentEditor::closeTab ( int tab_index )
+bool documentEditor::closeTab ( int tab_index )
 {
-	if ( tab_index == -1 )
-	{
-		tab_index = tabDocuments->currentIndex ();
-		if ( tab_index == -1 ) //no tabs
-			return;
-	}
-	if ( tab_index < tabDocuments->count () )
+	if ( tab_index >= 0 && tab_index < tabDocuments->count () )
 	{
 		if ( dynamic_cast<documentEditorWindow*>( tabDocuments->widget ( tab_index ) )->canClose () )
 		{
@@ -327,16 +314,20 @@ void documentEditor::closeTab ( int tab_index )
 			}
 			delete doc;
 		}
+		else
+			return false;
 	}
+	return true;
 }
 
-void documentEditor::closeAllTabs ()
+bool documentEditor::closeAllTabs ()
 {
 	mb_ClosingAllTabs = true;
 	int i ( tabDocuments->count () - 1 );
+	bool bAllClosed ( true );
 	for ( ; i >= 0; --i )
 	{
-		closeTab ( i );
+		bAllClosed &= closeTab ( i );
 	}
 	if ( i == 0 )
 	{
@@ -344,6 +335,7 @@ void documentEditor::closeAllTabs ()
 		updateMenus ( -1 );	
 	}
 	mb_ClosingAllTabs = false;
+	return bAllClosed;
 }
 
 void documentEditor::activateNextTab ()
@@ -371,10 +363,14 @@ void documentEditor::setCompleterManager ( vmCompleters* const completer )
 
 void documentEditor::closeEvent ( QCloseEvent* ce )
 {
-	m_config->saveWindowGeometry ( this, de_configSectionName, de_configCategoryWindowGeometry );
-	closeAllTabs ();
-	ce->accept ();
-	editorWindowClosed_func ();
+	if ( closeAllTabs () )
+	{
+		m_config->saveWindowGeometry ( this, de_configSectionName, de_configCategoryWindowGeometry );
+		ce->accept ();
+		editorWindowClosed_func ();
+	}
+	else
+		ce->ignore ();
 }
 
 textEditor* documentEditor::startNewTextEditor ( textEditor* editor )

@@ -8,6 +8,7 @@
 
 class QVBoxLayout;
 class documentEditor;
+class textEditWithCompleter;
 
 class documentEditorWindow : public QWidget
 {
@@ -62,7 +63,7 @@ public:
 protected:
 	QVBoxLayout* mainLayout;
 
-	void documentWasModified ();
+	void documentWasModified ( textEditWithCompleter* tec );
 	void documentWasModifiedByUndo ( const bool );
 	void documentWasModifiedByRedo ( const bool );
 	

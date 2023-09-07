@@ -114,7 +114,7 @@ QSize vmActionLabel::sizeHint () const
 	w += 8;
 
 	return style ()->sizeFromContents ( QStyle::CT_PushButton, &opt, QSize ( w, h ), this ).
-		   expandedTo ( QApplication::globalStrut () );
+		   expandedTo ( QToolButton::sizeHint () );
 }
 
 QSize vmActionLabel::minimumSizeHint () const
@@ -325,7 +325,7 @@ vmDateEdit::vmDateEdit ( QWidget* parent )
 	static_cast<void>( connect ( mButton, &QToolButton::clicked, this, [&] () { return datesButtonMenuRequested (); } ) );
 
 	auto mainLayout ( new QHBoxLayout );
-	mainLayout->setMargin ( 0 );
+	mainLayout->setContentsMargins ( 0, 0, 0, 0 );
 	mainLayout->setSpacing ( 1 );
 	mainLayout->addWidget ( mDateEdit, 1 );
 	mainLayout->addWidget ( mButton );
@@ -935,7 +935,7 @@ vmLineEditWithButton::vmLineEditWithButton ( QWidget* parent )
 {
 	setWidgetPtr ( static_cast<QWidget*>( this ) );
 	mainLayout = new QHBoxLayout;
-	mainLayout->setMargin ( 0 );
+	mainLayout->setContentsMargins ( 0, 0, 0, 0 );
 	mainLayout->setSpacing ( 1 );
 	mainLayout->addWidget ( mLineEdit, 1 );
 	setLayout ( mainLayout );

@@ -164,7 +164,7 @@ void BackupDialog::fillTable ()
 
 		auto widgetitem ( new QListWidgetItem ( ui->tablesList ) );
 		widgetitem->setText ( TR_FUNC ( "Select all " ) );
-		widgetitem->setFlags ( Qt::ItemIsEnabled|Qt::ItemIsTristate|Qt::ItemIsSelectable|Qt::ItemIsUserCheckable );
+		widgetitem->setFlags ( Qt::ItemIsEnabled|Qt::ItemIsAutoTristate|Qt::ItemIsSelectable|Qt::ItemIsUserCheckable );
 		widgetitem->setCheckState ( Qt::Checked );
 
 		for ( uint i ( 0 ); i < TABLES_IN_DB; ++i )
@@ -463,7 +463,7 @@ int BackupDialog::showNoDatabaseOptionsWindow ()
 		layout->addWidget ( rdNothing, 1, Qt::AlignLeft );
 		layout->addWidget ( btnProceed, 1, Qt::AlignCenter );
 
-		layout->setMargin ( 0 );
+		layout->setContentsMargins ( 0, 0, 0, 0 );
 		layout->setSpacing ( 1 );
 		dlgNoDB->adjustSize ();
 		dlgNoDB->setLayout ( layout );

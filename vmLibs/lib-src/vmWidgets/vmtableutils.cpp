@@ -38,7 +38,7 @@ vmTableSearchPanel::vmTableSearchPanel ( const vmTableWidget* const table )
 
 	auto mLayout ( new QHBoxLayout );
 	mLayout->setSpacing( 2 );
-	mLayout->setMargin ( 2 );
+	mLayout->setContentsMargins ( 2, 2, 2, 2 );
 	mLayout->addWidget ( lblSearch );
 	mLayout->addWidget ( txtSearchTerm, 3 );
 	mLayout->addWidget ( btnSearchStart );
@@ -146,7 +146,7 @@ void vmTableSearchPanel::txtSearchTerm_keyPressed ( const QKeyEvent* ke )
 	}
 }
 
-vmTableFilterPanel::vmTableFilterPanel ( const vmTableWidget * const table )
+vmTableFilterPanel::vmTableFilterPanel ( const vmTableWidget* const table )
 	: QFrame ( nullptr ), m_utilidx ( -1 ), m_table ( const_cast<vmTableWidget*>( table ) ),
 		searchLevels ( 10 ), newView_func ( nullptr )
 {
@@ -162,7 +162,7 @@ vmTableFilterPanel::vmTableFilterPanel ( const vmTableWidget * const table )
 	m_txtFilter->setCallbackForValidKeyEntered ( [&] ( const triStateType level, const int startlevel ) { return doFilter ( level, startlevel ); } );
 
 	auto mainLayout ( new QHBoxLayout );
-	mainLayout->setMargin ( 2 );
+	mainLayout->setContentsMargins ( 2, 2, 2, 2 );
 	mainLayout->setSpacing ( 2 );
 	mainLayout->addWidget ( lblFilter );
 	mainLayout->addWidget ( m_txtFilter, 2 );

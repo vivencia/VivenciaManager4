@@ -49,27 +49,27 @@ void configDialog::connectUIForms ()
 	static_cast<void>( connect ( ui->btnCfgChooseDropboxDir, &QToolButton::clicked, this, [&] () { return on_btnCfgChooseDropBoxDir_clicked (); } ) );
 	static_cast<void>( connect ( ui->btnCfgUseDefaultDropboxDir, &QToolButton::clicked, this, [&] () { return on_btnCfgUseDefaultDropBoxDir_clicked (); } ) );
 
-	ui->txtCfgFileManager->setCallbackForContentsAltered ( [&] (const vmWidget* txtWidget ) {
+	ui->txtCfgFileManager->setCallbackForContentsAltered ( [&] ( const vmWidget* txtWidget ) {
 			CONFIG ()->setFileManager ( txtWidget->text () ); } );
-	ui->txtCfgPictureViewer->setCallbackForContentsAltered ( [&] (const vmWidget* txtWidget ) {
+	ui->txtCfgPictureViewer->setCallbackForContentsAltered ( [&] ( const vmWidget* txtWidget ) {
 			CONFIG ()->setPictureViewer ( txtWidget->text () ); } );
-	ui->txtCfgPictureEditor->setCallbackForContentsAltered ( [&] (const vmWidget* txtWidget ) {
+	ui->txtCfgPictureEditor->setCallbackForContentsAltered ( [&] ( const vmWidget* txtWidget ) {
 			CONFIG ()->setPictureEditor ( txtWidget->text () ); } );
-	ui->txtCfgDocumentViewer->setCallbackForContentsAltered ( [&] (const vmWidget* txtWidget ) {
+	ui->txtCfgDocumentViewer->setCallbackForContentsAltered ( [&] ( const vmWidget* txtWidget ) {
 			CONFIG ()->setUniversalViewer ( txtWidget->text () ); } );
-	ui->txtCfgDocEditor->setCallbackForContentsAltered ( [&] (const vmWidget* txtWidget ) {
+	ui->txtCfgDocEditor->setCallbackForContentsAltered ( [&] ( const vmWidget* txtWidget ) {
 			CONFIG ()->setDocEditor ( txtWidget->text () ); } );
-	ui->txtCfgXlsEditor->setCallbackForContentsAltered ( [&] (const vmWidget* txtWidget ) {
+	ui->txtCfgXlsEditor->setCallbackForContentsAltered ( [&] ( const vmWidget* txtWidget ) {
 			CONFIG ()->setXlsEditor ( txtWidget->text () ); } );
-	ui->txtCfgJobsPrefix->setCallbackForContentsAltered ( [&] (const vmWidget* txtWidget ) {
+	ui->txtCfgJobsPrefix->setCallbackForContentsAltered ( [&] ( const vmWidget* txtWidget ) {
 			CONFIG ()->setProjectsBaseDir ( txtWidget->text () ); } );
-	ui->txtCfgEstimate->setCallbackForContentsAltered ( [&] (const vmWidget* txtWidget ) {
+	ui->txtCfgEstimate->setCallbackForContentsAltered ( [&] ( const vmWidget* txtWidget ) {
 			CONFIG ()->setEstimatesDir ( txtWidget->text () ); } );
-	ui->txtCfgReports->setCallbackForContentsAltered ( [&] (const vmWidget* txtWidget ) {
+	ui->txtCfgReports->setCallbackForContentsAltered ( [&] ( const vmWidget* txtWidget ) {
 			CONFIG ()->setReportsDir ( txtWidget->text () ); } );
-	ui->txtCfgDropbox->setCallbackForContentsAltered ( [&] (const vmWidget* txtWidget ) {
+	ui->txtCfgDropbox->setCallbackForContentsAltered ( [&] ( const vmWidget* txtWidget ) {
 			CONFIG ()->setDropboxDir ( txtWidget->text () ); } );
-	ui->txtCfgScheme->setCallbackForContentsAltered ( [&] (const vmWidget* txtWidget ) {
+	ui->txtCfgScheme->setCallbackForContentsAltered ( [&] ( const vmWidget* txtWidget ) {
 			MAINWINDOW ()->changeSchemeStyle ( txtWidget->text (), true ); } );
 
 	ui->txtCfgFileManager->setEditable ( true );

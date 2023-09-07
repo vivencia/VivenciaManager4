@@ -73,6 +73,18 @@ const QString DB_Image::imageFileName () const
 	return emptyString;
 }
 
+const QString DB_Image::imageCompletePath () const
+{
+	RECORD_IMAGES* ri ( images_array.current () );
+	if ( ri != nullptr )
+	{
+		fileOps::st_fileInfo* fi ( ri->files.current () );
+		if ( fi != nullptr )
+			return fi->fullpath;
+	}
+	return emptyString;
+}
+
 void DB_Image::loadImage ( const QString& filename )
 {
 	QImageReader reader;

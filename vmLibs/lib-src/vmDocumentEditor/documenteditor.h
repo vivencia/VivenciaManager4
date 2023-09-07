@@ -37,8 +37,8 @@ public:
 	void openRecentFile ( QAction* action );
 	void makeWindowActive ( QAction* action );
 	void changeTabText ( documentEditorWindow* window );
-	void closeTab ( int tab_index = -1 );
-	void closeAllTabs ();
+	bool closeTab ( int tab_index = -1 );
+	bool closeAllTabs ();
 	void activateNextTab ();
 	void activatePreviousTab ();
 

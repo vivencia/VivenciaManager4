@@ -63,15 +63,13 @@ textEditWithCompleter::textEditWithCompleter ( QWidget* parent )
 
 	createContextMenu ();
 	newest_edited_text.reserve ( 20000 );
-	static_cast<void>( connect ( document (), &QTextDocument::modificationChanged, this, [&] ( const bool bChanged ) { mbDocumentModified = bChanged; } ) );
+	static_cast<void>( connect ( document (), &QTextDocument::modificationChanged, this, [&] ( const bool bChanged ){ mbDocumentModified = bChanged; } ) );
 }
 
 textEditWithCompleter::~textEditWithCompleter ()
 {
 	for ( QAction* act : misspelledWordsActs )
 		heap_del ( act );
-	//for  ( uint i = 0; i < WRONG_WORDS_MENUS; ++i )
-	//	heap_del ( misspelledWordsActs[i] );
 	heap_del ( mContextMenu );
 	heap_del ( m_searchPanel );
 	heap_del ( m_highlighter );
@@ -441,7 +439,7 @@ void textEditWithCompleter::contextMenuEvent ( QContextMenuEvent* e )
 		for ( i = 0; i < qMin ( static_cast<int>(WRONG_WORDS_MENUS), list_words.size () + 3 ); ++i )
 		{
 			if ( i >= 3 )
-				misspelledWordsActs[i]->setText ( list_words.at ( i - 3 ).trimmed () );
+				misspelledWordsActs[i]->setText ( static_cast<QString>(list_words.at ( i - 3 )).trimmed () );
 			misspelledWordsActs[i]->setVisible ( true );
 			mContextMenu->addAction ( misspelledWordsActs[i] );
 		}

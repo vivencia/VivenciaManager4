@@ -19,7 +19,7 @@ TaskGroup::TaskGroup ( QWidget *parent, const bool stretchContents )
 	setProperty ( "header", QStringLiteral ( "true" ) );
 	//setScheme ( ActionPanelScheme::defaultScheme () );
 	auto vbl ( new QVBoxLayout () );
-	vbl->setMargin ( 2 );
+	vbl->setContentsMargins ( 2, 2, 2, 2 );
 	vbl->setSpacing ( 4 );
 	setLayout ( vbl );
 	setSizePolicy ( QSizePolicy::Minimum, QSizePolicy::Minimum );
@@ -57,7 +57,7 @@ void TaskGroup::addQEntry ( QWidget* widget, QLayout* l, const bool addStretch )
 		if ( addStretch )
 		{
 			auto hbl ( new QHBoxLayout () );
-			hbl->setMargin ( 0 );
+			hbl->setContentsMargins ( 0, 0, 0, 0 );
 			hbl->setSpacing ( 0 );
 			hbl->addWidget ( widget );
 			groupLayout ()->addLayout ( hbl );
@@ -106,7 +106,7 @@ TaskHeader::TaskHeader ( const QIcon& icon, const QString& title,
 	connect ( timerSlide, &QTimer::timeout, this, [&] () { return animate (); } );
 
 	auto hbl ( new QHBoxLayout () );
-	hbl->setMargin ( 2 );
+	hbl->setContentsMargins ( 2, 2, 2, 2 );
 	setLayout ( hbl );
 	hbl->addWidget ( mTitle );
 
@@ -407,7 +407,7 @@ void vmActionGroup::init ()
 	connect ( timerHide, &QTimer::timeout, this, [&] () { return processHide (); } );
 
 	auto vbl ( new QVBoxLayout () );
-	vbl->setMargin ( 0 );
+	vbl->setContentsMargins ( 0, 0 ,0 ,0 );
 	vbl->setSpacing ( 0 );
 	setLayout ( vbl );
 

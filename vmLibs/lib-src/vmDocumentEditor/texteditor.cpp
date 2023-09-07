@@ -65,6 +65,7 @@ textEditor::textEditor ( documentEditor* mdiParent )
 
 textEditor::~textEditor ()
 {
+	mDocument->blockSignals ( true );
 	static_cast<void>( mDocument->disconnect ());
 	delete mDocument;
 }
@@ -73,13 +74,13 @@ void textEditor::setEditable ( const bool b_editable )
 {
 	if ( b_editable )
 	{
-		static_cast<void>( connect ( mDocument->document (), &QTextDocument::contentsChanged, this, [&] () { return documentWasModified (); } ) );
+		static_cast<void>( connect ( mDocument->document (), &QTextDocument::contentsChanged, this, [&] () { return documentWasModified ( this->mDocument ); } ) );
 		static_cast<void>( connect ( mDocument->document (), &QTextDocument::undoAvailable, this, [&] ( const bool undo ) { return documentWasModifiedByUndo ( undo ); } ) );
 		static_cast<void>( connect ( mDocument->document (), &QTextDocument::redoAvailable, this, [&] ( const bool redo ) { return documentWasModifiedByRedo ( redo ); } ) );
 		static_cast<void>( connect ( mDocument, &textEditWithCompleter::cursorPositionChanged, TEXT_EDITOR_TOOLBAR (), [&] () { return TEXT_EDITOR_TOOLBAR ()->updateControls (); } ) );
 	}
 	else
-		disconnect ( mDocument->document (), nullptr, nullptr, nullptr );
+		mDocument->document ()->disconnect ();
 
 	mDocument->setEditable ( b_editable );
 }
@@ -393,6 +394,7 @@ textEditorToolBar::textEditorToolBar ()
 	layoutFontStyleButtons->addWidget ( btnHighlightColor );
 
 	cboFontType = new QFontComboBox;
+	cboFontType->setEditable ( false );
 	cboFontType->setCurrentFont ( QApplication::font () );
 	connect ( cboFontType, static_cast<void (QFontComboBox::*) (const QString&)>( &QFontComboBox::textActivated ), this, [&] ( const QString& fontname ) { return setFontType ( fontname ); } );
 	
@@ -611,6 +613,10 @@ void textEditorToolBar::mergeFormatOnWordOrSelection ( const QTextCharFormat& fo
 
 	mEditorWindow->mCursor.mergeCharFormat ( format );
 	mEditorWindow->mDocument->mergeCurrentCharFormat ( format );
+	//Some widgets that call this function steal the focus when they are used
+	//(eg. the QFontComboBox when activated, via mouse or keyboard grabs the focus and keeps. So that the user does not
+	//have to click or tab navigate to the edited document, we send the focus automatically back to the document
+	mEditorWindow->mDocument->setFocus ();
 }
 
 void textEditorToolBar::updateControls ()

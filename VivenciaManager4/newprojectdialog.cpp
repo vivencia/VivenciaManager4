@@ -64,7 +64,7 @@ newProjectDialog::newProjectDialog ( QWidget *parent )
 	connect ( btnCancel, &QPushButton::clicked, this, [&] () { return btnCancel_clicked (); } );
 
 	auto vbLayout ( new QVBoxLayout );
-	vbLayout->setMargin ( 2 );
+	vbLayout->setContentsMargins ( 2, 2, 2, 2 );
 	vbLayout->setSpacing ( 2 );
 	vbLayout->addWidget ( lblClient );
 	vbLayout->addWidget ( cboClients, 2 );
@@ -72,7 +72,7 @@ newProjectDialog::newProjectDialog ( QWidget *parent )
 	vbLayout->addWidget( lstJobTypes, 2 );
 
 	auto gLayout ( new QGridLayout );
-	gLayout->setMargin ( 2 );
+	gLayout->setContentsMargins ( 2, 2, 2, 2 );
 	gLayout->setSpacing ( 2 );
 	gLayout->setColumnStretch ( 0, 3 );
 	gLayout->addWidget ( lblProjectName, 0, 0, 1, 3 );
@@ -87,7 +87,7 @@ newProjectDialog::newProjectDialog ( QWidget *parent )
 	gLayout->addLayout ( btnsLayout, 6, 0, 6, 5 );
 
 	auto mainLayout ( new QHBoxLayout );
-	mainLayout->setMargin ( 0 );
+	mainLayout->setContentsMargins ( 0, 0, 0, 0 );
 	mainLayout->setSpacing ( 2 );
 	mainLayout->addLayout ( vbLayout, 1 );
 	mainLayout->addLayout ( gLayout, 1 );

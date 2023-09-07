@@ -408,8 +408,11 @@ bool configFile::setFieldValue ( const QString& field_name, const QString& value
 		const int idx ( fieldIndex ( field_name ) );
 		if ( idx != -1 )
 		{
-			section_info->values[idx] = value;
-			m_needsaving = true;
+			if ( section_info->values[idx] != value )
+			{
+				section_info->values[idx] = value;
+				m_needsaving = true;
+			}
 			return true;
 		}
 	}

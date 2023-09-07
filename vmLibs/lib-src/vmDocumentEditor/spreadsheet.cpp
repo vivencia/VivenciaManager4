@@ -65,7 +65,7 @@ void spreadSheetEditor::setupUI ()
 	static_cast<void>(connect ( btnClose, &QPushButton::clicked, this, [&] () { return closeClicked (); } ));
 
 	auto hLayout1 ( new QHBoxLayout );
-	hLayout1->setMargin ( 2 );
+	hLayout1->setContentsMargins ( 2, 2, 2, 2 );
 	hLayout1->setSpacing ( 2 );
 	hLayout1->addWidget ( btnEditTable, 1 );
 	hLayout1->addWidget ( btnCancel, 1 );
@@ -125,7 +125,7 @@ void spreadSheetEditor::setupUI ()
 	m_table->setCallbackForRowRemoved ( [&] ( const uint row ) { return rowRemoved ( row ); } );
 
 	mLayoutMain = new QVBoxLayout;
-	mLayoutMain->setMargin ( 2 );
+	mLayoutMain->setContentsMargins ( 2, 2, 2, 2 );
 	mLayoutMain->setSpacing ( 2 );
 	m_table->addToLayout ( mLayoutMain );
 	mLayoutMain->addLayout ( hLayout1, 0 );

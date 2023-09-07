@@ -239,7 +239,7 @@ estimateDlg::estimateDlg ( QWidget* parent )
 	connect ( btnReload, &QToolButton::pressed, this, [&] () { return scanDir (); } );
 
 	auto vLayout1 ( new QVBoxLayout );
-	vLayout1->setMargin ( 1 );
+	vLayout1->setContentsMargins ( 1, 1, 1, 1 );
 	vLayout1->setSpacing ( 1 );
 	vLayout1->addWidget ( btnDoc );
 	vLayout1->addWidget ( btnVmr );
@@ -262,7 +262,7 @@ estimateDlg::estimateDlg ( QWidget* parent )
 	connect ( treeView, &QTreeWidget::itemDoubleClicked, this, [&] ( QTreeWidgetItem* item, int ) { return openWithDoubleClick ( item ); } );
 
 	auto hLayout2 ( new QHBoxLayout );
-	hLayout2->setMargin ( 2 );
+	hLayout2->setContentsMargins ( 2, 2, 2, 2 );
 	hLayout2->setSpacing ( 2 );
 	hLayout2->addWidget ( treeView, 2 );
 	hLayout2->addLayout ( vLayout1, 0 );
@@ -280,7 +280,7 @@ estimateDlg::estimateDlg ( QWidget* parent )
 	connect ( btnClose, &QPushButton::clicked, this, [&] () { b_inItemSelectionMode ? cancelItemSelection () : static_cast<void>( close () ); } );
 
 	auto hLayout3 ( new QHBoxLayout );
-	hLayout3->setMargin ( 2 );
+	hLayout3->setContentsMargins ( 2, 2, 2, 2 );
 	hLayout3->setSpacing ( 2 );
 	hLayout3->addWidget ( btnProject, 1, Qt::AlignCenter );
 	hLayout3->addWidget ( btnEstimate, 1, Qt::AlignCenter );
@@ -288,7 +288,7 @@ estimateDlg::estimateDlg ( QWidget* parent )
 	hLayout3->addWidget ( btnClose, 1, Qt::AlignCenter );
 
 	auto mainLayout ( new QVBoxLayout );
-	mainLayout->setMargin ( 2 );
+	mainLayout->setContentsMargins ( 2, 2, 2, 2 );
 	mainLayout->setSpacing ( 0 );
 	mainLayout->addLayout ( hLayout2, 2 );
 	mainLayout->addLayout ( hLayout3, 0 );

@@ -4,6 +4,7 @@
 #include "heapmanager.h"
 
 #include <vmNotify/vmnotify.h>
+#include <vmWidgets/texteditwithcompleter.h>
 
 #include <QtGui/QCloseEvent>
 #include <QtWidgets/QDockWidget>
@@ -17,7 +18,7 @@ documentEditorWindow::documentEditorWindow ( documentEditor *parent )
 	setAttribute ( Qt::WA_DeleteOnClose );
 
 	mainLayout = new QVBoxLayout;
-	mainLayout->setMargin ( 1 );
+	mainLayout->setContentsMargins ( 1, 1, 1, 1 );
 	mainLayout->setSpacing ( 1 );
 	setLayout ( mainLayout );
 }
@@ -87,7 +88,7 @@ bool documentEditorWindow::saveas ( const QString& filename )
 	return ret;
 }
 
-void documentEditorWindow::documentWasModified ()
+void documentEditorWindow::documentWasModified ( textEditWithCompleter* tec )
 {
 	if ( !mb_programModification )
 	{
@@ -114,6 +115,21 @@ void documentEditorWindow::documentWasModified ()
 			if ( documentModified_func )
 				documentModified_func ( this );
 		}
+
+		/* Rationale for this piece of code: spellchecking highlight was not working in textEditor::textEditWithCompleter. It was, though, in other parts
+		 * of the application. Maybe it is something in the program's code or maybe it has to do with some signals being intercepted by other objects in the chain
+		 * QTextDocument->textEditWithCompleter->QWidget->documentEditorWindow->textEditor. If I tried to connect textEditWithCompleter::document ()::&QTextDocument::contentsChanged()
+		 * within textEditWithCompleter itself I would not get any response if textEditWithCompleter was within a documentEditorWindow, even when disabling the connection to this slot.
+		 * But anywhere else in the app it worked. Also, I did not need to connect that signal in order for the highlighting to work elsewhere.
+		 * Finally, in order for it to work here I must block all signals from being emitted by textEditWithCompleter and QTextDocument.
+		 * Otherwise, when QSyntaxHighlighter from wordHighlighter called rehighlight () it would trigger QTextDocument::contentsChanged() signal to be emitted and an infinite loop would ensue
+		 * (the signal connect to this slot, mind you, not any slot from within textEditWithCompleter itself, which as explained above, never gets called)
+		 */
+		tec->blockSignals ( true );
+		tec->document ()->blockSignals ( true );
+		tec->enableSpellChecking ( true );
+		tec->document ()->blockSignals ( false );
+		tec->blockSignals( false );
 	}
 }
 

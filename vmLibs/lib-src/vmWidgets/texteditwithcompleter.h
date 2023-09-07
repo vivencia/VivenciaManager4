@@ -2,7 +2,7 @@
 #define TEXTEDITWITHCOMPLETER_H
 
 #include "vmwidget.h"
-#include"wordhighlighter.h"
+#include "wordhighlighter.h"
 
 #include <QtWidgets/QTextEdit>
 
@@ -36,6 +36,8 @@ public:
 	{
 		return document ()->property ( PROPERTY_PRINT_PREVIEW ).toBool ();
 	}
+
+	inline void enableSpellChecking ( const bool b_enable ) { m_highlighter->enableSpellChecking ( b_enable ); }
 
 	void setCompleter ( QCompleter* const completer );
 	inline spellCheck* spellChecker () const { return mSpellChecker; }
@@ -71,6 +73,8 @@ protected:
 	void contextMenuEvent ( QContextMenuEvent* e ) override;
 
 private:
+	friend class documentEditorWindow;
+
 	QString spell_dic;
 	QString m_wordUnderCursor;
 	QString mHighlightedWord;
