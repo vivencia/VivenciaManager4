@@ -176,22 +176,22 @@ void MainWindow::setupClientPanel ()
 
 	saveClientWidget ( ui->txtClientID, FLD_CLIENT_ID );
 	saveClientWidget ( ui->txtClientName, FLD_CLIENT_NAME );
-	ui->txtClientName->setCompleter ( COMPLETERS ()->getCompleter ( CLIENT_NAME ) );
+	COMPLETERS ()->setCompleterForWidget ( ui->txtClientName, CC_CLIENT_NAME );
 	ui->txtClientName->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) {
 		return txtClientName_textAltered ( sender->text () ); } );
 
 	saveClientWidget ( ui->txtClientCity, FLD_CLIENT_CITY );
-	ui->txtClientCity->setCompleter ( COMPLETERS ()->getCompleter ( ADDRESS ) );
+	COMPLETERS ()->setCompleterForWidget ( ui->txtClientCity, CC_ADDRESS );
 	ui->txtClientCity->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) {
 		return txtClient_textAltered ( sender ); } );
 
 	saveClientWidget ( ui->txtClientDistrict, FLD_CLIENT_DISTRICT );
-	ui->txtClientDistrict->setCompleter ( COMPLETERS ()->getCompleter ( ADDRESS ) );
+	COMPLETERS ()->setCompleterForWidget ( ui->txtClientDistrict, CC_ADDRESS );
 	ui->txtClientDistrict->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) {
 		return txtClient_textAltered ( sender ); } );
 
 	saveClientWidget ( ui->txtClientStreetAddress, FLD_CLIENT_STREET );
-	ui->txtClientStreetAddress->setCompleter ( COMPLETERS ()->getCompleter ( ADDRESS ) );
+	COMPLETERS ()->setCompleterForWidget ( ui->txtClientStreetAddress, CC_ADDRESS );
 	ui->txtClientStreetAddress->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) {
 		return txtClient_textAltered ( sender ); } );
 
@@ -897,7 +897,7 @@ void MainWindow::setupJobPanel ()
 
 	saveJobWidget ( ui->txtJobID, FLD_JOB_ID );
 	saveJobWidget ( ui->cboJobType, FLD_JOB_TYPE );
-	COMPLETERS ()->setCompleterForWidget ( ui->cboJobType, COMPLETER_CATEGORIES::JOB_TYPE );
+	COMPLETERS ()->setCompleterForWidget ( ui->cboJobType, CC_JOB_TYPE );
 	ui->cboJobType->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) {
 		return cboJobType_textAltered ( sender ); } );
 	ui->cboJobType->setCallbackForIndexChanged ( [] ( const int ) { return; } ); // this call is just to trigger the signal. With this combo box, we do nothing at an index change
@@ -937,7 +937,7 @@ void MainWindow::setupJobPanel ()
 	ui->txtJobReport->setCallbackForContentsAltered ( [&] ( const vmWidget* const widget ) {
 		return updateJobInfo ( static_cast<textEditWithCompleter*>( const_cast<vmWidget*>( widget ) )->currentText (), JILUR_REPORT ); } );
 	ui->txtJobReport->setUtilitiesPlaceLayout ( ui->layoutTxtJobUtilities );
-	ui->txtJobReport->setCompleter ( COMPLETERS ()->getCompleter ( ALL_CATEGORIES ) );
+	COMPLETERS ()->setCompleterForWidget ( ui->txtJobReport, CC_ALL_CATEGORIES );
 
 	saveJobWidget ( ui->timeJobStart, FLD_JOB_REPORT + Job::JRF_START_TIME );
 	ui->timeJobStart->setCallbackForContentsAltered ( [&] ( const vmWidget* const ) {
@@ -2294,7 +2294,7 @@ void MainWindow::setupPayPanel ()
 	ui->paysOverdueClientList->setUtilitiesPlaceLayout ( ui->layoutClientOverduePaysUtility );
 	ui->paysOverdueClientList->setCallbackForWidgetGettingFocus ( [&] () { ui->lblCurInfoPay->callLabelActivatedFunc (); } );
 
-	static_cast<void>( dbTableWidget::createPayHistoryTable ( ui->tablePayments ) );
+	dbTableWidget::createPayHistoryTable ( ui->tablePayments );
 	savePayWidget ( ui->tablePayments, FLD_PAY_INFO );
 	ui->tablePayments->setUtilitiesPlaceLayout ( ui->layoutPayTableUtility );
 	ui->tablePayments->setCallbackForCellChanged ( [&] ( const vmTableItem* const item ) {
@@ -2835,10 +2835,10 @@ void MainWindow::interceptPaymentCellChange ( const vmTableItem* const item )
 		switch ( col )
 		{
 			case PHR_METHOD:
-				COMPLETERS ()->updateCompleter ( item->text (), PAYMENT_METHOD );
+				COMPLETERS ()->updateCompleter ( item->text (), CC_PAYMENT_METHOD );
 			break;
 			case PHR_ACCOUNT:
-				COMPLETERS ()->updateCompleter ( item->text (), ACCOUNT );
+				COMPLETERS ()->updateCompleter ( item->text (), CC_ACCOUNT );
 			break;
 			default:
 			break;
@@ -3027,7 +3027,7 @@ void MainWindow::setupBuyPanel ()
 	ui->tableBuyItemsSelectiveView->setIsPlainTable ( false );
 	ui->tableBuyItemsSelectiveView->setSelectionBehavior ( QAbstractItemView::SelectRows );
 	ui->tableBuyItemsSelectiveView->setSelectionMode ( QAbstractItemView::ExtendedSelection );
-	dbTableWidget::createPurchasesTable ( ui->tableBuyItemsSelectiveView, this );
+	dbTableWidget::createPurchasesTable ( ui->tableBuyItemsSelectiveView );
 	connect ( ui->tableBuyItemsSelectiveView, &QTableWidget::itemSelectionChanged, this, [&] () { updateBuySelectionTotals (); } );
 	ui->tableBuyItemsSelectiveView->setCallbackForNewViewAfterFilter ( [&] () { updateBuyFilteredViewTotals (); } );
 	connect ( ui->tabBuysSelectiveView, &QTabWidget::currentChanged, this, [&] ( const int index ) {
@@ -3062,7 +3062,7 @@ void MainWindow::setupBuyPanel ()
 		return txtBuy_textAltered ( sender ); } );
 
 	saveBuyWidget ( ui->txtBuyDeliveryMethod, FLD_BUY_DELIVERMETHOD );
-	ui->txtBuyDeliveryMethod->setCompleter ( COMPLETERS ()->getCompleter ( DELIVERY_METHOD ) );
+	COMPLETERS ()->setCompleterForWidget ( ui->txtBuyDeliveryMethod, CC_DELIVERY_METHOD );
 	ui->txtBuyDeliveryMethod->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) {
 		return txtBuy_textAltered ( sender ); } );
 
@@ -3074,7 +3074,7 @@ void MainWindow::setupBuyPanel ()
 		return dteBuy_dateAltered ( sender ); } );
 
 	saveBuyWidget ( ui->cboBuySuppliers, FLD_BUY_SUPPLIER );
-	COMPLETERS ()->setCompleterForWidget ( ui->cboBuySuppliers, SUPPLIER );
+	COMPLETERS ()->setCompleterForWidget ( ui->cboBuySuppliers, CC_SUPPLIER );
 	ui->cboBuySuppliers->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) {
 		return cboBuySuppliers_textAltered ( sender->text () ); } );
 	ui->cboBuySuppliers->setCallbackForIndexChanged ( [&] ( const int index ) {
@@ -3090,7 +3090,7 @@ void MainWindow::setupBuyPanel ()
 	ui->tableBuyItems->setCallbackForMonitoredCellChanged ( [&] ( const vmTableItem* const item ) {
 		return ui->txtBuyTotalPrice->setText ( item->text (), true ); } );
 
-	dbTableWidget::createPayHistoryTable ( ui->tableBuyPayments, this, PHR_METHOD );
+	dbTableWidget::createPayHistoryTable ( ui->tableBuyPayments, PHR_METHOD );
 	ui->tableBuyPayments->setKeepModificationRecords ( false );
 	saveBuyWidget ( ui->tableBuyPayments, FLD_BUY_PAYINFO );
 	ui->tableBuyPayments->setUtilitiesPlaceLayout ( ui->layoutTableBuyPaysUtility );
@@ -3523,7 +3523,7 @@ void MainWindow::interceptBuyPaymentCellChange ( const vmTableItem* const item )
 			else
 			{
 				if ( bMethodOk )
-					COMPLETERS ()->updateCompleter ( ui->tableBuyPayments->sheetItem ( row, PHR_METHOD )->text (), PAYMENT_METHOD );
+					COMPLETERS ()->updateCompleter ( ui->tableBuyPayments->sheetItem ( row, PHR_METHOD )->text (), CC_PAYMENT_METHOD );
 			}
 		}
 		break;

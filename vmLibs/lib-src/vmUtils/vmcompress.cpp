@@ -28,7 +28,7 @@ bool VMCompress::compress ( const QString& in_filename, const QString& out_filen
 		return false;
 
 	FILE* f_out ( nullptr );
-	f_out = ::fopen ( out_filename.toUtf8 ().constData (), "wb" );
+	f_out = ::fopen ( out_filename.toLocal8Bit ().constData (), "wb" );
 	if ( f_out == nullptr )
 	{
 		in_file.close ();
@@ -79,7 +79,7 @@ bool VMCompress::compress ( const QString& in_filename, const QString& out_filen
 bool VMCompress::isCompressed ( const QString& filename )
 {
 	FILE* f = nullptr;
-	f = ::fopen ( filename.toUtf8 ().constData (), "rb" );
+	f = ::fopen ( filename.toLocal8Bit ().constData (), "rb" );
 	if ( f == nullptr )
 		return false;
 
@@ -102,7 +102,7 @@ bool VMCompress::decompress ( const QString& in_filename, const QString& out_fil
 		return false;
 
 	FILE* f_in = nullptr;
-	f_in = ::fopen ( in_filename.toUtf8 ().constData (), "rb" );
+	f_in = ::fopen ( in_filename.toLocal8Bit ().constData (), "rb" );
 	if ( f_in == nullptr )
 		return false;
 
@@ -162,7 +162,7 @@ bool VMCompress::createTar ( const QString& input_dir, const QString& out_filena
 		return true;
 
 	const QString cmd ( QStringLiteral ( "tar -C %1 -cf %2 %3" ) );
-	return ( ::system ( cmd.arg ( fileOps::nthDirFromPath ( input_dir, 0 ), out_filename, fileOps::nthDirFromPath ( input_dir ) ).toUtf8 ().constData () ) == 0 );
+	return ( ::system ( cmd.arg ( fileOps::nthDirFromPath ( input_dir, 0 ), out_filename, fileOps::nthDirFromPath ( input_dir ) ).toLocal8Bit ().constData () ) == 0 );
 }
 
 bool VMCompress::addToTar ( const QString& input, const QString& tar_file, const bool create_if_not_exists )
@@ -179,5 +179,5 @@ bool VMCompress::addToTar ( const QString& input, const QString& tar_file, const
 	}
 	const QString cmd ( QStringLiteral ( "tar -C %1 -rf %2 %3" ) );
 	const QString topDir ( fileOps::nthDirFromPath ( input, 0 ) );
-	return ( ::system ( cmd.arg ( topDir, tar_file,	QString ( input ).remove ( topDir ) ).toUtf8 ().constData () ) == 0 );
+	return ( ::system ( cmd.arg ( topDir, tar_file,	QString ( input ).remove ( topDir ) ).toLocal8Bit ().constData () ) == 0 );
 }

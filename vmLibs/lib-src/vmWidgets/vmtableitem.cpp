@@ -410,7 +410,6 @@ void vmTableItem::computeFormula ()
 		}
 	}
 
-
 	/*
 	 * Force the widget to change its text and emit a signal to notify the callback,
 	 * but only do that when editing the table. Changes when the table is read-only must not

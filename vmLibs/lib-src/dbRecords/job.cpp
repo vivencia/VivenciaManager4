@@ -73,7 +73,7 @@ const TABLE_INFO Job::t_info =
 
 static void updateJobCompleters ( const DBRecord* db_rec )
 {
-	DBRecord::completerManager ()->updateCompleter ( db_rec, FLD_JOB_TYPE, JOB_TYPE );
+	db_rec->completerManager ()->updateCompleter ( db_rec, FLD_JOB_TYPE, CC_JOB_TYPE );
 }
 
 Job::Job ( const bool connect_helper_funcs )

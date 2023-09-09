@@ -22,22 +22,22 @@ bool updateSuppliesTable ()
 
 void updateSuppliesISRUnitCompleter ( const DBRecord* db_rec )
 {
-	DBRecord::completerManager ()->updateCompleter ( db_rec, FLD_SUPPLIES_UNIT, PRODUCT_OR_SERVICE );
+	db_rec->completerManager ()->updateCompleter ( db_rec, FLD_SUPPLIES_UNIT, CC_PRODUCT_OR_SERVICE );
 }
 
 void updateSuppliesISRPriceCompleter ( const DBRecord* db_rec )
 {
-	DBRecord::completerManager ()->updateCompleter ( db_rec, FLD_SUPPLIES_PRICE, PRODUCT_OR_SERVICE );
+	db_rec->completerManager ()->updateCompleter ( db_rec, FLD_SUPPLIES_PRICE, CC_PRODUCT_OR_SERVICE );
 }
 
 void updateSuppliesItemCompleter ( const DBRecord* db_rec )
 {
-	DBRecord::completerManager ()->updateCompleter ( db_rec, FLD_SUPPLIES_ITEM, ITEM_NAMES );
+	db_rec->completerManager ()->updateCompleter ( db_rec, FLD_SUPPLIES_ITEM, CC_ITEM_NAMES );
 }
 
 void updateSuppliesTypeCompleter ( const DBRecord* db_rec )
 {
-	DBRecord::completerManager ()->updateCompleter ( db_rec, FLD_SUPPLIES_TYPE, STOCK_TYPE );
+	db_rec->completerManager ()->updateCompleter ( db_rec, FLD_SUPPLIES_TYPE, CC_STOCK_TYPE );
 }
 
 void updateSuppliesSupplierCompleter ( const DBRecord* db_rec )
@@ -47,12 +47,12 @@ void updateSuppliesSupplierCompleter ( const DBRecord* db_rec )
 
 void updateSuppliesPlaceCompleter ( const DBRecord* db_rec )
 {
-	DBRecord::completerManager ()->updateCompleter ( db_rec, FLD_SUPPLIES_PLACE, STOCK_PLACE );
+	db_rec->completerManager ()->updateCompleter ( db_rec, FLD_SUPPLIES_PLACE, CC_STOCK_PLACE );
 }
 
 void updateSuppliesBrandCompleter ( const DBRecord* db_rec )
 {
-	DBRecord::completerManager ()->updateCompleter ( db_rec, FLD_SUPPLIES_BRAND, BRAND );
+	db_rec->completerManager ()->updateCompleter ( db_rec, FLD_SUPPLIES_BRAND, CC_BRAND );
 }
 
 const TABLE_INFO dbSupplies::t_info =

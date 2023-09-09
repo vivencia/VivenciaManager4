@@ -65,7 +65,7 @@ void suppliersDlg::setupUI ()
 		return txtSupplier_textAltered ( sender ); } );
 	txtSupStreet->setCallbackForRelevantKeyPressed ( [&] ( const QKeyEvent* const ke, const vmWidget* const ) {
 		return keyPressedSelector ( ke ); } );
-	COMPLETERS ()->setCompleterForWidget ( txtSupStreet, COMPLETER_CATEGORIES::ADDRESS );
+	COMPLETERS ()->setCompleterForWidget ( txtSupStreet, CC_ADDRESS );
 
 	txtSupNbr = new vmLineEdit;
 	saveWidget ( txtSupNbr, FLD_SUPPLIER_NUMBER );
@@ -87,7 +87,7 @@ void suppliersDlg::setupUI ()
 		return txtSupplier_textAltered ( sender ); } );
 	txtSupDistrict->setCallbackForRelevantKeyPressed ( [&] ( const QKeyEvent* const ke, const vmWidget* const ) {
 		return keyPressedSelector ( ke ); } );
-	COMPLETERS ()->setCompleterForWidget ( txtSupDistrict, COMPLETER_CATEGORIES::ADDRESS );
+	COMPLETERS ()->setCompleterForWidget ( txtSupDistrict, CC_ADDRESS );
 
 	txtSupCity = new vmLineEdit;
 	saveWidget ( txtSupCity, FLD_SUPPLIER_CITY );
@@ -95,7 +95,7 @@ void suppliersDlg::setupUI ()
 		return txtSupplier_textAltered ( sender ); } );
 	txtSupCity->setCallbackForRelevantKeyPressed ( [&] ( const QKeyEvent* const ke, const vmWidget* const ) {
 		return keyPressedSelector ( ke ); } );
-	COMPLETERS ()->setCompleterForWidget ( txtSupCity, COMPLETER_CATEGORIES::ADDRESS );
+	COMPLETERS ()->setCompleterForWidget ( txtSupCity, CC_ADDRESS );
 
 	auto hLayout3 ( new QHBoxLayout );
 	hLayout3->addWidget ( new QLabel ( TR_FUNC ( "District: " ) ), 0 );

@@ -6,7 +6,7 @@
 #include <QtSql/QSqlRecord>
 
 VivenciaDB* DBRecord::VDB ( nullptr );
-vmCompleters* DBRecord::completer_manager ( new vmCompleters ( false ) );
+vmCompleters* __restrict__ DBRecord::completer_manager ( nullptr );
 
 static const int podBytes ( sizeof ( RECORD_FIELD::i_field ) + sizeof ( RECORD_FIELD::modified ) + sizeof ( RECORD_FIELD::was_modified ) );
 
@@ -449,12 +449,6 @@ void DBRecord::fromStringRecord ( const stringRecord& str_rec, const uint fromFi
 				break;
 		} while ( true );
 	}
-}
-
-void DBRecord::setCompleterManager ( vmCompleters* const completer )
-{
-	delete DBRecord::completer_manager;
-	DBRecord::completer_manager = completer;
 }
 
 void DBRecord::contains ( const QString& value, podList<uint>& fields ) const

@@ -18,6 +18,8 @@
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QLabel>
+#include <QtWidgets/QCompleter>
+
 //------------------------------------------------TEXT-EDIT-COMPLETER--------------------------------------------
 
 //static const QString eow                ( "~!@#$%^&*() _+{}|:\"<>?,./;'[]\\-=" ); // end of word
@@ -462,9 +464,9 @@ QString textEditWithCompleter::textUnderCursor () const
 
 void textEditWithCompleter::setCompleter ( QCompleter* const completer )
 {
-	mCompleter = completer;
-	if ( mCompleter != nullptr )
+	if ( completer != nullptr )
 	{
+		mCompleter = completer;
 		mCompleter->setWidget ( this );
 		static_cast<void>( connect ( mCompleter, static_cast<void (QCompleter::*)( const QString& )>( &QCompleter::activated ),
 			this, [&, this] ( const QString& text ) { insertCompletion ( text ); } ) );
@@ -477,59 +479,9 @@ void textEditWithCompleter::insertCompletion ( const QString& completion )
 {
 	QTextCursor tc ( textCursor () );
 	tc.movePosition ( QTextCursor::StartOfWord );
-
-	QString completion_copy ( completion );
-	/*switch ( APP_COMPLETERS ()->completerType ( completer, completion ) )
-	{
-		default:
-		break;
-		case vmCompleters::DELIVERY_METHOD:
-		case vmCompleters::ACCOUNT:
-		case vmCompleters::JOB_TYPE:
-		case vmCompleters::STOCK_TYPE:
-		case vmCompleters::STOCK_PLACE:
-		case vmCompleters::PAYMENT_METHOD:
-		case vmCompleters::ITEM_NAMES:
-		{*/
-			bool b_can_change ( true );
-			bool b_is_space ( false );
-			const QString str ( tc.block ().text () );
-			int pos ( tc.positionInBlock () - 1 );
-
-			if ( pos >= 0 && pos < str.count () )
-			{
-				QChar chr;
-				const QChar chrExclamationPoint ( QLatin1Char ( '!' ) );
-				do
-				{
-					chr = str.at ( pos );
-					if ( chr == chrExclamationPoint || chr == CHR_DOT || chr == CHR_QUESTION_MARK )
-					{
-						b_can_change = false;
-						break;
-					}
-					if ( chr.isSpace () )
-						b_is_space = true;
-					else
-					{
-						// reached another word; now we know we have not completed the first word in a sentence
-						if ( b_is_space )
-							break;
-					}
-					--pos;
-				} while ( pos > 0 );
-			}
-			else
-				b_can_change = false;
-
-			if ( b_can_change )
-			{
-				completion_copy = completion_copy.toLower ();
-			}
-		//}
-	//}
+	//QString completion_copy ( completion );
 	tc.movePosition ( QTextCursor::EndOfWord, QTextCursor::KeepAnchor );
-	tc.insertText ( completion_copy );
+	tc.insertText ( completion );
 	setTextCursor ( tc );
 }
 

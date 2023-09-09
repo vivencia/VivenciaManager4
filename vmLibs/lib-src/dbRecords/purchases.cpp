@@ -55,7 +55,7 @@ void updateSupplierTable_purchases ( const DBRecord* db_rec )
 
 void updateBuyDeliverCompleter ( const DBRecord* db_rec )
 {
-	DBRecord::completerManager ()->updateCompleter ( db_rec, FLD_BUY_DELIVERMETHOD, DELIVERY_METHOD );
+	db_rec->completerManager ()->updateCompleter ( db_rec, FLD_BUY_DELIVERMETHOD, CC_DELIVERY_METHOD );
 }
 
 Buy::Buy ( const bool connect_helper_funcs )

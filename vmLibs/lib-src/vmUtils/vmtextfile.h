@@ -50,7 +50,7 @@ protected:
 	void writeHeader ();
 	void fileExternallyAltered ( const QString&, const uint event );
 
-	virtual bool loadData ( const bool b_replaceBuffers = true, const bool b_includeNonManaged = false );
+	virtual bool loadData ( const bool b_replaceBuffers = true );
 	virtual bool writeData();
 	virtual void clearData ();
 
@@ -98,7 +98,7 @@ public:
 	inline uint sectionCount () const { return cfgData.count (); }
 
 protected:
-	bool loadData ( const bool b_replaceBuffers = true, const bool b_onlyNonManaged = false );
+	bool loadData ( const bool b_replaceBuffers = true );
 	bool writeData ();
 	void clearData ();
 
@@ -138,7 +138,7 @@ public:
 
 protected:
 	void clearData ();
-	bool loadData ( const bool b_replaceBuffers = true, const bool b_includeNonManaged = false );
+	bool loadData ( const bool b_replaceBuffers = true );
 	bool writeData ();
 
 private:

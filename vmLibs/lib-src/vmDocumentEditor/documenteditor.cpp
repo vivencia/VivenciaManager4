@@ -30,7 +30,6 @@ inline static const QString buildFilter () { return	documentEditorWindow::filter
 			QLatin1String ( ";;" ) + reportGenerator::filter (); }
 
 static heapManager<reportGenerator> heap_mngr;
-vmCompleters* documentEditor::completer_manager ( new vmCompleters ( false ) );
 
 documentEditor::~documentEditor ()
 {
@@ -38,9 +37,9 @@ documentEditor::~documentEditor ()
 	heap_del ( m_config );
 }
 
-documentEditor::documentEditor ( QWidget* parent )
+documentEditor::documentEditor ( QWidget* parent, vmCompleters* completer )
 	: QMainWindow ( parent ), mb_ClosingAllTabs ( false ), recentFilesList ( QString (), MAX_RECENT_FILES ),
-	  m_config ( new configOps ( configOps::appConfigFile (), "DocumentEditorConfig" ) )
+	  m_config ( new configOps ( configOps::appConfigFile (), "DocumentEditorConfig" ) ), mCompleterManager ( completer )
 {
 	editorWindowClosed_func = [] () { return; };
 	setDockNestingEnabled ( true );
@@ -350,15 +349,6 @@ void documentEditor::activatePreviousTab ()
 	const int tab_index ( tabDocuments->currentIndex () );
 	if ( tab_index > 0 )
 		tabDocuments->setCurrentIndex ( tab_index - 1 );
-}
-
-void documentEditor::setCompleterManager ( vmCompleters* const completer )
-{
-	if ( documentEditor::completer_manager != completer )
-	{
-		heap_del ( documentEditor::completer_manager );
-		documentEditor::completer_manager = completer;
-	}
 }
 
 void documentEditor::closeEvent ( QCloseEvent* ce )

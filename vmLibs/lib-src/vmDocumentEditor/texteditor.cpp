@@ -52,7 +52,7 @@ textEditor::textEditor ( documentEditor* mdiParent )
 {
 	setEditorType ( TEXT_EDITOR_SUB_WINDOW );
 	mDocument = new textEditWithCompleter ( nullptr );
-	mDocument->setCompleter ( mdiParent->completerManager ()->getCompleter ( ALL_CATEGORIES ) );
+	mDocument->setCompleter ( mdiParent->completerManager ()->getCompleter ( CC_ALL_CATEGORIES ) );
 	mCursor = mDocument->textCursor ();
 	mCursor.movePosition ( QTextCursor::Start );
 	mainLayout->addWidget ( mDocument, 3 );

@@ -43,22 +43,22 @@ const TABLE_INFO supplierRecord::t_info =
 
 static void updateSupplierNameCompleter ( const DBRecord* db_rec )
 {
-	DBRecord::completerManager ()->updateCompleter ( db_rec, FLD_SUPPLIER_NAME, SUPPLIER );
+	db_rec->completerManager ()->updateCompleter ( db_rec, FLD_SUPPLIER_NAME, CC_SUPPLIER );
 }
 
 static void updateSupplierStreetCompleter ( const DBRecord* db_rec )
 {
-	DBRecord::completerManager ()->updateCompleter ( db_rec, FLD_SUPPLIER_STREET, ADDRESS );
+	db_rec->completerManager ()->updateCompleter ( db_rec, FLD_SUPPLIER_STREET, CC_ADDRESS );
 }
 
 static void updateSupplierDistrictCompleter ( const DBRecord* db_rec )
 {
-	DBRecord::completerManager ()->updateCompleter ( db_rec, FLD_SUPPLIER_DISTRICT, ADDRESS );
+	db_rec->completerManager ()->updateCompleter ( db_rec, FLD_SUPPLIER_DISTRICT, CC_ADDRESS );
 }
 
 static void updateSupplierCityCompleter ( const DBRecord* db_rec )
 {
-	DBRecord::completerManager ()->updateCompleter ( db_rec, FLD_SUPPLIER_CITY, ADDRESS );
+	db_rec->completerManager ()->updateCompleter ( db_rec, FLD_SUPPLIER_CITY, CC_ADDRESS );
 }
 
 supplierRecord::supplierRecord ( const bool connect_helper_funcs )

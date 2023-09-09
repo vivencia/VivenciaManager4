@@ -141,7 +141,7 @@ void companyPurchasesUI::setupUI ()
 	static_cast<void>( ui->btnCPRemove->connect ( ui->btnCPRemove, &QPushButton::clicked, this, [&] () { return btnCPRemove_clicked (); } ) );
 	static_cast<void>( ui->btnClose->connect ( ui->btnClose, &QPushButton::clicked, this, [&] () { return hide (); } ) );
 
-	static_cast<void>( dbTableWidget::createPurchasesTable ( ui->tableItems ) );
+	dbTableWidget::createPurchasesTable ( ui->tableItems );
 	saveWidget ( ui->tableItems, FLD_CP_ITEMS_REPORT );
 	ui->tableItems->setKeepModificationRecords ( false );
 	ui->tableItems->setParentLayout ( ui->layoutCPTable );
@@ -154,7 +154,7 @@ void companyPurchasesUI::setupUI ()
 	ui->tableItems->setCallbackForRowRemoved ( [&] ( const uint row ) {
 			return tableRowRemoved ( row ); } );
 
-	static_cast<void>( dbTableWidget::createPayHistoryTable ( ui->tablePayments, this, PHR_METHOD ) );
+	dbTableWidget::createPayHistoryTable ( ui->tablePayments, PHR_METHOD );
 	saveWidget ( ui->tablePayments, FLD_CP_PAY_REPORT );
 	ui->tablePayments->setParentLayout ( ui->layoutCPTable );
 	ui->tablePayments->setCallbackForMonitoredCellChanged ( [&] ( const vmTableItem* const item ) {
@@ -164,14 +164,14 @@ void companyPurchasesUI::setupUI ()
 	ui->tablePayments->setCallbackForCellChanged ( [&] ( const vmTableItem* const item ) {
 			return tablePaymentsCellChanged ( item ); } );
 
-	ui->txtCPSupplier->setCompleter ( COMPLETERS ()->getCompleter ( SUPPLIER ) );
+	COMPLETERS ()->setCompleterForWidget ( ui->txtCPSupplier, CC_SUPPLIER );
 	saveWidget ( ui->txtCPSupplier, FLD_CP_SUPPLIER );
 	ui->txtCPSupplier->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) {
 			return txtCP_textAltered ( sender ); } );
 	ui->txtCPSupplier->setCallbackForRelevantKeyPressed ( [&] ( const QKeyEvent* const ke, const vmWidget* const ) {
 			return relevantKeyPressed ( ke ); } );
 
-	ui->txtCPDeliveryMethod->setCompleter ( COMPLETERS ()->getCompleter ( DELIVERY_METHOD ) );
+	COMPLETERS ()->setCompleterForWidget ( ui->txtCPDeliveryMethod, CC_DELIVERY_METHOD );
 	saveWidget ( ui->txtCPDeliveryMethod, FLD_CP_DELIVERY_METHOD );
 	ui->txtCPDeliveryMethod->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) {
 			return txtCP_textAltered ( sender ); } );

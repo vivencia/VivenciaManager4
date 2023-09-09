@@ -647,12 +647,6 @@ QMenu* vmLineEdit::standardContextMenu () const
 	return menu;
 }
 
-void vmLineEdit::completerClickReceived ( const QString& value )
-{
-	if ( hasFocus () )
-		setText ( value, true );
-}
-
 void vmLineEdit::updateText ( const bool b_notify )
 {
 	vmNumber nbr;
@@ -876,12 +870,12 @@ void vmLineEdit::focusInEvent ( QFocusEvent* e )
 				e->ignore ();
 				return;
 			}
-			if ( completer ()->widget () == nullptr )
+			/*if ( completer ()->widget () == nullptr )
 			{
 				completer ()->setWidget ( this );
 				static_cast<void>( connect ( completer (), static_cast<void (QCompleter::*)(const QString&)>( &QCompleter::activated ),
 					this, [&] ( const QString& value ) { completerClickReceived ( value ); } ) );
-			}
+			}*/
 		}
 		mbButtonClicked = false;
 		mCurrentText = text ();

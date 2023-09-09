@@ -41,7 +41,7 @@ const TABLE_INFO companyPurchases::t_info =
 static void updateCPPayReport ( const DBRecord* db_rec )
 {
 	//TODO
-	DBRecord::completerManager ()->updateCompleter ( db_rec, FLD_CP_PAY_REPORT, STOCK_TYPE );
+	db_rec->completerManager ()->updateCompleter ( db_rec, FLD_CP_PAY_REPORT, CC_STOCK_TYPE );
 }
 
 static void updateSupplierTable ( const DBRecord* db_rec )
@@ -51,7 +51,7 @@ static void updateSupplierTable ( const DBRecord* db_rec )
 
 static void updateCPDeliverMethodCompleter ( const DBRecord* db_rec )
 {
-	DBRecord::completerManager ()->updateCompleter ( db_rec, FLD_CP_DELIVERY_METHOD, DELIVERY_METHOD );
+	db_rec->completerManager ()->updateCompleter ( db_rec, FLD_CP_DELIVERY_METHOD, CC_DELIVERY_METHOD );
 }
 
 companyPurchases::companyPurchases ( const bool connect_helper_funcs )

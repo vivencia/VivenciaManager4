@@ -192,7 +192,7 @@ bool spellCheck::setUserDictionary ()
 		while ( !in.atEnd () )
 			unknownWordList.append ( in.readLine () );
 		file.close ();
-		return ( mChecker->add_dic ( mUserDict.toUtf8 ().constData () ) == 0 );
+		return ( mChecker->add_dic ( mUserDict.toLocal8Bit ().constData () ) == 0 );
 	}
 	return false;
 }

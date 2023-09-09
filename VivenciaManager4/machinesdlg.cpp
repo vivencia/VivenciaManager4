@@ -324,13 +324,13 @@ void machinesDlg::clearForms ()
 void machinesDlg::fillComboBoxes ()
 {
 	QStringList list;
-	COMPLETERS ()->fillList ( MACHINE_EVENT, list );
+	COMPLETERS ()->fillList ( CC_MACHINE_EVENT, list );
 	cboEvents->addItems ( list );
-	COMPLETERS ()->fillList ( MACHINE_NAME, list );
+	COMPLETERS ()->fillList ( CC_MACHINE_NAME, list );
 	cboMachines->addItems ( list );
-	COMPLETERS ()->fillList ( STOCK_TYPE, list );
+	COMPLETERS ()->fillList ( CC_STOCK_TYPE, list );
 	cboType->addItems ( list );
-	COMPLETERS ()->fillList ( BRAND, list );
+	COMPLETERS ()->fillList ( CC_BRAND, list );
 	cboBrand->addItems ( list );
 }
 
@@ -561,13 +561,13 @@ void machinesDlg::btnSave_clicked ()
 	if ( mMacRec->saveRecord () )
 	{
 		if ( cboEvents->insertItemSorted ( cboEvents->text () ) != -1 )
-			COMPLETERS ()->updateCompleter ( cboEvents->text (), MACHINE_EVENT );
+			COMPLETERS ()->updateCompleter ( cboEvents->text (), CC_MACHINE_EVENT );
 		if ( cboEvents->insertItemSorted ( cboMachines->text () ) != -1 )
-			COMPLETERS ()->updateCompleter ( cboMachines->text (), MACHINE_NAME );
+			COMPLETERS ()->updateCompleter ( cboMachines->text (), CC_MACHINE_NAME );
 		if ( cboBrand->insertItemSorted ( cboBrand->text () ) != -1 )
-			COMPLETERS ()->updateCompleter ( cboBrand->text (), BRAND );
+			COMPLETERS ()->updateCompleter ( cboBrand->text (), CC_BRAND );
 		if ( cboType->insertItemSorted ( cboType->text () ) != -1 )
-			COMPLETERS ()->updateCompleter ( cboType->text (), STOCK_TYPE );
+			COMPLETERS ()->updateCompleter ( cboType->text (), CC_STOCK_TYPE );
 		
 		auto row ( static_cast<uint>( tableMachineHistory->lastUsedRow () + 1 ) );
 		tableMachineHistory->setCellValue ( cboEvents->text (), row, 0 );

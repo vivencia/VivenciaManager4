@@ -14,11 +14,11 @@ class completerRecord;
 
 enum COMPLETER_CATEGORIES
 {
-	NONE = -1, ALL_CATEGORIES = 0, PRODUCT_OR_SERVICE = 1,
-	SUPPLIER = 2, BRAND = 3, STOCK_TYPE = 4, STOCK_PLACE = 5,
-	PAYMENT_METHOD = 6, ADDRESS = 7, ITEM_NAMES = 8, CLIENT_NAME = 9,
-	DELIVERY_METHOD = 10, ACCOUNT = 11, JOB_TYPE = 12, MACHINE_NAME = 13,
-	MACHINE_EVENT = 14
+	CC_NONE = -1, CC_ALL_CATEGORIES = 0, CC_PRODUCT_OR_SERVICE = 1,
+	CC_SUPPLIER = 2, CC_BRAND = 3, CC_STOCK_TYPE = 4, CC_STOCK_PLACE = 5,
+	CC_PAYMENT_METHOD = 6, CC_ADDRESS = 7, CC_ITEM_NAMES = 8, CC_CLIENT_NAME = 9,
+	CC_DELIVERY_METHOD = 10, CC_ACCOUNT = 11, CC_JOB_TYPE = 12, CC_MACHINE_NAME = 13,
+	CC_MACHINE_EVENT = 14
 };
 
 class vmCompleters
@@ -41,7 +41,7 @@ public:
 	void fillList ( const COMPLETER_CATEGORIES type, QStringList &list ) const;
 	int inList ( const QString& str, const COMPLETER_CATEGORIES type ) const;
 
-	COMPLETER_CATEGORIES completerType ( QCompleter* completer, const QString& completion = QString () ) const;
+	COMPLETER_CATEGORIES deriveCompleterTypeFromItsContents ( QCompleter* completer, const QString& completion = QString () );
 	void encodeCompleterISRForSpreadSheet ( const DBRecord* dbrec );
 
 private:

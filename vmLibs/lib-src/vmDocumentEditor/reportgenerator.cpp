@@ -158,8 +158,8 @@ reportGenerator::reportGenerator ( documentEditor* mdiParent )
 	lblClientID->setMaximumHeight ( 30 );
 
 	txtClientsIDs = new vmLineEdit;
-	txtClientsIDs->setCompleter ( parentEditor ()->completerManager ()->getCompleter ( CLIENT_NAME ) );
-	connect ( txtClientsIDs, &vmLineEdit::textEdited, this, [&] ( const QString& text ) { return updateJobIDsAndQPs ( text ); } );
+	parentEditor ()->completerManager ()->setCompleterForWidget ( txtClientsIDs, CC_CLIENT_NAME );
+	txtClientsIDs->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) { return updateJobIDsAndQPs ( sender->text () ); } );
 	txtClientsIDs->setEditable ( true );
 
 	btnInsertClientAddress = new QPushButton ( TR_FUNC ( "Address" ) );

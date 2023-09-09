@@ -57,38 +57,38 @@ const TABLE_INFO Inventory::t_info =
 
 void updateInventoryISRUnitCompleter ( const DBRecord* db_rec )
 {
-	DBRecord::completerManager ()->updateCompleter ( db_rec, FLD_INVENTORY_UNIT, PRODUCT_OR_SERVICE );
+	db_rec->completerManager ()->updateCompleter ( db_rec, FLD_INVENTORY_UNIT, CC_PRODUCT_OR_SERVICE );
 }
 
 void updateInventoryISRPriceCompleter ( const DBRecord* db_rec )
 {
-	DBRecord::completerManager ()->updateCompleter ( db_rec, FLD_INVENTORY_PRICE, PRODUCT_OR_SERVICE );
+	db_rec->completerManager ()->updateCompleter ( db_rec, FLD_INVENTORY_PRICE, CC_PRODUCT_OR_SERVICE );
 }
 
 void updateInventoryItemCompleter ( const DBRecord* db_rec )
 {
-	DBRecord::completerManager ()->updateCompleter ( db_rec, FLD_INVENTORY_ITEM, ITEM_NAMES );
+	db_rec->completerManager ()->updateCompleter ( db_rec, FLD_INVENTORY_ITEM, CC_ITEM_NAMES );
 }
 
 void updateInventoryBrandCompleter ( const DBRecord* db_rec )
 {
-	DBRecord::completerManager ()->updateCompleter ( db_rec, FLD_INVENTORY_BRAND, BRAND );
+	db_rec->completerManager ()->updateCompleter ( db_rec, FLD_INVENTORY_BRAND, CC_BRAND );
 }
 
 void updateInventoryTypeCompleter ( const DBRecord* db_rec )
 {
-	DBRecord::completerManager ()->updateCompleter ( db_rec, FLD_INVENTORY_TYPE, STOCK_TYPE );
+	db_rec->completerManager ()->updateCompleter ( db_rec, FLD_INVENTORY_TYPE, CC_STOCK_TYPE );
 }
 
 void updateSupplierTable_inventory ( const DBRecord* db_rec )
 {
 	supplierRecord::insertIfSupplierInexistent ( recStrValue ( db_rec, FLD_INVENTORY_SUPPLIER ) );
-	DBRecord::completerManager ()->updateCompleter ( db_rec, FLD_INVENTORY_SUPPLIER, PRODUCT_OR_SERVICE );
+	db_rec->completerManager ()->updateCompleter ( db_rec, FLD_INVENTORY_SUPPLIER, CC_PRODUCT_OR_SERVICE );
 }
 
 void updateInventoryPlaceCompleter ( const DBRecord* db_rec )
 {
-	DBRecord::completerManager ()->updateCompleter ( db_rec, FLD_INVENTORY_PLACE, STOCK_PLACE );
+	db_rec->completerManager ()->updateCompleter ( db_rec, FLD_INVENTORY_PLACE, CC_STOCK_PLACE );
 }
 
 Inventory::Inventory ( const bool connect_helper_funcs )

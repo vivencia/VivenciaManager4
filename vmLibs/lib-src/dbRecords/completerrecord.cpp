@@ -188,22 +188,22 @@ static inline uint translateCategory ( const COMPLETER_CATEGORIES category )
 	uint field ( 0 );
 	switch ( category )
 	{
-		case NONE:														break;
-		case ALL_CATEGORIES:		field = FLD_CR_PRODUCT_OR_SERVICE_1;	break;
-		case PRODUCT_OR_SERVICE:	field = FLD_CR_PRODUCT_OR_SERVICE_2;	break;
-		case SUPPLIER:													break;
-		case BRAND:				field = FLD_CR_BRAND;					break;
-		case STOCK_TYPE:			field = FLD_CR_STOCK_TYPE;				break;
-		case STOCK_PLACE:			field = FLD_CR_STOCK_PLACE;				break;
-		case PAYMENT_METHOD:		field = FLD_CR_PAYMENT_METHOD;			break;
-		case ADDRESS:				field = FLD_CR_ADDRESS;					break;
-		case ITEM_NAMES:													break;
-		case CLIENT_NAME:													break;
-		case DELIVERY_METHOD:		field = FLD_CR_DELIVERY_METHOD;			break;
-		case ACCOUNT:				field = FLD_CR_ACCOUNT;					break;
-		case JOB_TYPE:			field = FLD_CR_JOB_TYPE;				break;
-		case MACHINE_NAME:		field = FLD_CR_MACHINE_NAME;			break;
-		case MACHINE_EVENT:		field = FLD_CR_MACHINE_EVENT;			break;
+		case CC_NONE:														break;
+		case CC_ALL_CATEGORIES:		field = FLD_CR_PRODUCT_OR_SERVICE_1;	break;
+		case CC_PRODUCT_OR_SERVICE:	field = FLD_CR_PRODUCT_OR_SERVICE_2;	break;
+		case CC_SUPPLIER:													break;
+		case CC_BRAND:				field = FLD_CR_BRAND;					break;
+		case CC_STOCK_TYPE:			field = FLD_CR_STOCK_TYPE;				break;
+		case CC_STOCK_PLACE:		field = FLD_CR_STOCK_PLACE;				break;
+		case CC_PAYMENT_METHOD:		field = FLD_CR_PAYMENT_METHOD;			break;
+		case CC_ADDRESS:			field = FLD_CR_ADDRESS;					break;
+		case CC_ITEM_NAMES:													break;
+		case CC_CLIENT_NAME:												break;
+		case CC_DELIVERY_METHOD:	field = FLD_CR_DELIVERY_METHOD;			break;
+		case CC_ACCOUNT:			field = FLD_CR_ACCOUNT;					break;
+		case CC_JOB_TYPE:			field = FLD_CR_JOB_TYPE;				break;
+		case CC_MACHINE_NAME:		field = FLD_CR_MACHINE_NAME;			break;
+		case CC_MACHINE_EVENT:		field = FLD_CR_MACHINE_EVENT;			break;
 	}
 	return field;
 }
@@ -278,13 +278,13 @@ void completerRecord::loadCompleterStrings ( QStringList& completer_strings, con
 {
 	switch ( category )
 	{
-		case CLIENT_NAME:
+		case CC_CLIENT_NAME:
 			runQuery ( completer_strings, &Client::t_info, FLD_CLIENT_NAME );
 		break;
-		case SUPPLIER:
+		case CC_SUPPLIER:
 			runQuery ( completer_strings, &supplierRecord::t_info, FLD_SUPPLIER_NAME  );
 		break;
-		case ITEM_NAMES:
+		case CC_ITEM_NAMES:
 			runQuery ( completer_strings, &dbSupplies::t_info, FLD_SUPPLIES_ITEM );
 			runQuery ( completer_strings, &Inventory::t_info, FLD_INVENTORY_ITEM );
 		break;

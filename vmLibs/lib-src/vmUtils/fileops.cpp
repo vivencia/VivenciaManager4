@@ -55,7 +55,7 @@ triStateType fileOps::exists ( const QString& file )
 	if ( !file.isEmpty () )
 	{
 		struct stat stFileInfo {};
-		return ( ::stat ( file.toUtf8 ().constData (), &stFileInfo ) == 0 ) ? TRI_ON : TRI_OFF;
+		return ( ::stat ( file.toLocal8Bit ().constData (), &stFileInfo ) == 0 ) ? TRI_ON : TRI_OFF;
 	}
 	return TRI_UNDEF;
 }
@@ -70,7 +70,7 @@ triStateType fileOps::isDir ( const QString& param )
 	if ( !param.isEmpty () )
 	{
 		struct stat stFileInfo {};
-		if ( ::stat ( param.toUtf8 ().constData (), &stFileInfo ) == 0 )
+		if ( ::stat ( param.toLocal8Bit ().constData (), &stFileInfo ) == 0 )
 			return ( static_cast<bool> ( S_ISDIR ( stFileInfo.st_mode ) ) ) ? TRI_ON : TRI_OFF;
 		return TRI_OFF;
 	}
@@ -82,7 +82,7 @@ triStateType fileOps::isLink ( const QString& param )
 	if ( !param.isEmpty () )
 	{
 		struct stat stFileInfo {};
-		if ( ::stat ( param.toUtf8 ().constData (), &stFileInfo ) == 0 )
+		if ( ::stat ( param.toLocal8Bit ().constData (), &stFileInfo ) == 0 )
 			return ( static_cast<bool> ( S_ISLNK ( stFileInfo.st_mode ) ) ) ? TRI_ON : TRI_OFF;
 	}
 	return TRI_UNDEF;
@@ -93,7 +93,7 @@ triStateType fileOps::isFile ( const QString& param )
 	if ( !param.isEmpty () )
 	{
 		struct stat stFileInfo {};
-		if ( ::stat ( param.toUtf8 ().constData (), &stFileInfo ) == 0 )
+		if ( ::stat ( param.toLocal8Bit ().constData (), &stFileInfo ) == 0 )
 			return ( static_cast<bool> ( S_ISREG ( stFileInfo.st_mode ) ) ) ? TRI_ON : TRI_OFF;
 	}
 	return TRI_UNDEF;
@@ -104,7 +104,7 @@ long int fileOps::fileSize ( const QString& filepath )
 	if ( isFile ( filepath ).isOn () )
 	{
 		struct stat stFileInfo {};
-		if ( ::stat ( filepath.toUtf8 ().constData (), &stFileInfo ) == 0 )
+		if ( ::stat ( filepath.toLocal8Bit ().constData (), &stFileInfo ) == 0 )
 			return stFileInfo.st_size;
 	}
 	return -1;
@@ -113,7 +113,7 @@ long int fileOps::fileSize ( const QString& filepath )
 int fileOps::fileCount ( const QString& path, const QStringList& name_filters )
 {
 	DIR* __restrict dir ( nullptr );
-	if ( ( dir = ::opendir ( path.toUtf8 ().constData () ) ) != nullptr )
+	if ( ( dir = ::opendir ( path.toLocal8Bit ().constData () ) ) != nullptr )
 	{
 		struct dirent* __restrict dir_ent ( nullptr );
 		int n_files ( 0 );
@@ -160,7 +160,7 @@ bool fileOps::modifiedDateTime ( const QString& path, vmNumber& modDate, vmNumbe
 	if ( !path.isEmpty () )
 	{
 		struct stat stFileInfo {};
-		if ( ::stat ( path.toUtf8 ().constData (), &stFileInfo ) == 0 )
+		if ( ::stat ( path.toLocal8Bit ().constData (), &stFileInfo ) == 0 )
 		{
 			time_t filetime ( stFileInfo.st_mtime );
 			struct tm* __restrict date ( ::localtime ( &filetime ) );
@@ -181,7 +181,7 @@ bool fileOps::modifiedDateTime ( const QString& path, vmNumber& modDate, vmNumbe
 triStateType fileOps::canRead ( const QString& path )
 {
 	struct stat stFileInfo {};
-	if ( ::stat ( path.toUtf8 ().constData (), &stFileInfo ) == 0 )
+	if ( ::stat ( path.toLocal8Bit ().constData (), &stFileInfo ) == 0 )
 	{
 		bool r_ok ( false );
 		const QString username ( QString::fromUtf8 ( ::getenv ( "USER" ) ) );
@@ -189,7 +189,7 @@ triStateType fileOps::canRead ( const QString& path )
 		const size_t buffer_len ( static_cast<size_t>(::sysconf ( _SC_GETPW_R_SIZE_MAX )) * sizeof ( char ) );
 		auto* __restrict buffer ( new char[buffer_len] );
 
-		::getpwnam_r ( username.toUtf8 ().constData (), pwd, buffer, buffer_len, &pwd );
+		::getpwnam_r ( username.toLocal8Bit ().constData (), pwd, buffer, buffer_len, &pwd );
 		if ( ( stFileInfo.st_mode & S_IRUSR ) == S_IRUSR ) /* Read by owner.*/
 			r_ok = ( stFileInfo.st_uid == pwd->pw_uid ); // file can be read by username
 
@@ -216,7 +216,7 @@ triStateType fileOps::canRead ( const QString& path )
 triStateType fileOps::canWrite ( const QString& path )
 {
 	struct stat stFileInfo {};
-	if ( ::stat ( path.toUtf8 ().constData (), &stFileInfo ) == 0 )
+	if ( ::stat ( path.toLocal8Bit ().constData (), &stFileInfo ) == 0 )
 	{
 		bool w_ok ( false );
 		const QString username ( QString::fromUtf8 ( ::getenv ( "USER" ) ) );
@@ -224,7 +224,7 @@ triStateType fileOps::canWrite ( const QString& path )
 		const size_t buffer_len ( static_cast<size_t>(::sysconf ( _SC_GETPW_R_SIZE_MAX )) * sizeof ( char ) );
 		auto* __restrict buffer ( new char[buffer_len] );
 
-		::getpwnam_r ( username.toUtf8 ().constData (), pwd, buffer, buffer_len, &pwd );
+		::getpwnam_r ( username.toLocal8Bit ().constData (), pwd, buffer, buffer_len, &pwd );
 		if ( ( stFileInfo.st_mode & S_IWUSR ) == S_IWUSR ) /* Write by owner.*/
 			w_ok = ( stFileInfo.st_uid == pwd->pw_uid ); // file can be written by username
 
@@ -251,7 +251,7 @@ triStateType fileOps::canWrite ( const QString& path )
 triStateType fileOps::canExecute ( const QString& path )
 {
 	struct stat stFileInfo {};
-	if ( ::stat ( path.toUtf8 ().constData (), &stFileInfo ) == 0 )
+	if ( ::stat ( path.toLocal8Bit ().constData (), &stFileInfo ) == 0 )
 	{
 		bool x_ok ( false );
 		const QString username ( QString::fromUtf8 ( ::getenv ( "USER" ) ) );
@@ -259,7 +259,7 @@ triStateType fileOps::canExecute ( const QString& path )
 		const size_t buffer_len ( static_cast<size_t>(::sysconf ( _SC_GETPW_R_SIZE_MAX )) * sizeof (char) );
 		auto* __restrict buffer ( new char[buffer_len] );
 
-		::getpwnam_r ( username.toUtf8 ().constData (), pwd, buffer, buffer_len, &pwd );
+		::getpwnam_r ( username.toLocal8Bit ().constData (), pwd, buffer, buffer_len, &pwd );
 		if ( ( stFileInfo.st_mode & S_IXUSR ) == S_IXUSR ) /* Execute by owner.*/
 			x_ok = ( stFileInfo.st_uid == pwd->pw_uid ); // file can be executed by username
 		if ( !x_ok )
@@ -299,8 +299,8 @@ triStateType fileOps::createDir ( const QString& path )
 				if ( new_path.at ( new_path.length () - 1 ) != CHR_F_SLASH )
 					new_path.append ( CHR_F_SLASH );
 				struct stat stFileInfo {};
-				::stat ( new_path.leftRef ( idx ).toUtf8 ().constData (), &stFileInfo );
-				return ( ::mkdir ( new_path.toUtf8 ().constData (), stFileInfo.st_mode ) == 0 ) ? TRI_ON : TRI_OFF;
+				::stat ( new_path.leftRef ( idx ).toLocal8Bit ().constData (), &stFileInfo );
+				return ( ::mkdir ( new_path.toLocal8Bit ().constData (), stFileInfo.st_mode ) == 0 ) ? TRI_ON : TRI_OFF;
 			}
 		}
 	}
@@ -320,7 +320,7 @@ bool fileOps::copyFile ( const QString& dst, const QString& src )
 			{
 				if ( vmNotify::questionBox ( nullptr, APP_TR_FUNC ( "Same filename" ), QString ( APP_TR_FUNC (
 													 "Destination file %1 already exists. Overwrite it?" ) ).arg ( dst ) ) )
-					ret = ::remove ( dst.toUtf8 ().constData () ); // if remove succeeds there is not need to check if dst's path is writable
+					ret = ::remove ( dst.toLocal8Bit ().constData () ); // if remove succeeds there is not need to check if dst's path is writable
 			}
 		}
 		else if ( isDir ( dst ).isOn () )
@@ -344,13 +344,13 @@ bool fileOps::copyFile ( const QString& dst, const QString& src )
 
 triStateType fileOps::rename ( const QString& old_name, const QString& new_name )
 {
-	return ( ::rename ( old_name.toUtf8 ().constData (), new_name.toUtf8 ().constData () ) == 0 ) ? TRI_ON : TRI_OFF;
+	return ( ::rename ( old_name.toLocal8Bit ().constData (), new_name.toLocal8Bit ().constData () ) == 0 ) ? TRI_ON : TRI_OFF;
 }
 
 triStateType fileOps::removeFile ( const QString& filename )
 {
 	if ( isFile ( filename ) == TRI_ON )
-		return ( ::remove ( filename.toUtf8 ().constData () ) == 0 ) ? TRI_ON : TRI_OFF;
+		return ( ::remove ( filename.toLocal8Bit ().constData () ) == 0 ) ? TRI_ON : TRI_OFF;
 	return TRI_UNDEF;
 }
 
@@ -445,7 +445,7 @@ void fileOps::lsDir ( pointersList<st_fileInfo*>& result, const QString& baseDir
 					  const int filter, const int follow_into, const bool b_insert_sorted )
 {
 	DIR* __restrict dir ( nullptr );
-	if ( ( dir = ::opendir ( baseDir.toUtf8 ().constData () ) ) != nullptr )
+	if ( ( dir = ::opendir ( baseDir.toLocal8Bit ().constData () ) ) != nullptr )
 	{
 		struct dirent* __restrict dir_ent ( nullptr );
 		QString filename, pathname;
@@ -533,7 +533,7 @@ bool fileOps::rmDir ( const QString& baseDir,
 	static int level ( 0 );
 	++level;
 	DIR* __restrict dir ( nullptr );
-	if ( ( dir = ::opendir ( baseDir.toUtf8 ().constData () ) ) != nullptr )
+	if ( ( dir = ::opendir ( baseDir.toLocal8Bit ().constData () ) ) != nullptr )
 	{	
 		struct dirent* __restrict dir_ent ( nullptr );
 		QString filename, pathname;
@@ -567,17 +567,17 @@ bool fileOps::rmDir ( const QString& baseDir,
 			if ( ok )
 			{
 				if ( dir_ent->d_type == DT_REG )
-					::remove ( pathname.toUtf8 ().constData () );
+					::remove ( pathname.toLocal8Bit ().constData () );
 				else
 				{
 					if ( follow_into != 0 )
 						(void) rmDir ( pathname, name_filters, filter, follow_into == -1 ? -1 : follow_into - 1 );
-					ok = ( ::rmdir ( pathname.toUtf8 ().constData () ) == 0 );
+					ok = ( ::rmdir ( pathname.toLocal8Bit ().constData () ) == 0 );
 				}
 			}
 		}
 		if ( --level == 0 )
-			ok = ( ::rmdir ( baseDir.toUtf8 ().constData () ) == 0 );
+			ok = ( ::rmdir ( baseDir.toLocal8Bit ().constData () ) == 0 );
 		::closedir ( dir );
 	}
 	return ok;
@@ -591,7 +591,7 @@ int fileOps::sysExec ( const QStringList &command_line )
 int fileOps::sysExec ( const QString& command_line )
 {
 	const QString cmdLine ( configOps::pkexec () + QSTRING_ENCODING_FIX(command_line) );
-	return ::system ( cmdLine.toUtf8 ().constData () );
+	return ::system ( cmdLine.toLocal8Bit ().constData () );
 }
 
 /*bool fileOps::executeWait ( const QString& arguments, const QString& program,

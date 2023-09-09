@@ -167,7 +167,6 @@ public:
 
 	QMenu* standardContextMenu () const override;
 
-	void completerClickReceived ( const QString& value );
 	void updateText ( const bool b_notify );
 	
 	inline const QString& textBeforeChange () const { return mCurrentText; }
@@ -288,7 +287,6 @@ public:
 	inline void setCallbackForEscKeyPressed ( const std::function<void ()>& func ) { keyEsc_func = func; }
 
 	inline vmLineEdit* editor () const { return mLineEdit; }
-	inline void setCompleter ( QCompleter* const completer ) { mLineEdit->setCompleter ( completer ); }
 
 protected:
 	void focusOutEvent ( QFocusEvent* ) override;

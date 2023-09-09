@@ -124,7 +124,7 @@ void vmFileMonitor::startMonitoring ( const QString& filename, const uint event 
 		return;
 
 	const QString dir ( fileOps::dirFromPath ( filename ) );
-	const int wd ( inotify_add_watch ( m_inotifyFd, dir.toUtf8 ().constData(), IN_ALL_EVENTS ) );
+	const int wd ( inotify_add_watch ( m_inotifyFd, dir.toLocal8Bit ().constData(), IN_ALL_EVENTS ) );
 	if ( wd == -1 )
 	{
 		DBG_OUT ( "inotify add watch failed: ", filename, true, true )

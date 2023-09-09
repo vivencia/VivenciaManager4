@@ -60,8 +60,8 @@ void deleteInstances ()
 void Sys_Init::restartProgram ()
 {
 	char* args[2] = { nullptr, nullptr };
-	args[0] = static_cast<char*> ( ::malloc ( static_cast<size_t>(APP_START_CMD.toUtf8 ().size ()) * sizeof (char) ) );
-	::strcpy ( args[0], APP_START_CMD.toUtf8 ().constData () );
+	args[0] = static_cast<char*> ( ::malloc ( static_cast<size_t>(APP_START_CMD.toLocal8Bit ().size ()) * sizeof (char) ) );
+	::strcpy ( args[0], APP_START_CMD.toLocal8Bit ().constData () );
 	::execv ( args[0], args );
 	::free ( args[0] );
 	qApp->exit ( 0 );
@@ -162,11 +162,8 @@ void Sys_Init::init ( const QString& cmd )
 	completers_instance = new vmCompleters;
 	mainwindow_instance = new MainWindow;
 	notify_instance = new vmNotify ( "BR", mainwindow_instance );
-
-	//DBRecord::setDatabaseManager ( vdb_instance );
 	DBRecord::setCompleterManager ( completers_instance );
-	documentEditor::setCompleterManager ( completers_instance );
-	dbTableWidget::setCompleterManager ( completers_instance );
+
 	dbListItem::appStartingProcedures ();
 	vmDateEdit::appStartingProcedures ();
 

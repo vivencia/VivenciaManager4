@@ -7,8 +7,6 @@ constexpr uint PURCHASES_TABLE_REG_COL ( 6 );
 constexpr auto PURCHASES_TABLE_COLS ( 7 );
 static const char* const PROPERTY_TABLE_HAS_ITEM_TO_REGISTER ( "pthitr" );
 
-vmCompleters* dbTableWidget::completer_manager ( new vmCompleters ( false ) );
-
 dbTableWidget::dbTableWidget ( QWidget* parent )
 	: vmTableWidget ( parent ), mbDoNotUpdateCompleters ( false )
 {}
@@ -19,32 +17,26 @@ dbTableWidget::dbTableWidget ( const uint rows, QWidget* parent )
 
 dbTableWidget::~dbTableWidget () {}
 
-void dbTableWidget::setCompleterManager ( vmCompleters* const completer )
-{
-	delete dbTableWidget::completer_manager;
-	dbTableWidget::completer_manager = completer;
-}
-
 void dbTableWidget::setIgnoreChanges ( const bool b_ignore )
 {
 	if ( colCount () == PURCHASES_TABLE_COLS )
 	{
 		if ( !b_ignore )
 		{
-			static_cast<void>( connect ( completerManager ()->getCompleter ( PRODUCT_OR_SERVICE ),
+			static_cast<void>( connect ( DBRecord::completerManager ()->getCompleter ( CC_PRODUCT_OR_SERVICE ),
 					  static_cast<void (QCompleter::*)( const QModelIndex& )>( &QCompleter::activated ),
 					this, ( [&, this] ( const QModelIndex& index ) { return interceptCompleterActivated ( index );
 			} ) ) );
 		}
 		else
-			static_cast<void>( disconnect ( completerManager ()->getCompleter ( PRODUCT_OR_SERVICE ), nullptr, nullptr, nullptr ) );
+			static_cast<void>( disconnect ( DBRecord::completerManager ()->getCompleter ( CC_PRODUCT_OR_SERVICE ), nullptr, nullptr, nullptr ) );
 	}
 	vmTableWidget::setIgnoreChanges ( b_ignore );
 }
 
 void dbTableWidget::interceptCompleterActivated ( const QModelIndex& index )
 {
-	const QCompleter* const prod_completer ( completerManager ()->getCompleter ( PRODUCT_OR_SERVICE ) );
+	const QCompleter* const prod_completer ( DBRecord::completerManager ()->getCompleter ( CC_PRODUCT_OR_SERVICE ) );
 	if ( prod_completer->widget ()->parentWidget ()->parentWidget () != this )
 		return;
 
@@ -133,7 +125,7 @@ void dbTableWidget::exportPurchaseToSupplies ( const DBRecord* const src_dbrec, 
 	delete s_row;
 }
 
-dbTableWidget* dbTableWidget::createPurchasesTable ( dbTableWidget* table, QWidget* parent )
+void dbTableWidget::createPurchasesTable ( dbTableWidget* table )
 {
 	vmTableColumn* cols ( table->createColumns ( PURCHASES_TABLE_COLS ) );
 	uint i ( 0 );
@@ -142,7 +134,7 @@ dbTableWidget* dbTableWidget::createPurchasesTable ( dbTableWidget* table, QWidg
 		switch ( i )
 		{
 			case ISR_NAME:
-				cols[ISR_NAME].completer_type = PRODUCT_OR_SERVICE;
+				cols[ISR_NAME].completer_type = CC_PRODUCT_OR_SERVICE;
 				cols[ISR_NAME].width = 280;
 				cols[ISR_NAME].label = TR_FUNC ( "Item" );
 			break;
@@ -150,7 +142,7 @@ dbTableWidget* dbTableWidget::createPurchasesTable ( dbTableWidget* table, QWidg
 				cols[ISR_UNIT].label = TR_FUNC ( "Unit" );
 			break;
 			case ISR_BRAND:
-				cols[ISR_BRAND].completer_type = BRAND;
+				cols[ISR_BRAND].completer_type = CC_BRAND;
 				cols[ISR_BRAND].text_type = vmWidget::TT_UPPERCASE;
 				cols[ISR_BRAND].label = TR_FUNC ( "Maker" );
 			break;
@@ -178,22 +170,14 @@ dbTableWidget* dbTableWidget::createPurchasesTable ( dbTableWidget* table, QWidg
 		}
 	}
 
-	if ( table )
-	{
-		table->setCallbackForSettingCompleterForWidget ( [&] ( vmWidget* widget, const int completer_type )
-				{ return completerManager ()->setCompleterForWidget ( widget, completer_type ); } );
-		table->initTable ( 10 );
-	}
-	else
-		table = new dbTableWidget ( 10, parent );
-
+	table->setCallbackForSettingCompleterForWidget ( [&] ( vmWidget* widget, const int completer_type )
+			{ return DBRecord::completerManager ()->setCompleterForWidget ( widget, completer_type ); } );
+	table->initTable ( 10 );
 	table->setKeepModificationRecords ( false );
 	table->insertMonitoredCell ( static_cast<uint>( table->totalsRow () ), ISR_TOTAL_PRICE );
-	return table;
 }
 
-dbTableWidget* dbTableWidget::createPayHistoryTable ( dbTableWidget* table, QWidget* parent,
-		const PAY_HISTORY_RECORD last_column )
+void dbTableWidget::createPayHistoryTable ( dbTableWidget* table, const PAY_HISTORY_RECORD last_column )
 {
 	vmTableColumn* cols ( table->createColumns ( last_column + 1 ) );
 
@@ -219,13 +203,13 @@ dbTableWidget* dbTableWidget::createPayHistoryTable ( dbTableWidget* table, QWid
 			break;
 			case PHR_METHOD:
 				cols[PHR_METHOD].label = TR_FUNC ( "Method" );
-				cols[PHR_METHOD].completer_type = PAYMENT_METHOD;
+				cols[PHR_METHOD].completer_type = CC_PAYMENT_METHOD;
 				cols[PHR_METHOD].text_type = vmWidget::TT_UPPERCASE;
 				cols[PHR_METHOD].width = 200;
 			break;
 			case PHR_ACCOUNT:
 				cols[PHR_ACCOUNT].label = TR_FUNC ( "Account" );
-				cols[PHR_ACCOUNT].completer_type = ACCOUNT;
+				cols[PHR_ACCOUNT].completer_type = CC_ACCOUNT;
 				cols[PHR_ACCOUNT].width = 120;
 			break;
 			case PHR_USE_DATE:
@@ -236,12 +220,10 @@ dbTableWidget* dbTableWidget::createPayHistoryTable ( dbTableWidget* table, QWid
 	}
 
 	table->setCallbackForSettingCompleterForWidget ( [&] ( vmWidget* widget, const int completer_type ) {
-				return completerManager ()->setCompleterForWidget ( widget, completer_type ); } );
-	if ( table )
-		table->initTable ( 5 );
-	else
-		table = new dbTableWidget ( 5, parent );
+				return DBRecord::completerManager ()->setCompleterForWidget ( widget, completer_type );
+		} );
 
+	table->initTable ( 5 );
 	table->setKeepModificationRecords ( false );
 	/* insertMonitoredCell () assumes the totals row and columns are monitored. Se we setup the callback to nullptr
 	 * to avoid the c++ lib to throw a std::bad_function_call. Any pay history object that wishes to monitor changes to
@@ -250,7 +232,6 @@ dbTableWidget* dbTableWidget::createPayHistoryTable ( dbTableWidget* table, QWid
 	 */
 	table->setCallbackForMonitoredCellChanged ( [&] ( const vmTableItem* const ) { return nullptr; } );
 	table->insertMonitoredCell ( static_cast<uint>( table->totalsRow () ), PHR_VALUE );
-	return table;
 }
 
 void dbTableWidget::derivedClassCellContentChanged ( const vmTableItem* const item )

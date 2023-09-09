@@ -82,7 +82,7 @@ inline vmNotify* NOTIFY ()
 inline documentEditor* EDITOR ()
 {
 	if ( Sys_Init::editor_instance == nullptr )
-		Sys_Init::editor_instance = new documentEditor;
+		Sys_Init::editor_instance = new documentEditor ( MAINWINDOW (), COMPLETERS () );
 	return Sys_Init::editor_instance;
 }
 

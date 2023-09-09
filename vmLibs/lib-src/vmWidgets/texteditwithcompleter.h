@@ -11,11 +11,11 @@ class wordHighlighter;
 class spellCheck;
 class vmLineEdit;
 
-class QCompleter;
 class QGridLayout;
 class QToolButton;
 class QMenu;
 class QAction;
+class QCompleter;
 
 //------------------------------------------------TEXT-EDIT-COMPLETER--------------------------------------------
 

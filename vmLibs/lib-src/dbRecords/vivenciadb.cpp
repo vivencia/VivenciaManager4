@@ -302,21 +302,7 @@ bool VivenciaDB::restart ()
 }
 
 void VivenciaDB::doPreliminaryWork ()
-{	
-	/* This piece of code was created and discarded at 2016/02/14. At this date I discovered that General table
-	 * was empty, for some reason, and I needed to use an update function (in Payment) which would not be called
-	 * for lack of database table version to compare. Fixed it. Code discarded.
-	 * 
-	 * UPDATE: this happend again and was noted at 2016/09/06. Cause unkown
-	 * Noticed again at 2017/04/25. Cause unknown. UPDATE: there is no more need to use this commented out code
-	 */
-	/*if ( this->recordCount ( &gen_rec.t_info ) < TABLES_IN_DB ) {
-		for ( uint i ( 0 ); i < TABLES_IN_DB; ++i )
-			gen_rec.insertOrUpdate ( table_info[i] );
-	}
-	::exit ( 1 );
-	return;*/
-	
+{
 	if ( !mNewDB )
 	{
 		generalTable gen_rec;

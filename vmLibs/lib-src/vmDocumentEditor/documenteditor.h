@@ -20,7 +20,7 @@ class documentEditor : public QMainWindow
 {
 
 public:
-	explicit documentEditor ( QWidget* parent = nullptr );
+	explicit documentEditor ( QWidget* parent = nullptr, vmCompleters* completer = nullptr );
 	virtual ~documentEditor () override;
 	textEditor* startNewTextEditor ( textEditor* editor = nullptr );
 	reportGenerator* startNewReport ( const bool b_windowless = false );
@@ -42,12 +42,11 @@ public:
 	void activateNextTab ();
 	void activatePreviousTab ();
 
-	static void setCompleterManager ( vmCompleters* const completer );
-	inline static vmCompleters* completerManager () { return documentEditor::completer_manager; }
-
-	void setCallbackForEditorWindowClosed ( const std::function<void()>& func ) {
+	inline void setCallbackForEditorWindowClosed ( const std::function<void()>& func ) {
 		editorWindowClosed_func = func;
 	}
+
+	inline vmCompleters* completerManager () const { return mCompleterManager; }
 
 protected:
 	void closeEvent ( QCloseEvent* ) override;
@@ -91,10 +90,9 @@ private:
 
 	bool mb_ClosingAllTabs;
 	stringRecord recentFilesList;
-
 	configOps* m_config;
+	vmCompleters* mCompleterManager;
 
-	static vmCompleters* completer_manager;
 	std::function<void()> editorWindowClosed_func;
 };
 

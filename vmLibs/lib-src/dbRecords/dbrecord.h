@@ -72,6 +72,9 @@ public:
 	
 	virtual ~DBRecord () = default; // if a class has virtual functions, if should have a virtual destructor
 
+	static inline void setCompleterManager ( vmCompleters* __restrict__ completer ) { DBRecord::completer_manager = completer; }
+	static inline vmCompleters* completerManager () { return DBRecord::completer_manager; }
+
 	bool operator== ( const DBRecord& other ) const;
 	inline bool operator!= ( const DBRecord& other ) const { return !( this->operator == ( other ) ); }
 
@@ -198,12 +201,9 @@ public:
 	inline const TABLE_INFO* tableInfo () const { return this->t_info; }
 
 	// Must be set early on any app start up. Nowhere in this code is VDB checked against any possible problems
-	inline static void setDatabaseManager ( VivenciaDB* vdb ) { VDB = vdb; }
-	inline static VivenciaDB* databaseManager () { return VDB; }
+	static inline void setDatabaseManager ( VivenciaDB* vdb ) { DBRecord::VDB = vdb; }
+	static inline VivenciaDB* databaseManager () { return DBRecord::VDB; }
 	
-	static void setCompleterManager ( vmCompleters* const completer );
-	inline static vmCompleters* completerManager () { return DBRecord::completer_manager; }
-
 protected:
 	friend void updateSuppliesItemCompleter ( const DBRecord* db_rec );
 	friend void updateInventoryItemCompleter ( const DBRecord* db_rec );
@@ -280,8 +280,8 @@ protected:
 	recordValueInt fptr_recordInt;
 	recordValueStr fptr_recordStrAlternate;
 
-	static vmCompleters* completer_manager;
 	static VivenciaDB* VDB;
+	static vmCompleters* __restrict__ completer_manager;
 };
 
 #endif // DBRECORD_H

@@ -26,7 +26,7 @@ vmCompleters::vmCompleters ( const bool b_full_init )
 			completer->setProperty ( "type", QVariant ( i ) );
 			// Initialize SERVICES with two columns. The first holds a stringRecord with the pertiment
 			// information; the second, an index for faster searches
-			item_model = new QStandardItemModel ( 0, i != PRODUCT_OR_SERVICE ? 1 : 2, completer );
+			item_model = new QStandardItemModel ( 0, i != CC_PRODUCT_OR_SERVICE ? 1 : 2, completer );
 			completer->setModel ( item_model );
 			completersList.insert ( i, completer );
 		}
@@ -43,7 +43,7 @@ void vmCompleters::loadCompleters ()
 {
 	QStringList completer_strings;
 	QStandardItemModel* item_model ( nullptr );
-	auto model_all ( dynamic_cast<QStandardItemModel*> ( completersList.at ( ALL_CATEGORIES )->model () ) );
+	auto model_all ( dynamic_cast<QStandardItemModel*> ( completersList.at ( CC_ALL_CATEGORIES )->model () ) );
 
 	for ( int i ( 2 ), x ( 0 ), str_count ( 0 ); i < static_cast<int>( COMPLETERS_COUNT ); ++i )
 	{
@@ -66,7 +66,7 @@ void vmCompleters::loadCompleters ()
 	const int str_count ( static_cast<int> ( qMin ( completer_strings.count (), completer_strings_2.count () ) ) );
 	if ( str_count > 0 )
 	{
-		item_model = dynamic_cast<QStandardItemModel*>( completersList.at ( PRODUCT_OR_SERVICE )->model () );
+		item_model = dynamic_cast<QStandardItemModel*>( completersList.at ( CC_PRODUCT_OR_SERVICE )->model () );
 		for ( int x ( 0 ); x < str_count; ++x )
 		{
 			item_model->insertRow ( x, QList<QStandardItem *> () <<
@@ -106,10 +106,10 @@ void vmCompleters::setCompleterForWidget ( vmWidget* widget, const int completer
 
 void vmCompleters::updateCompleter ( const DBRecord* const db_rec, const uint field, const COMPLETER_CATEGORIES type )
 {
-	if ( type >= COMPLETER_CATEGORIES::SUPPLIER )
+	if ( type >= CC_SUPPLIER )
 	{
 		updateCompleter ( recStrValue ( db_rec, field ), type );
-		if ( (type != SUPPLIER) && (type != BRAND) && (type != ITEM_NAMES) )
+		if ( (type != CC_SUPPLIER) && (type != CC_BRAND) && (type != CC_ITEM_NAMES) )
 			return;
 	}
 	encodeCompleterISRForSpreadSheet ( db_rec );
@@ -120,7 +120,7 @@ void vmCompleters::updateCompleter ( const QString& str, const COMPLETER_CATEGOR
 	if ( str.isEmpty () || (str == QStringLiteral ( "N/A" )) )
         return;
     
-	if ( type >= COMPLETER_CATEGORIES::SUPPLIER )
+	if ( type >= CC_SUPPLIER )
 	{
 		if ( inList ( str, type ) == -1 )
 		{
@@ -128,7 +128,7 @@ void vmCompleters::updateCompleter ( const QString& str, const COMPLETER_CATEGOR
 			auto item_model ( dynamic_cast<QStandardItemModel*>(completer->model ()) );
 		
 			item_model->appendRow ( new QStandardItem ( str ) );
-			auto model_all ( dynamic_cast<QStandardItemModel*>( completersList.at ( ALL_CATEGORIES )->model () ) );
+			auto model_all ( dynamic_cast<QStandardItemModel*>( completersList.at ( CC_ALL_CATEGORIES )->model () ) );
 			model_all->appendRow ( new QStandardItem ( str ) );
 			completerRecord cr_rec;
 			cr_rec.updateTable ( type, str );
@@ -138,7 +138,7 @@ void vmCompleters::updateCompleter ( const QString& str, const COMPLETER_CATEGOR
 
 void vmCompleters::fillList ( const COMPLETER_CATEGORIES type, QStringList& list ) const
 {
-	const auto* __restrict model ( dynamic_cast<QStandardItemModel*>( completersList.at ( static_cast<int> ( type ) )->model () ) );
+	const QStandardItemModel* __restrict__ model ( dynamic_cast<QStandardItemModel*>( completersList.at ( static_cast<int> ( type ) )->model () ) );
 	if ( model )
 	{
 		const auto n_items ( static_cast<uint> ( model->rowCount () ) );
@@ -150,7 +150,6 @@ void vmCompleters::fillList ( const COMPLETER_CATEGORIES type, QStringList& list
 				insertStringIntoContainer ( list, model->data ( index.sibling ( static_cast<int>(i_row), 0 ) ).toString (),
 											[&] ( const int i ) ->QString { return list.at ( i ); },
 											[&] (const int i, const QString& text ) { list.insert ( i, text ); } );
-				//static_cast<void>( VM_LIBRARY_FUNCS::insertStringListItem ( list, model->data ( index.sibling ( static_cast<int>(i_row), 0 ) ).toString () ) );
 		}
 	}
 }
@@ -171,18 +170,18 @@ int vmCompleters::inList ( const QString& str, const COMPLETER_CATEGORIES type )
 	return -1;
 }
 
-COMPLETER_CATEGORIES vmCompleters::completerType ( QCompleter* completer, const QString& completion ) const
+COMPLETER_CATEGORIES vmCompleters::deriveCompleterTypeFromItsContents ( QCompleter* completer, const QString& completion )
 {
-	if ( mbFullInit )
-	{
+	//if ( mbFullInit )
+	//{
 		COMPLETER_CATEGORIES ret ( static_cast<COMPLETER_CATEGORIES>( completer->property ( "type" ).toInt () ) );
-		if ( ret == ALL_CATEGORIES )
+		if ( ret == CC_ALL_CATEGORIES )
 		{
 			if ( !completion.isEmpty () )
 			{
-				for ( uint i = 0; i <= JOB_TYPE; ++i )
+				for ( uint i = 0; i <= CC_JOB_TYPE; ++i )
 				{
-					if ( i != static_cast<int>( ALL_CATEGORIES ) )
+					if ( i != static_cast<int>( CC_ALL_CATEGORIES ) )
 					{
 						if ( inList ( completion, static_cast<COMPLETER_CATEGORIES>( i ) ) != -1 )
 						{
@@ -194,8 +193,8 @@ COMPLETER_CATEGORIES vmCompleters::completerType ( QCompleter* completer, const 
 			}
 		}
 		return ret;
-	}
-	return NONE;
+	//}
+	//return NONE;
 }
 
 void vmCompleters::encodeCompleterISRForSpreadSheet ( const DBRecord* dbrec )
@@ -206,7 +205,7 @@ void vmCompleters::encodeCompleterISRForSpreadSheet ( const DBRecord* dbrec )
 	if ( !dbrec->completerUpdated () )
 	{
 		stringRecord info;
-		auto model ( static_cast<QStandardItemModel*>( completersList.at ( PRODUCT_OR_SERVICE )->model () ) );
+		auto model ( static_cast<QStandardItemModel*>( completersList.at ( CC_PRODUCT_OR_SERVICE )->model () ) );
 
 		const QString compositItemName (	dbrec->isrValue ( ISR_NAME ) + QLatin1String ( " (" ) +
 											dbrec->isrValue ( ISR_UNIT ) + QLatin1String ( ") " ) +
@@ -216,7 +215,7 @@ void vmCompleters::encodeCompleterISRForSpreadSheet ( const DBRecord* dbrec )
 		for ( uint i ( ISR_NAME ); i <= ISR_DATE; ++i )
 			info.fastAppendValue ( dbrec->isrValue ( static_cast<ITEMS_AND_SERVICE_RECORD> ( i ) ) );
 
-		const int row ( inList ( compositItemName, PRODUCT_OR_SERVICE ) );
+		const int row ( inList ( compositItemName, CC_PRODUCT_OR_SERVICE ) );
 		completerRecord cr_rec;
 		bool ok ( false );
 

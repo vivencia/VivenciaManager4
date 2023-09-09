@@ -80,7 +80,7 @@ void spreadSheetEditor::setupUI ()
 		switch ( i )
 		{
 			case SPREADSHEET_ITEM: //FLD_QP_ITEM = 3 - Column A
-				fields[SPREADSHEET_ITEM].completer_type = PRODUCT_OR_SERVICE;
+				fields[SPREADSHEET_ITEM].completer_type = CC_PRODUCT_OR_SERVICE;
 				fields[SPREADSHEET_ITEM].width = 250;
 			break;
 			case SPREADSHEET_SELL_QUANTITY: //FLD_QP_SELL_QUANTITY = 4 - Column B
@@ -191,7 +191,7 @@ QString spreadSheetEditor::getJobIDFromQPString ( const QString& qpIDstr ) const
 void spreadSheetEditor::completeItem ( const QModelIndex& index )
 {
 	const stringRecord record ( completerManager ()->getCompleter (
-									PRODUCT_OR_SERVICE )->completionModel ()->data (
+									CC_PRODUCT_OR_SERVICE )->completionModel ()->data (
 									index.sibling ( index.row (), 1 ) ).toString () );
 
 	if ( record.isOK () )
@@ -258,20 +258,20 @@ void spreadSheetEditor::editTable ( const bool checked )
 	{
 		qp_rec->setAction ( recIntValue ( qp_rec, FLD_QP_ID ) > 0 ? ACTION_EDIT : ACTION_ADD );
 		setRecValue ( qp_rec, FLD_QP_JOB_ID, recStrValue ( mJob, FLD_JOB_ID ) );
-		static_cast<void>(connect ( completerManager ()->getCompleter ( PRODUCT_OR_SERVICE ),
+		static_cast<void>(connect ( completerManager ()->getCompleter ( CC_PRODUCT_OR_SERVICE ),
 				  static_cast<void (QCompleter::*)( const QModelIndex& )>(&QCompleter::activated), this,
 				  [&] ( const QModelIndex& idx ) { return completeItem ( idx ); } ) );
 	}
 	else
 	{
 		mbQPChanged |= qp_rec->saveRecord ();
-		disconnect ( completerManager ()->getCompleter ( PRODUCT_OR_SERVICE ), nullptr, this, nullptr );
+		disconnect ( completerManager ()->getCompleter ( CC_PRODUCT_OR_SERVICE ), nullptr, this, nullptr );
 	}
 }
 
 void spreadSheetEditor::cancelEdit ()
 {
-	static_cast<void>(disconnect ( completerManager ()->getCompleter ( PRODUCT_OR_SERVICE ), nullptr, this, nullptr ));
+	static_cast<void>(disconnect ( completerManager ()->getCompleter ( CC_PRODUCT_OR_SERVICE ), nullptr, this, nullptr ));
 	btnEditTable->setChecked ( false );
 	enableControls ( false );
 	qp_rec->setAction ( ACTION_REVERT );

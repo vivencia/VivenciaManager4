@@ -167,7 +167,7 @@ triStateType textFile::load ( const bool b_replaceBuffers )
 			return TRI_OFF;
 		}
 
-		const triStateType ret ( loadData ( b_replaceBuffers, false ) );
+		const triStateType ret ( loadData ( b_replaceBuffers ) );
 		mb_needRechecking = ( ret != TRI_ON );
 		setIgnoreEvents ( b_ignore );
 		if ( ret == TRI_ON )
@@ -185,8 +185,8 @@ void textFile::writeHeader ()
 	{
 		QString str;
 		str = HEADER_ID + ( type () == TF_CONFIG ? CFG_TYPE_LINE : DATA_TYPE_LINE );
-		m_headerSize = qstrlen ( str.toUtf8 ().data () );
-		m_file.write ( str.toUtf8 ().data (), m_headerSize );
+		m_headerSize = qstrlen ( str.toLocal8Bit ().data () );
+		m_file.write ( str.toLocal8Bit ().data (), m_headerSize );
 		m_file.flush ();
 	}
 }
@@ -223,7 +223,7 @@ void textFile::commit ()
 	fileOps::modifiedDateTime ( m_filename, modDate, modTime );
 
 	if ( m_readDate != modDate || m_readTime != modTime )
-		loadData ( true, true );
+		loadData ( true );
 
 	const bool b_ignore ( mb_IgnoreEvents );
 	setIgnoreEvents ( true );
@@ -260,7 +260,7 @@ void textFile::setIgnoreEvents ( const bool b_ignore )
 	}
 }
 
-bool textFile::loadData ( const bool, const bool )
+bool textFile::loadData ( const bool )
 {
 	m_data = m_file.readAll ();
 	return ( !m_data.isEmpty () );
@@ -268,7 +268,7 @@ bool textFile::loadData ( const bool, const bool )
 
 bool textFile::writeData ()
 {
-	const QByteArray data ( m_data.toUtf8 () );
+	const QByteArray data ( m_data.toLocal8Bit () );
 	return ( m_file.write ( data.data (), data.count () ) > 0 );
 }
 
@@ -419,7 +419,7 @@ bool configFile::setFieldValue ( const QString& field_name, const QString& value
 	return false;
 }
 
-bool configFile::loadData ( const bool b_replaceBuffers, const bool b_includeNonManaged )
+bool configFile::loadData ( const bool b_replaceBuffers )
 {
 	close ();
 	if ( !open () )
@@ -450,30 +450,13 @@ bool configFile::loadData ( const bool b_replaceBuffers, const bool b_includeNon
 			{
 				section_name = line.mid ( idx, idx2 - idx );
 
-				// This section is managed, therefore we check if it is already in memory. If it is not, we read it from the disk.
-				// If it is, we only read if b_replaceBuffers is true. In this case, the memory contents will be overwritten with the disk contents
-				if ( mlst_managedSections.contains ( section_name ) )
+				if ( b_replaceBuffers || !mlst_managedSections.contains ( section_name ) ) // Always b_replaceBuffers = true for non-managed
 				{
-					if ( b_replaceBuffers )
-					{
-						if ( !setWorkingSection ( section_name ) ) // managed information is not in memory
-							insertNewSection ( section_name );
-					}
-						else
-						continue; //read it and ignore it
+					if ( !setWorkingSection ( section_name ) ) // managed information is not in memory
+						insertNewSection ( section_name );
 				}
 				else
-				{
-					if ( b_includeNonManaged ) // Always b_replaceBuffers = true for non-managed
-					{
-						if ( !setWorkingSection ( section_name ) ) // non-managed information is not in memory
-							insertNewSection ( section_name );
-					}
-					else //First time read, skip non-managed sections
-					{
-						 continue;
-					}
-				}
+					continue; //read it and ignore it
 
 				do
 				{
@@ -488,7 +471,7 @@ bool configFile::loadData ( const bool b_replaceBuffers, const bool b_includeNon
 							fld_value = line.mid ( idx + 1 ).simplified ();
 							if ( fieldIndex ( fld_name ) != -1 ) // field read from disk exists in memory
 							{
-								if ( b_replaceBuffers || b_includeNonManaged )
+								if ( b_replaceBuffers )
 									setFieldValue ( fld_name, fld_value );
 							}
 							else
@@ -628,7 +611,7 @@ void dataFile::clearData ()
 	recData.clear ();
 }
 
-bool dataFile::loadData ( const bool, const bool )
+bool dataFile::loadData ( const bool )
 {
 	QString buf ( m_file.readAll () );
 	if ( buf.length () > 1 )
@@ -644,7 +627,7 @@ bool dataFile::writeData ()
 	qint64 written ( 0 );
 	if ( recData.isOK () )
 	{
-		const QByteArray data ( recData.toString ().toUtf8 () );
+		const QByteArray data ( recData.toString ().toLocal8Bit () );
 		written = m_file.write ( data, static_cast<qint64>( data.size () ) );
 	}
 	return ( written > 0 );

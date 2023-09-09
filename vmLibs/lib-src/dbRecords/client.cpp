@@ -218,22 +218,22 @@ static void clientNameChangeActions ( const DBRecord* db_rec )
 						  config.projectsBaseDir () + db_rec->backupRecordStr ( FLD_CLIENT_NAME ) );
 	}
 	
-	DBRecord::completerManager ()->updateCompleter ( db_rec, FLD_CLIENT_NAME, CLIENT_NAME );
+	db_rec->completerManager ()->updateCompleter ( db_rec, FLD_CLIENT_NAME, CC_CLIENT_NAME );
 }
 
 static void updateClientStreetCompleter ( const DBRecord* db_rec )
 {
-	DBRecord::completerManager ()->updateCompleter ( db_rec, FLD_CLIENT_STREET, ADDRESS );
+	db_rec->completerManager ()->updateCompleter ( db_rec, FLD_CLIENT_STREET, CC_ADDRESS );
 }
 
 static void updateClientDistrictCompleter ( const DBRecord* db_rec )
 {
-	DBRecord::completerManager ()->updateCompleter ( db_rec, FLD_CLIENT_DISTRICT, ADDRESS );
+	db_rec->completerManager ()->updateCompleter ( db_rec, FLD_CLIENT_DISTRICT, CC_ADDRESS );
 }
 
 static void updateClientCityCompleter ( const DBRecord* db_rec )
 {
-	DBRecord::completerManager ()->updateCompleter ( db_rec, FLD_CLIENT_CITY, ADDRESS );
+	db_rec->completerManager ()->updateCompleter ( db_rec, FLD_CLIENT_CITY, CC_ADDRESS );
 }
 
 Client::Client ( const bool connect_helper_funcs )
