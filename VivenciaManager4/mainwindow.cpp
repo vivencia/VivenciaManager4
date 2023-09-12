@@ -90,7 +90,7 @@ const auto screen_width = [] ()-> int
 MainWindow::MainWindow ()
 	: QMainWindow ( nullptr ),
 	  ui ( new Ui::MainWindow ),  menuJobDoc ( nullptr ), menuJobXls ( nullptr ), menuJobPdf ( nullptr ),
-          subMenuJobPdfView ( nullptr ), sepWin_JobPictures ( nullptr ), sepWin_JobReport ( nullptr ), mCal ( nullptr ),
+		  subMenuJobPdfView ( nullptr ), sepWin_JobPictures ( nullptr ), sepWin_JobReport ( nullptr ), mCal ( new dbCalendar ),
 	  mTableView ( nullptr ), mCalendarView ( nullptr ), mStatistics ( nullptr ), mMachines ( nullptr ), jobsPicturesMenuAction ( nullptr ),
 	  mainTaskPanel ( nullptr ), selJob_callback ( nullptr ), mb_jobPosActions ( false ), mClientCurItem ( nullptr ),
 	  mJobCurItem ( nullptr ), mPayCurItem ( nullptr ), mBuyCurItem ( nullptr ), dlgSaveEditItems ( nullptr )
@@ -937,7 +937,7 @@ void MainWindow::setupJobPanel ()
 	ui->txtJobReport->setCallbackForContentsAltered ( [&] ( const vmWidget* const widget ) {
 		return updateJobInfo ( static_cast<textEditWithCompleter*>( const_cast<vmWidget*>( widget ) )->currentText (), JILUR_REPORT ); } );
 	ui->txtJobReport->setUtilitiesPlaceLayout ( ui->layoutTxtJobUtilities );
-	COMPLETERS ()->setCompleterForWidget ( ui->txtJobReport, CC_ALL_CATEGORIES );
+	ui->txtJobReport->setCompleter ( COMPLETERS (), CC_ALL_CATEGORIES );
 
 	saveJobWidget ( ui->timeJobStart, FLD_JOB_REPORT + Job::JRF_START_TIME );
 	ui->timeJobStart->setCallbackForContentsAltered ( [&] ( const vmWidget* const ) {
@@ -2052,7 +2052,6 @@ void MainWindow::quickProjectClosed ()
 
 void MainWindow::on_btnQuickProject_clicked ()
 {
-	QUICK_PROJECT ()->setCompleterManager ( COMPLETERS () );
 	QUICK_PROJECT ()->setCallbackForDialogClosed ( [&] () { return quickProjectClosed (); } );
 	QUICK_PROJECT ()->prepareToShow ( mJobCurItem->jobRecord () );
 	QUICK_PROJECT ()->show ();
@@ -3967,7 +3966,7 @@ void MainWindow::setupWorkFlow ()
 	ui->scrollWorkFlow->setWidget ( mainTaskPanel );
 	setupSectionNavigation ();
 
-	mCalendarView = new calendarViewUI ( ui->tabMain, TI_CALENDAR, this );
+	mCalendarView = new calendarViewUI ( ui->tabMain, TI_CALENDAR, this, mCal );
 
 	ui->tabMain->removeTab ( 7 );
 	ui->tabMain->removeTab ( 6 );

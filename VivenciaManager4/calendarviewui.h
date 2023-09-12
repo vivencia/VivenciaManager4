@@ -21,7 +21,7 @@ class calendarViewUI : public QWidget
 {
 
 public:
-	explicit calendarViewUI ( QTabWidget* parent, const uint tab_index, MainWindow* mainwindow );
+	explicit calendarViewUI ( QTabWidget* parent, const uint tab_index, MainWindow* mainwindow, dbCalendar* db_cal );
 	virtual ~calendarViewUI ();
 
 	void activate ();

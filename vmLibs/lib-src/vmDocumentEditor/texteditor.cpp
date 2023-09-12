@@ -51,8 +51,7 @@ textEditor::textEditor ( documentEditor* mdiParent )
 	: documentEditorWindow ( mdiParent ), mPDFName ( QString () ), mb_UseHtml ( false ), mb_IgnoreCursorPos ( true ), m_ImageNumber ( 0 )
 {
 	setEditorType ( TEXT_EDITOR_SUB_WINDOW );
-	mDocument = new textEditWithCompleter ( nullptr );
-	mDocument->setCompleter ( mdiParent->completerManager ()->getCompleter ( CC_ALL_CATEGORIES ) );
+	mDocument = new textEditWithCompleter ( nullptr, mdiParent->completerManager () );
 	mCursor = mDocument->textCursor ();
 	mCursor.movePosition ( QTextCursor::Start );
 	mainLayout->addWidget ( mDocument, 3 );

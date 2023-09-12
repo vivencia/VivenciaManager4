@@ -124,7 +124,7 @@ inline configDialog* CONFIG_DIALOG ()
 inline spreadSheetEditor* QUICK_PROJECT ()
 {
 	if ( Sys_Init::qp_instance == nullptr )
-		Sys_Init::qp_instance = new spreadSheetEditor;
+		Sys_Init::qp_instance = new spreadSheetEditor ( nullptr, COMPLETERS () );
 	return Sys_Init::qp_instance;
 }
 

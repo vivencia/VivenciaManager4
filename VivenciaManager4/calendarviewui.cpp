@@ -11,8 +11,8 @@
 
 #include <QtWidgets/QTabWidget>
 
-calendarViewUI::calendarViewUI ( QTabWidget* parent, const uint tab_index, MainWindow* mainwindow )
-	: QWidget ( parent ), ui ( new Ui::calendarViewUI ), mMainWindow ( mainwindow )
+calendarViewUI::calendarViewUI ( QTabWidget* parent, const uint tab_index, MainWindow* mainwindow, dbCalendar* db_cal )
+	: QWidget ( parent ), ui ( new Ui::calendarViewUI ), mMainWindow ( mainwindow ), mCal ( db_cal )
 {
 	ui->setupUi ( this );
 	parent->insertTab ( tab_index, this, ICON ( "x-office-calendar" ), APP_TR_FUNC ( "Calendar" ) );
@@ -46,7 +46,6 @@ void calendarViewUI::activate ()
 
 void calendarViewUI::setupCalendarMethods ()
 {
-	mCal = new dbCalendar;
 	static_cast<void>( connect ( ui->calMain, &QCalendarWidget::activated, this, [&] ( const QDate& date ) {
 				return calMain_activated ( date ); } ) );
 	static_cast<void>( connect ( ui->calMain, &QCalendarWidget::clicked, this, [&] ( const QDate& date ) {

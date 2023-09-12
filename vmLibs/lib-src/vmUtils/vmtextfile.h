@@ -34,7 +34,7 @@ public:
 	inline bool isEmpty () const { return m_file.size () <= 0; }
 
 	void close ();
-	triStateType load ( const bool b_replaceBuffers = true );
+	triStateType load ();
 	void commit ();
 
 	void setText ( const QString& new_file_text );

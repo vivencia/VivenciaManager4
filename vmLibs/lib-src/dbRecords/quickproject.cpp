@@ -2,7 +2,7 @@
 #include "vivenciadb.h"
 #include "vmlibs.h"
 
-static const unsigned int TABLE_VERSION ( 'A' );
+static const unsigned int TABLE_VERSION ( 'B' );
 
 constexpr DB_FIELD_TYPE QP_FIELDS_TYPE[QUICK_PROJECT_FIELD_COUNT] =
 {
@@ -10,11 +10,37 @@ constexpr DB_FIELD_TYPE QP_FIELDS_TYPE[QUICK_PROJECT_FIELD_COUNT] =
 	DBTYPE_PRICE, DBTYPE_NUMBER, DBTYPE_PRICE, DBTYPE_PRICE, DBTYPE_PRICE
 };
 
+//#define QP_TABLE_UPDATE_AVAILABLE
 #ifdef QP_TABLE_UPDATE_AVAILABLE
-bool updateQuickProjectTable ()
+
+#include <vmStringRecord/stringrecord.h>
+bool updateQuickProjectTable ( const unsigned char current_table_version )
 {
-	VDB ()->optimizeTable ( &quickProject::t_info );
-	return true;
+	if ( current_table_version == 'A' )
+	{
+		quickProject qp;
+		QString new_value;
+		if ( qp.readFirstRecord () )
+		{
+			do
+			{
+				for ( uint i_col ( FLD_QP_ITEM ); i_col < FLD_QP_RESULT; ++i_col )
+				{
+					new_value = recStrValue ( &qp, i_col );
+					if ( new_value.startsWith ( record_separator ) || new_value.startsWith ( table_separator ) )
+					{
+						qp.setAction ( ACTION_EDIT );
+						new_value.remove ( 0, 1 );
+						setRecValue ( &qp, i_col, new_value );
+						qp.saveRecord ();
+					}
+				}
+			} while ( qp.readNextRecord () );
+			VivenciaDB::optimizeTable ( &quickProject::t_info );
+			return true;
+		}
+	}
+	return false;
 }
 #endif //QP_TABLE_UPDATE_AVAILABLE
 

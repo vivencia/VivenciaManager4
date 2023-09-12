@@ -31,13 +31,12 @@ public:
 		SPREADSHEET_RESULT = 7
 	};
 
-	explicit spreadSheetEditor ( documentEditor* mdiParent = nullptr );
+	explicit spreadSheetEditor ( documentEditor* mdiParent = nullptr, vmCompleters* completer_manager = nullptr );
 	virtual ~spreadSheetEditor () override;
 
 	void setupUI ();
 	void prepareToShow ( const Job* const job = nullptr );
 	bool loadData ( const QString& jobid, const bool force = false );
-	QString getJobIDFromQPString ( const QString& qpIDstr ) const;
 
 	inline void setCallbackForDialogClosed ( const std::function<void ()>& func ) { funcClosed = func; }
 	inline vmTableWidget* table () const { return m_table; }
@@ -54,9 +53,6 @@ public:
 	inline documentEditor* parentEditor () const {
 		return m_parentEditor;
 	}
-
-	void setCompleterManager ( vmCompleters* const completer );
-	inline vmCompleters* completerManager () { return mCompleterManager; }
 
 private:
 	void cellModified ( const vmTableItem* const item );

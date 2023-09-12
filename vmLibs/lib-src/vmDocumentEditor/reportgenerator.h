@@ -67,8 +67,8 @@ public:
 	void btnInsertFootNotes_clicked ( const uint c_id = 0 );
 	void btnInsertProjectNumber_clicked ();
 
-	void updateJobIDsAndQPs ( const QString& text );
-	void showProjectID ( const int = 0 );
+	void updateJobIDs ( const QString& text );
+	void loadJobQP ();
 	void changeJobBriefInfo ( const int );
 	void btnViewJob_clicked ( const bool );
 
@@ -87,10 +87,10 @@ private:
 	QToolButton* btnGenerateReport;
 	QToolButton* btnViewJob;
 
-	vmComboBox* cboQPIDs, *cboJobIDs;
+	vmComboBox* cboJobIDs;
 	vmComboBox* cboHeaderType, *cboHeaderJobType;
 
-	vmLineEdit* txtClientsIDs;
+	vmLineEdit* txtClientsIDs, *txtJobQP;
 
 	QPushButton* btnCopyTableRow, *btnCopyEntireTable;
 	QPushButton* btnInsertClientAddress, *btnInsertJobReport;

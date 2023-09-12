@@ -83,6 +83,9 @@
          <property name="accessibleName">
           <string>calMain</string>
          </property>
+         <property name="autoFillBackground">
+          <bool>false</bool>
+         </property>
          <property name="gridVisible">
           <bool>true</bool>
          </property>
@@ -198,7 +201,7 @@
               <enum>QFrame::Plain</enum>
              </property>
              <property name="currentIndex">
-              <number>1</number>
+              <number>0</number>
              </property>
              <widget class="QWidget" name="tboxPageJobDay">
               <property name="geometry">

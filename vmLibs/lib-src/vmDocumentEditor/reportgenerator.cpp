@@ -159,7 +159,7 @@ reportGenerator::reportGenerator ( documentEditor* mdiParent )
 
 	txtClientsIDs = new vmLineEdit;
 	parentEditor ()->completerManager ()->setCompleterForWidget ( txtClientsIDs, CC_CLIENT_NAME );
-	txtClientsIDs->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) { return updateJobIDsAndQPs ( sender->text () ); } );
+	txtClientsIDs->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) { return updateJobIDs ( sender->text () ); } );
 	txtClientsIDs->setEditable ( true );
 
 	btnInsertClientAddress = new QPushButton ( TR_FUNC ( "Address" ) );
@@ -176,33 +176,6 @@ reportGenerator::reportGenerator ( documentEditor* mdiParent )
 
 	auto vLine1 ( new QFrame );
 	vLine1->setFrameStyle ( QFrame::VLine|QFrame::Raised );
-	//----------------------------------------------------------------------------------------
-
-	//----------------------------------------------------------------------------------------
-	auto lblQPID ( new QLabel ( TR_FUNC ( "Quick Project:" ) ) );
-
-	cboQPIDs = new vmComboBox;
-	cboQPIDs->setCallbackForIndexChanged ( [&] ( const int idx ) { return showProjectID ( idx ); } );
-
-	btnCopyTableRow = new QPushButton ( TR_FUNC ( "Copy selected rows" ) );
-	connect ( btnCopyTableRow, &QPushButton::clicked, this, [&] () { return btnCopyTableRow_clicked (); } );
-	btnCopyTableRow->setEnabled ( false );
-
-	btnCopyEntireTable = new QPushButton ( TR_FUNC ( "Copy table" ) );
-	connect ( btnCopyEntireTable, &QPushButton::clicked, this, [&] () { return btnCopyEntireTable_clicked (); } );
-	btnCopyEntireTable->setEnabled ( false );
-
-	auto layoutQPID ( new QVBoxLayout );
-	layoutQPID->setSpacing ( 1 );
-	layoutQPID->setContentsMargins ( 1, 1, 1, 1 );
-	layoutQPID->setSizeConstraint ( QLayout::SetFixedSize );
-	layoutQPID->addWidget ( lblQPID, 1 );
-	layoutQPID->addWidget ( cboQPIDs, 1 );
-	layoutQPID->addWidget ( btnCopyTableRow, 1 );
-	layoutQPID->addWidget ( btnCopyEntireTable, 1 );
-
-	auto vLine2 ( new QFrame );
-	vLine2->setFrameStyle ( QFrame::VLine|QFrame::Raised );
 	//----------------------------------------------------------------------------------------
 
 	//----------------------------------------------------------------------------------------
@@ -237,6 +210,33 @@ reportGenerator::reportGenerator ( documentEditor* mdiParent )
 	layoutJobID->addWidget ( btnInsertJobReport, 1 );
 	//----------------------------------------------------------------------------------------
 
+	//----------------------------------------------------------------------------------------
+	auto lblQPID ( new QLabel ( TR_FUNC ( "Quick Project:" ) ) );
+
+	txtJobQP = new vmLineEdit;
+	txtJobQP->setCallbackForContentsAltered ( [&] ( const vmWidget* const ) { return loadJobQP (); } );
+
+	btnCopyTableRow = new QPushButton ( TR_FUNC ( "Copy selected rows" ) );
+	connect ( btnCopyTableRow, &QPushButton::clicked, this, [&] () { return btnCopyTableRow_clicked (); } );
+	btnCopyTableRow->setEnabled ( false );
+
+	btnCopyEntireTable = new QPushButton ( TR_FUNC ( "Copy table" ) );
+	connect ( btnCopyEntireTable, &QPushButton::clicked, this, [&] () { return btnCopyEntireTable_clicked (); } );
+	btnCopyEntireTable->setEnabled ( false );
+
+	auto layoutQPID ( new QVBoxLayout );
+	layoutQPID->setSpacing ( 1 );
+	layoutQPID->setContentsMargins ( 1, 1, 1, 1 );
+	layoutQPID->setSizeConstraint ( QLayout::SetFixedSize );
+	layoutQPID->addWidget ( lblQPID, 1 );
+	layoutQPID->addWidget ( txtJobQP, 1 );
+	layoutQPID->addWidget ( btnCopyTableRow, 1 );
+	layoutQPID->addWidget ( btnCopyEntireTable, 1 );
+
+	auto vLine2 ( new QFrame );
+	vLine2->setFrameStyle ( QFrame::VLine|QFrame::Raised );
+	//----------------------------------------------------------------------------------------
+
 	auto layoutBottomBar ( new QHBoxLayout );
 	layoutBottomBar->setSpacing ( 1 );
 	layoutBottomBar->setContentsMargins ( 1, 1, 1, 1 );
@@ -244,9 +244,9 @@ reportGenerator::reportGenerator ( documentEditor* mdiParent )
 	layoutBottomBar->addWidget ( vLine, 1 );
 	layoutBottomBar->addLayout ( layoutClientID, 0 );
 	layoutBottomBar->addWidget ( vLine1, 1 );
-	layoutBottomBar->addLayout ( layoutQPID, 0 );
-	layoutBottomBar->addWidget ( vLine2, 1 );
 	layoutBottomBar->addLayout ( layoutJobID, 0 );
+	layoutBottomBar->addWidget ( vLine2, 1 );
+	layoutBottomBar->addLayout ( layoutQPID, 0 );
 
 	//------------------------------------------------------------------------------------------------------------
 
@@ -341,7 +341,7 @@ void reportGenerator::createPaymentStub ( const uint payID )
 	}
 }
 
-void reportGenerator::updateJobIDsAndQPs ( const QString& text )
+void reportGenerator::updateJobIDs ( const QString& text )
 {
 	if ( text.count () > 3 )
 	{
@@ -350,21 +350,16 @@ void reportGenerator::updateJobIDsAndQPs ( const QString& text )
 			str_curclientname = text;
 			if ( rgClient->readRecord ( FLD_CLIENT_NAME, text ) )
 			{
+				cboJobIDs->setIgnoreChanges ( true );
 				cboJobIDs->clear ();
-				cboQPIDs->clear ();
 				if ( rgJob->readRecord ( FLD_JOB_CLIENTID, recStrValue ( rgClient, FLD_CLIENT_ID ) ) )
 				{
 					do
 					{
-						const QString& job_project ( recStrValue ( rgJob, FLD_JOB_PROJECT_ID ) );
 						cboJobIDs->insertItem ( recStrValue ( rgJob, FLD_JOB_ID ), 0, false );
-						if ( !job_project.isEmpty () )
-							cboQPIDs->insertItem ( job_project, 0, false );
 					} while ( rgJob->readNextRecord ( true ) );
+					cboJobIDs->setIgnoreChanges ( false );
 					cboJobIDs->setCurrentIndex ( cboJobIDs->count () - 1 );
-					cboQPIDs->setCurrentIndex ( cboQPIDs->count () - 1 );
-					btnCopyTableRow->setEnabled ( cboQPIDs->count () > 0 );
-					btnCopyEntireTable->setEnabled ( cboQPIDs->count () > 0 );
 					btnViewJob->setEnabled ( cboJobIDs->count () > 0 );
 					mb_IgnoreChange = ( cboJobIDs->count () == 0 );
 					if ( !mb_IgnoreChange )
@@ -388,11 +383,10 @@ void reportGenerator::changeJobBriefInfo ( const int index )
 	if ( index >= 0 )
 	{
 		const uint cboJobID ( cboJobIDs->itemText ( index ).toUInt () );
-		if ( cboJobID != static_cast<uint>(recIntValue ( rgJob, FLD_JOB_ID )) )
-		{
-			if ( !rgJob->readRecord ( cboJobID ) )
-				return;
-		}
+		if ( !rgJob->readRecord ( cboJobID ) )
+			return;
+		txtJobQP->setText ( recStrValue ( rgJob, FLD_JOB_PROJECT_ID ), true );
+
 		m_dockBriefJob->fillControls ( rgJob );
 	}
 	else
@@ -524,16 +518,13 @@ void reportGenerator::btnInsertLogo_clicked ( const uint c_id )
 		setIgnoreCursorPos ( false );
 }
 
-void reportGenerator::showProjectID ( const int )
+void reportGenerator::loadJobQP ()
 {
 	if ( mb_IgnoreChange )
 		return;
 
 	m_dockSpreadSheet->attach ( this );
-	const bool b_hasData (
-		m_spreadSheet->loadData (
-			m_spreadSheet->getJobIDFromQPString ( cboQPIDs->currentText () ) )
-	);
+	const bool b_hasData ( m_spreadSheet->loadData ( cboJobIDs->currentText () ) );
 	btnCopyTableRow->setEnabled ( b_hasData );
 	btnCopyEntireTable->setEnabled ( b_hasData );
 }
@@ -606,7 +597,7 @@ void reportGenerator::btnCopyTableRow_clicked ()
 		TEXT_EDITOR_TOOLBAR ()->spinNRows->setValue ( static_cast<int>(n_selRows + 3) ); // 1 - Header; 2 - Empty row; 3 - Total row
 		TEXT_EDITOR_TOOLBAR ()->btnCreateTable_clicked ();
 		textTable = mCursor.currentTable ();
-		// Despite the ui language, every program output should be in portuguese
+		// Despite the ui language, every output generated by the application must be in portuguese
 		for ( ; i_col < n_cols; ++i_col )
 		{
 			t_cursor = textTable->cellAt ( 0, static_cast<int>(i_col) ).firstCursorPosition ();
@@ -634,7 +625,7 @@ void reportGenerator::btnCopyTableRow_clicked ()
 	int textTable_row ( 0 ), foundRow ( 0 );
 	QStringList itemNames;
 	QString name;
-	bool ok ( true );
+
 	for ( uint i_row ( 0 ); static_cast<int>(i_row) < n_rows; ++i_row )
 	{
 		if ( m_spreadSheet->table ()->isRowSelected ( i_row ) )
@@ -654,40 +645,16 @@ void reportGenerator::btnCopyTableRow_clicked ()
 				mCursor.movePosition ( QTextCursor::PreviousRow, QTextCursor::MoveAnchor, textTable_row - ( foundRow + 1 ) );
 			t_cursor = textTable->cellAt ( textTable->cellAt ( mCursor ).row (), 0 ).firstCursorPosition ();
 			t_cursor.insertText ( name );
-			for ( i_col = 1; i_col < n_cols; ++i_col )
-			{
-				t_cursor = textTable->cellAt ( textTable->cellAt ( mCursor ).row (), static_cast<int>(i_col) ).firstCursorPosition ();
-				quantity.fromTrustedStrPrice ( m_spreadSheet->table ()->sheetItem ( i_row, i_col )->text () );
 
-				ok = true;
-				if ( foundRow != -1 )
-				{
-					if ( !quantity.isNull () )
-					{
-						t_cursor = textTable->cellAt ( textTable->cellAt ( mCursor ).row (), static_cast<int>(i_col) ).firstCursorPosition ();
-						t_cursor.select ( QTextCursor::LineUnderCursor );
-						t_cursor.selectedText ().toDouble ( &ok );
-					}
-					if ( !ok )
-					{
-						/* As much as I'd like this code to be completely automatic and independent from any modifications done to the program elsewhere in the code
-						I cannot add the individual items price because the resulting document would be pathetic. Since I don't want to create an option in QP to determine
-						which columns values can and cannot be added, I manually insert this bit of code to skip adding. Should the program change the column layout, I will
-						have to change this bit too.
-						*/
-						if ( i_col != 2 )
-						{
-							t_cursor = textTable->cellAt ( textTable->cellAt ( mCursor ).row (), static_cast<int>(i_col) ).firstCursorPosition ();
-							t_cursor.select ( QTextCursor::LineUnderCursor );
-							t_cursor.selectedText ().toDouble ( &ok );
-						}
-					}
-				}
-				if ( ok )
-				{
-					quantity += t_cursor.selectedText ().toDouble ( &ok );
-					t_cursor.insertText ( quantity.toStrDouble () );
-				}
+			quantity.fromStrDouble ( m_spreadSheet->table ()->sheetItem ( i_row, 1 )->text () );
+			t_cursor = textTable->cellAt ( textTable->cellAt ( mCursor ).row (), 1 ).firstCursorPosition ();
+			t_cursor.insertText ( quantity.toStrDouble () );
+
+			for ( i_col = 2; i_col < n_cols; ++i_col )
+			{
+				quantity.fromTrustedStrPrice ( m_spreadSheet->table ()->sheetItem ( i_row, i_col )->text () );
+				t_cursor = textTable->cellAt ( textTable->cellAt ( mCursor ).row (), static_cast<int>(i_col) ).firstCursorPosition ();
+				t_cursor.insertText ( quantity.toPrice () );
 			}
 			total += m_spreadSheet->table ()->sheetItem ( i_row, i_col - 1 )->number ();
 			mCursor.movePosition ( QTextCursor::NextRow, QTextCursor::MoveAnchor, foundRow == -1 ? 1 : textTable_row - ( foundRow + 1 ) );
@@ -1216,7 +1183,7 @@ void dockQP::setCurrentWindow ( reportGenerator *report )
 	if ( report && report != cur_report )
 	{
 		cur_report = report;
-		cur_report->showProjectID ();
+		cur_report->loadJobQP ();
 	}
 }
 

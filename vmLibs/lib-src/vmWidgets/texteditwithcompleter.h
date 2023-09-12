@@ -10,6 +10,7 @@ class searchWordPanel;
 class wordHighlighter;
 class spellCheck;
 class vmLineEdit;
+class vmCompleters;
 
 class QGridLayout;
 class QToolButton;
@@ -27,7 +28,7 @@ class textEditWithCompleter : public QTextEdit, public vmWidget
 friend class searchWordPanel;
 
 public:
-	explicit textEditWithCompleter ( QWidget* parent = nullptr );
+	explicit textEditWithCompleter ( QWidget* parent = nullptr , vmCompleters* completer_manager = nullptr );
 	virtual ~textEditWithCompleter ();
 
 	void setEditable ( const bool editable ) override;
@@ -39,7 +40,7 @@ public:
 
 	inline void enableSpellChecking ( const bool b_enable ) { m_highlighter->enableSpellChecking ( b_enable ); }
 
-	void setCompleter ( QCompleter* const completer );
+	void setCompleter ( vmCompleters* const completer, const int type );
 	inline spellCheck* spellChecker () const { return mSpellChecker; }
 
 	void showhideUtilityPanel ();

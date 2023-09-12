@@ -23,6 +23,7 @@ public:
 	virtual ~quickProject ();
 
 private:
+	friend bool updateQuickProjectTable ( const unsigned char current_table_version );
 	static const TABLE_INFO t_info;
 
 	RECORD_FIELD m_RECFIELDS[QUICK_PROJECT_FIELD_COUNT];

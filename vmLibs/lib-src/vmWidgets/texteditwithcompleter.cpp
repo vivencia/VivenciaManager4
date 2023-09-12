@@ -1,10 +1,10 @@
 #include "texteditwithcompleter.h"
 #include "heapmanager.h"
-
 #include "vmwidgets.h"
 #include "spellcheck.h"
 
 #include <vmNumbers/vmnumberformats.h>
+#include <dbRecords/completers.h>
 
 #include <QtGui/QTextCursor>
 #include <QtGui/QKeyEvent>
@@ -25,13 +25,14 @@
 //static const QString eow                ( "~!@#$%^&*() _+{}|:\"<>?,./;'[]\\-=" ); // end of word
 static const QString eow ( QStringLiteral ( "~!@#$%^&*() _+{}|:\"<>?,./;'[]\\=" ) ); // end of word
 
-textEditWithCompleter::textEditWithCompleter ( QWidget* parent )
+textEditWithCompleter::textEditWithCompleter ( QWidget* parent, vmCompleters* completer_manager )
 	: QTextEdit ( parent ), vmWidget ( WT_TEXTEDIT ),
 	  mFirstInsertedActionPos ( 0 ), mCursorPos ( -1 ), mbDocumentModified ( false ),
 	  mCompleter ( nullptr ), m_highlighter ( nullptr ), m_searchPanel ( nullptr ), mContextMenu ( nullptr )
 {
 	setWidgetPtr ( static_cast<QWidget*> ( this ) );
 	setAcceptRichText ( true );
+	setCompleter ( completer_manager, CC_ALL_CATEGORIES );
 
 	/* When print previewing, Qt makes a copy of QTextEdit (not textEditWithCompleter) and certain features of this class are, therefore,
 	   lost. The object's properties, though, are carried with the copy and, if we deference the QTextEdit pointer Qt uses, we can extract all of them,
@@ -462,12 +463,13 @@ QString textEditWithCompleter::textUnderCursor () const
 	return tc.selectedText ();
 }
 
-void textEditWithCompleter::setCompleter ( QCompleter* const completer )
+void textEditWithCompleter::setCompleter ( vmCompleters* const completer, const int type )
 {
 	if ( completer != nullptr )
 	{
-		mCompleter = completer;
-		mCompleter->setWidget ( this );
+		mCompleter = completer->getCompleter ( static_cast<COMPLETER_CATEGORIES>( type ) );
+		completer->setCompleterForWidget ( this, static_cast<COMPLETER_CATEGORIES>( type ) );
+		//mCompleter->setWidget ( this );
 		static_cast<void>( connect ( mCompleter, static_cast<void (QCompleter::*)( const QString& )>( &QCompleter::activated ),
 			this, [&, this] ( const QString& text ) { insertCompletion ( text ); } ) );
 	}

@@ -138,7 +138,7 @@ void textFile::readType ()
 	}
 }
 
-triStateType textFile::load ( const bool b_replaceBuffers )
+triStateType textFile::load ()
 {
 	if ( m_open && !mb_needRechecking )
 		return TRI_ON;
@@ -167,7 +167,7 @@ triStateType textFile::load ( const bool b_replaceBuffers )
 			return TRI_OFF;
 		}
 
-		const triStateType ret ( loadData ( b_replaceBuffers ) );
+		const triStateType ret ( loadData ( true ) );
 		mb_needRechecking = ( ret != TRI_ON );
 		setIgnoreEvents ( b_ignore );
 		if ( ret == TRI_ON )
@@ -223,7 +223,7 @@ void textFile::commit ()
 	fileOps::modifiedDateTime ( m_filename, modDate, modTime );
 
 	if ( m_readDate != modDate || m_readTime != modTime )
-		loadData ( true );
+		loadData ( false );
 
 	const bool b_ignore ( mb_IgnoreEvents );
 	setIgnoreEvents ( true );

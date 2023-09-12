@@ -163,7 +163,7 @@ void dbCalendar::updateCalendarWithJobInfo ( const Job* const job )
 	const vmNumber& pricePerDay ( job->price ( FLD_JOB_PRICE ) / n_days );
 	const stringRecord* dayRecord ( nullptr );
 	pointersList<CALENDAR_EXCHANGE*> ce_list ( 5 );
-	
+
 	switch ( job->action () )
 	{
 		case ACTION_ADD:
@@ -210,7 +210,7 @@ void dbCalendar::updateCalendarWithJobInfo ( const Job* const job )
 				
 				for ( uint i ( 0 ); i < n_days ; ++i )
 				{
-					dayRecord = &oldJobReport.readRecord ( i );
+					dayRecord = &jobReport.readRecord ( i );
 					date.fromTrustedStrDate ( dayRecord->fieldValue ( Job::JRF_DATE ), vmNumber::VDF_DB_DATE );
 					addCalendarExchangeRule ( ce_list, CEAO_ADD_DATE1, date, vmNumber::emptyNumber, static_cast<int>( i + 1 ) );
 					if ( !pricePerDay.isNull () )

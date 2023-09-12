@@ -31,12 +31,11 @@ constexpr inline uint dbColumnToGuiColumn ( const uint db_col )
 
 static const QString MODIFIED ( APP_TR_FUNC ( "Modified - " ) );
 
-spreadSheetEditor::spreadSheetEditor ( documentEditor* mdiParent )
-	: QDialog (), m_parentEditor ( mdiParent ), m_table ( nullptr ), mCompleterManager ( nullptr ), mbQPChanged ( false ),
+spreadSheetEditor::spreadSheetEditor ( documentEditor* mdiParent, vmCompleters* completer_manager )
+	: QDialog (), m_parentEditor ( mdiParent ), m_table ( nullptr ), mCompleterManager ( completer_manager ), mbQPChanged ( false ),
 	  qp_rec ( new quickProject ), mJob ( nullptr ), funcClosed ( nullptr )
 {
 	setWindowFlags ( Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowMinMaxButtonsHint ); // remove close button
-	setCompleterManager ( parentEditor ()->completerManager () );
 	setupUI ();
 }
 
@@ -117,6 +116,14 @@ void spreadSheetEditor::setupUI ()
 		}
 	}
 
+	if ( mCompleterManager )
+	{
+		m_table->setCallbackForSettingCompleterForWidget ( [&] ( vmWidget* widget, const int completer_type )
+		{
+		mCompleterManager->setCompleterForWidget ( widget, completer_type );
+		} );
+	}
+
 	m_table->setKeepModificationRecords ( false );
 	m_table->initTable ( 20 );
 
@@ -180,18 +187,9 @@ bool spreadSheetEditor::loadData ( const QString& jobid , const bool force )
 	return !m_table->isEmpty ();
 }
 
-QString spreadSheetEditor::getJobIDFromQPString ( const QString& qpIDstr ) const
-{
-	const int idx ( qpIDstr.indexOf ( CHR_HYPHEN ) );
-	if ( idx != -1 )
-		return qpIDstr.right ( qpIDstr.count () - idx - 1 );
-	return QStringLiteral ( "-1" );
-}
-
 void spreadSheetEditor::completeItem ( const QModelIndex& index )
 {
-	const stringRecord record ( completerManager ()->getCompleter (
-									CC_PRODUCT_OR_SERVICE )->completionModel ()->data (
+	const stringRecord record ( mCompleterManager->getCompleter ( CC_PRODUCT_OR_SERVICE )->completionModel ()->data (
 									index.sibling ( index.row (), 1 ) ).toString () );
 
 	if ( record.isOK () )
@@ -258,20 +256,20 @@ void spreadSheetEditor::editTable ( const bool checked )
 	{
 		qp_rec->setAction ( recIntValue ( qp_rec, FLD_QP_ID ) > 0 ? ACTION_EDIT : ACTION_ADD );
 		setRecValue ( qp_rec, FLD_QP_JOB_ID, recStrValue ( mJob, FLD_JOB_ID ) );
-		static_cast<void>(connect ( completerManager ()->getCompleter ( CC_PRODUCT_OR_SERVICE ),
+		static_cast<void>(connect ( mCompleterManager->getCompleter ( CC_PRODUCT_OR_SERVICE ),
 				  static_cast<void (QCompleter::*)( const QModelIndex& )>(&QCompleter::activated), this,
 				  [&] ( const QModelIndex& idx ) { return completeItem ( idx ); } ) );
 	}
 	else
 	{
 		mbQPChanged |= qp_rec->saveRecord ();
-		disconnect ( completerManager ()->getCompleter ( CC_PRODUCT_OR_SERVICE ), nullptr, this, nullptr );
+		disconnect ( mCompleterManager->getCompleter ( CC_PRODUCT_OR_SERVICE ), nullptr, this, nullptr );
 	}
 }
 
 void spreadSheetEditor::cancelEdit ()
 {
-	static_cast<void>(disconnect ( completerManager ()->getCompleter ( CC_PRODUCT_OR_SERVICE ), nullptr, this, nullptr ));
+	static_cast<void>(disconnect ( mCompleterManager->getCompleter ( CC_PRODUCT_OR_SERVICE ), nullptr, this, nullptr ));
 	btnEditTable->setChecked ( false );
 	enableControls ( false );
 	qp_rec->setAction ( ACTION_REVERT );
@@ -283,12 +281,6 @@ void spreadSheetEditor::getHeadersText ( spreadRow* row ) const
 {
 	for ( uint i_col ( 0 ); i_col < unsigned ( m_table->columnCount () ); ++i_col )
 		row->field_value.append ( m_table->sheetItem ( 0, i_col )->text () );
-}
-
-void spreadSheetEditor::setCompleterManager ( vmCompleters* const completer )
-{
-	heap_del ( mCompleterManager );
-	mCompleterManager = completer;
 }
 
 void spreadSheetEditor::closeClicked ()
