@@ -132,7 +132,7 @@ public:
 	bool deleteRecord ( const int pos );
 	void appendRecord ( const stringRecord& rec );
 	bool getRecord ( stringRecord& rec, const int pos ) const;
-	bool getRecord ( stringRecord& rec, const QString& value, const uint field ) const;
+	int getRecord ( const QString& value, const uint field ) const; //returns the first record index whose row contains "value" in any column
 
 	inline uint recCount () const { return recData.countRecords (); }
 

@@ -26,6 +26,7 @@ SOURCES += \
     configops.cpp \
     fast_library_functions.cpp \
     fileops.cpp \
+    imageviewer.cpp \
     tristatetype.cpp \
     vmcompress.cpp \
     crashrestore.cpp \
@@ -33,6 +34,7 @@ SOURCES += \
     vmtextfile.cpp
 
 HEADERS += \
+        imageviewer.h \
         vmutils_global.h \ 
     configops.h \
     fast_library_functions.h \
@@ -65,3 +67,6 @@ DEPENDPATH += $$PWD/../vmNumbers
 
 unix:!macx: LIBS += -L$$PWD/../build-vmNotify-Desktop-Debug/ -lvmNotify
 DEPENDPATH += $$PWD/../vmNotify
+
+RESOURCES += \
+    resources.qrc

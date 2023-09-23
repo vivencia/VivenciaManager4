@@ -32,7 +32,7 @@ public:
 	bool doExport ( const QString& prefix, const QString& path, const bool bUserInteraction = false );
 	bool doRestore ( const QString& files );
 
-	static void addToRestoreList ( const QString& filepath, BackupDialog* bDlg );
+	static void addToBackupList ( const QString& filepath, BackupDialog* bDlg );
 	void readFromBackupList ();
 
 	int showNoDatabaseOptionsWindow ();
@@ -61,9 +61,10 @@ private:
 	AFTER_CLOSE_ACTION m_after_close_action;
 	int mErrorCode;
 
-	void fillTable ();
 	bool canDoBackup () const;
 	bool canDoRestore () const;
+	void scanBackupFiles ();
+	void removeSelectedBackupFiles ( const bool b_delete_file = false );
 	bool getSelectedItems ( QString& selected );
 
 	void initProgressBar ( const uint max );
@@ -86,7 +87,5 @@ private:
 	void grpExportToText_clicked ( const bool checked );
 
 	void btnChooseImportFile_clicked ();
-	void btnRemoveFromList_clicked ();
-	void btnRemoveAndDelete_clicked ();
 };
 #endif // BACKUPDIALOG_H

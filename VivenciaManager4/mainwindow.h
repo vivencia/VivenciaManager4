@@ -28,6 +28,7 @@ class dbListItem;
 class dbTableView;
 class dbStatistics;
 class calendarViewUI;
+class imageViewer;
 
 class QEvent;
 class QKeyEvent;
@@ -336,6 +337,7 @@ private:
 	
 	std::function<void ( const uint )> selJob_callback;
 	bool mb_jobPosActions;
+	imageViewer* jobImageViewer;
 
 	pointersList<vmWidget*> clientWidgetList;
 	pointersList<vmWidget*> jobWidgetList;

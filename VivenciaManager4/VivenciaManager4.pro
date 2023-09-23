@@ -29,7 +29,6 @@ SOURCES += \
 	companypurchases.cpp \
 	configdialog.cpp \
         contactsmanagerwidget.cpp \
-        db_image.cpp \
         dbstatistics.cpp \
         dbtableview.cpp \
         estimates.cpp \
@@ -48,7 +47,6 @@ HEADERS += \
 	companypurchases.h \
 	configdialog.h \
 	contactsmanagerwidget.h \
-	db_image.h \
 	dbstatistics.h \
 	dbtableview.h \
 	estimates.h \

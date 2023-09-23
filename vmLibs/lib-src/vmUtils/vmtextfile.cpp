@@ -601,9 +601,9 @@ bool dataFile::getRecord ( stringRecord& rec, const int pos ) const
 	return false;
 }
 
-bool dataFile::getRecord ( stringRecord& rec, const QString& value, const uint field ) const
+int dataFile::getRecord ( const QString& value, const uint field ) const
 {
-	return getRecord ( rec, recData.findRecordRowByFieldValue ( value, field ) );
+	return recData.findRecordRowByFieldValue ( value, field );
 }
 
 void dataFile::clearData ()

@@ -5,9 +5,7 @@
 
 #include <vmlist.h>
 #include <heapmanager.h>
-
 #include <dbRecords/vivenciadb.h>
-
 #include <vmNotify/vmnotify.h>
 #include <vmWidgets/vmwidgets.h>
 
@@ -40,8 +38,7 @@ BackupDialog::BackupDialog ()
 	setWindowIcon ( ICON ( APP_ICON ) );
 
 	setupConnections ();
-	fillTable ();
-	readFromBackupList ();
+	scanBackupFiles ();
 }
 
 BackupDialog::~BackupDialog ()
@@ -79,57 +76,123 @@ void BackupDialog::setupConnections ()
 	connect ( ui->btnChooseImportFile, &QToolButton::clicked, this, [&] () {
 		return btnChooseImportFile_clicked (); } );
 	connect ( ui->btnRemoveFromList, &QToolButton::clicked, this, [&] () {
-		return btnRemoveFromList_clicked (); } );
+		return removeSelectedBackupFiles (); } );
 	connect ( ui->btnRemoveAndDelete, &QToolButton::clicked, this, [&] () {
-		return btnRemoveAndDelete_clicked (); } );
+		return removeSelectedBackupFiles ( true ); } );
 
 	connect ( ui->grpBackup, &QGroupBox::clicked, this, [&] ( const bool checked ) {
 		return grpBackup_clicked ( checked ); } );
 	connect ( ui->grpExportToText, &QGroupBox::clicked, this, [&] ( const bool checked ) {
 		return grpExportToText_clicked ( checked ); } );
 
-	connect ( ui->restoreList, &QListWidget::currentRowChanged, this, [&] ( const int row ) {
-		return ui->btnApply->setEnabled ( row != -1 ); } );
-	connect ( ui->restoreList, &QListWidget::itemActivated, this, [&] ( QListWidgetItem* item ) {
-		return ui->btnApply->setEnabled ( item != nullptr ); } );
+	ui->restoreList->setCallbackForCurrentItemChanged ( [&] (vmListItem* current_item ) { ui->btnApply->setEnabled ( current_item->row () != -1 ); } );
 
 	ui->chkTables->setCallbackForContentsAltered ( [&] ( const vmWidget* ) {
 		return ui->tablesList->setEnabled ( ui->chkTables->isChecked () ); } );
+
+	auto widgetitem ( new QListWidgetItem ( ui->tablesList ) );
+	widgetitem->setText ( TR_FUNC ( "Select all " ) );
+	widgetitem->setFlags ( Qt::ItemIsEnabled|Qt::ItemIsAutoTristate|Qt::ItemIsSelectable|Qt::ItemIsUserCheckable );
+	widgetitem->setCheckState ( Qt::Checked );
+
+	for ( uint i ( 0 ); i < TABLES_IN_DB; ++i )
+	{
+		widgetitem = new QListWidgetItem ( ui->tablesList );
+		widgetitem->setText ( VivenciaDB::tableInfo ( i )->table_name );
+		widgetitem->setFlags ( Qt::ItemIsEnabled|Qt::ItemIsSelectable|Qt::ItemIsUserCheckable );
+		widgetitem->setCheckState ( Qt::Checked );
+	}
+	connect ( ui->tablesList, &QListWidget::itemChanged, this,
+			  [&] ( QListWidgetItem* item ) { return selectAll ( item ); } );
 }
 
 bool BackupDialog::canDoBackup () const
 {
-	bool ret ( ui->tablesList->count () > 0 );
-	if ( ret )
+	if ( VDB () != nullptr )
 	{
-		ret = !( fileOps::appPath ( VivenciaDB::backupApp () ).isEmpty () );
-		NOTIFY ()->notifyMessage ( TR_FUNC ( "Backup" ), ret
+		if ( !VDB ()->databaseIsEmpty () )
+		{
+			const bool ret ( !fileOps::appPath ( VivenciaDB::backupApp () ).isEmpty () );
+			NOTIFY ()->notifyMessage ( TR_FUNC ( "Backup" ), ret
 				? TR_FUNC ( "Choose backup method" ) : VivenciaDB::backupApp () + TR_FUNC ( " must be installed to do backups" ) );
+			return ret;
+		}
+		else
+			NOTIFY ()->notifyMessage ( TR_FUNC ( "Backup - Error" ), TR_FUNC ( "Database is empty. Nothing to backup" ) );
 	}
 	else
-		NOTIFY ()->notifyMessage ( TR_FUNC ( "Backup - Error" ), TR_FUNC ( "Database has no tables to backup" ) );
-	return ret;
+		NOTIFY ()->notifyMessage ( TR_FUNC ( "Backup - Error" ), TR_FUNC ( "Database does not exist" ) );
+
+	return false;
 }
 
 bool BackupDialog::canDoRestore () const
 {
-	if ( fileOps::appPath ( VivenciaDB::restoreApp () ).isEmpty () )
+	if ( VDB () != nullptr )
 	{
-		NOTIFY ()->notifyMessage ( TR_FUNC ( "Restore - Error" ),
-				VivenciaDB::restoreApp () + TR_FUNC ( " must be installed to restore a database" ) );
-		return false;
+		if ( fileOps::appPath ( VivenciaDB::restoreApp () ).isEmpty () )
+		{
+			NOTIFY ()->notifyMessage ( TR_FUNC ( "Restore - Error" ),
+					VivenciaDB::restoreApp () + TR_FUNC ( " must be installed to restore a database" ) );
+			return false;
+		}
+		else
+			return true;
 	}
-
+	// New database
 	NOTIFY ()->notifyMessage ( TR_FUNC ( "Restore - Next step" ), ( ui->restoreList->count () > 0 )
 		? TR_FUNC ( "Choose restore method" ) : TR_FUNC ( "Choose a file containing a saved database to be restored" ) );
 	return true;
 }
 
+void BackupDialog::scanBackupFiles ()
+{
+	const QString strBackupdir ( CONFIG ()->backupDir () );
+	if ( fileOps::isDir ( strBackupdir ).isTrue () )
+	{
+		const QStringList nameFilters ( QStringList () << QStringLiteral ( ".bz2" ) << QStringLiteral ( ".sql" ) );
+		pointersList<fileOps::st_fileInfo*> filesfound;
+		filesfound.reserve ( 300 ); // FIX: pointerList has a bug reallocating more items on the fly
+		filesfound.setAutoDeleteItem ( true );
+		fileOps::lsDir ( filesfound, strBackupdir, nameFilters );
+		uint n ( 0 );
+		vmListItem* item ( nullptr );
+
+		while ( n < filesfound.count () )
+		{
+			item = new vmListItem ( filesfound.at ( n )->filename );
+			item->setData ( Qt::ToolTipRole, filesfound.at ( n )->fullpath );
+			item->addToList ( ui->restoreList, false );
+			++n;
+		}
+	}
+	//Now add backup sources outside the default dir
+	readFromBackupList ();
+}
+
+void BackupDialog::removeSelectedBackupFiles( const bool b_delete_file )
+{
+	if ( !ui->restoreList->selectedItems ().isEmpty () )
+	{
+		vmListItem* item ( nullptr );
+		const QList<QTableWidgetItem*> sel_items ( ui->restoreList->selectedItems () );
+		QList<QTableWidgetItem*>::const_iterator itr ( sel_items.constBegin () );
+		const QList<QTableWidgetItem*>::const_iterator itr_end ( sel_items.constEnd () );
+		for ( ; itr != itr_end; ++itr )
+		{
+			item = static_cast<vmListItem*> ( *itr );
+			const int pos ( tdb->getRecord ( item->data ( Qt::ToolTipRole ).toString (), 0 ) );
+			if ( pos >= 0 ) //If item is found in the backup files list, remove it from there
+				tdb->deleteRecord ( pos );
+			if ( b_delete_file )
+				fileOps::removeFile ( item->data ( Qt::ToolTipRole ).toString () );
+			ui->restoreList->removeItem ( item, true );
+		}
+	}
+}
+
 void BackupDialog::showWindow ()
 {
-	if ( ui->tablesList->count () == 0 )
-		fillTable ();
-
 	const bool b_backupEnabled ( canDoBackup () );
 	const bool b_restoreEnabled ( canDoRestore () );
 
@@ -149,34 +212,6 @@ void BackupDialog::showWindow ()
 
 	m_after_close_action = ACA_RETURN_TO_PREV_WINDOW;
 	this->exec ();
-}
-
-void BackupDialog::fillTable ()
-{
-	if ( VDB () != nullptr )
-	{
-		// this function will be called by Data after a restore. Because the tables might be different, we must clear the last used list
-		if ( ui->tablesList->count () != 0 )
-		{
-			ui->tablesList->clear ();
-			disconnect ( ui->tablesList, nullptr, nullptr, nullptr );
-		}
-
-		auto widgetitem ( new QListWidgetItem ( ui->tablesList ) );
-		widgetitem->setText ( TR_FUNC ( "Select all " ) );
-		widgetitem->setFlags ( Qt::ItemIsEnabled|Qt::ItemIsAutoTristate|Qt::ItemIsSelectable|Qt::ItemIsUserCheckable );
-		widgetitem->setCheckState ( Qt::Checked );
-
-		for ( uint i ( 0 ); i < TABLES_IN_DB; ++i )
-		{
-			widgetitem = new QListWidgetItem ( ui->tablesList );
-			widgetitem->setText ( VivenciaDB::tableInfo ( i )->table_name );
-			widgetitem->setFlags ( Qt::ItemIsEnabled|Qt::ItemIsSelectable|Qt::ItemIsUserCheckable );
-			widgetitem->setCheckState ( Qt::Checked );
-		}
-		connect ( ui->tablesList, &QListWidget::itemChanged, this,
-				  [&] ( QListWidgetItem* item ) { return selectAll ( item ); } );
-	}
 }
 
 bool BackupDialog::doBackup ( const QString& filename, const QString& path, const bool bUserInteraction )
@@ -252,7 +287,7 @@ bool BackupDialog::doBackup ( const QString& filename, const QString& path, cons
 							filename, ( ok ? QStringLiteral ( " successfull" ) : QStringLiteral ( " unsuccessfull" ) ) ) );
 		}
 		if ( ok )
-			BackupDialog::addToRestoreList ( backupFile, bUserInteraction ? BACKUP () : nullptr );
+			BackupDialog::addToBackupList ( backupFile, bUserInteraction ? BACKUP () : nullptr );
 	}
 	return ok;
 }
@@ -304,7 +339,7 @@ bool BackupDialog::doExport ( const QString& prefix, const QString& path, const 
 				{
 					ok = VDB ()->exportToCSV ( static_cast<uint>(2<<(i-1)), filepath );
 					if ( ok )
-						BackupDialog::addToRestoreList ( filepath, bDlg );
+						BackupDialog::addToBackupList ( filepath, bDlg );
 				}
 			}
 		}
@@ -321,7 +356,7 @@ bool BackupDialog::doExport ( const QString& prefix, const QString& path, const 
 			{
 				ok = VDB ()->exportToCSV ( static_cast<uint>(2)<<i, filepath );
 				if ( ok )
-					BackupDialog::addToRestoreList ( filepath, bDlg );
+					BackupDialog::addToBackupList ( filepath, bDlg );
 			}
 		}	
 	}
@@ -359,7 +394,7 @@ bool BackupDialog::doRestore ( const QString& files )
 			ok = VDB ()->doRestore ( filepath );
 		}
 		if ( ok )
-			addToRestoreList ( filepath, this );
+			addToBackupList ( filepath, this );
 		success |= ok;
 	}
 	if ( success )
@@ -381,13 +416,19 @@ bool BackupDialog::doRestore ( const QString& files )
 	return ok;
 }
 
-void BackupDialog::addToRestoreList ( const QString& filepath, BackupDialog* bDlg )
+//Only save the files that are not in the default backup dir
+void BackupDialog::addToBackupList ( const QString& filepath, BackupDialog* bDlg )
 {
+	if ( fileOps::dirFromPath ( filepath ) == CONFIG ()->backupDir () )
+		return;
+
 	if ( bDlg )
 	{
 		for ( int i ( 0 ); i < bDlg->ui->restoreList->count (); ++i )
-			if ( bDlg->ui->restoreList->item ( i )->text () == filepath ) return;
-		bDlg->ui->restoreList->addItem ( filepath );
+			if ( bDlg->ui->restoreList->item ( i )->data ( Qt::ToolTipRole ) == filepath ) return;
+		auto item ( new vmListItem ( fileOps::fileNameWithoutPath ( filepath ) ) );
+		item->setData ( Qt::ToolTipRole, filepath );
+		item->addToList ( bDlg->ui->restoreList, false );
 		bDlg->tdb->appendRecord ( filepath );
 	}
 	else
@@ -406,21 +447,24 @@ void BackupDialog::readFromBackupList ()
 	if ( tdb->load ().isOn () )
 	{
 		stringRecord files;
-		if ( tdb->getRecord ( files, 0 ) )
+		uint i ( 0 );
+		while ( tdb->getRecord ( files, i ) )
 		{
 			if ( files.first () )
 			{
-				do
+				if ( checkFile ( files.curValue () ) )
 				{
-					if ( checkFile ( files.curValue () ) )
-						ui->restoreList->addItem ( files.curValue () );
-					else // file does not exist; do not add to the list and remove it from database
-					{
-						files.removeFieldByValue ( files.curValue (), true );
-						tdb->changeRecord ( 0, files );
-					}
-				} while ( files.next () );
+					auto item ( new vmListItem ( fileOps::fileNameWithoutPath ( files.curValue () ) ) );
+					item->setData ( Qt::ToolTipRole, files.curValue () );
+					item->addToList ( ui->restoreList, false );
+				}
+				else // file does not exist; do not add to the list and remove it from database
+				{
+					files.removeFieldByValue ( files.curValue (), true );
+					tdb->changeRecord ( 0, files );
+				}
 			}
+			++i;
 		}
 	}
 }
@@ -566,7 +610,7 @@ void BackupDialog::btnApply_clicked ()
 		if ( ui->rdChooseKnownFile->isChecked () )
 		{
 			if ( ui->restoreList->currentRow () <= 0 )
-				ui->restoreList->setCurrentRow ( ui->restoreList->count () - 1 );
+				ui->restoreList->setCurrentRow ( ui->restoreList->count () - 1, false, true );
 			selected = ui->restoreList->currentItem ()->text ();
 		}
 		else
@@ -613,14 +657,14 @@ bool BackupDialog::getSelectedItems ( QString& selected )
 	if ( !ui->restoreList->selectedItems ().isEmpty () )
 	{
 		selected.clear ();
-		const QList<QListWidgetItem*> sel_items ( ui->restoreList->selectedItems () );
-		QList<QListWidgetItem*>::const_iterator itr ( sel_items.constBegin () );
-		const QList<QListWidgetItem*>::const_iterator itr_end ( sel_items.constEnd () );
+		const QList<QTableWidgetItem*> sel_items ( ui->restoreList->selectedItems () );
+		QList<QTableWidgetItem*>::const_iterator itr ( sel_items.constBegin () );
+		const QList<QTableWidgetItem*>::const_iterator itr_end ( sel_items.constEnd () );
 		for ( ; itr != itr_end; ++itr )
 		{
 			if ( !selected.isEmpty () )
 				selected += CHR_SPACE;
-			selected += static_cast<QListWidgetItem*> ( *itr )->text ();
+			selected += static_cast<vmListItem*> ( *itr )->text ();
 		}
 		return true;
 	}
@@ -720,29 +764,4 @@ void BackupDialog::btnChooseImportFile_clicked ()
 	if ( !selectedFile.isEmpty () )
 		ui->txtRestoreFileName->setText ( selectedFile );
 	ui->btnApply->setEnabled ( !selectedFile.isEmpty () );
-}
-
-void BackupDialog::btnRemoveFromList_clicked ()
-{
-	if ( ui->restoreList->currentItem () != nullptr )
-	{
-		QListWidgetItem* item ( ui->restoreList->currentItem () );
-		stringRecord files;
-		if ( tdb->getRecord ( files, 0 ) )
-		{
-			files.removeField ( static_cast<uint>(ui->restoreList->currentRow ()) );
-			tdb->changeRecord ( 0, files );
-		}
-		ui->restoreList->removeItemWidget ( item );
-		delete item;
-	}
-}
-
-void BackupDialog::btnRemoveAndDelete_clicked ()
-{
-	if ( ui->restoreList->currentItem () != nullptr )
-	{
-		fileOps::removeFile( ui->restoreList->currentItem ()->text () );
-		btnRemoveFromList_clicked ();
-	}
 }

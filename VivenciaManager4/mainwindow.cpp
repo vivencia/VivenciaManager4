@@ -5,7 +5,6 @@
 #include "backupdialog.h"
 #include "suppliersdlg.h"
 #include "separatewindow.h"
-#include "db_image.h"
 #include "searchui.h"
 #include "machinesdlg.h"
 #include "configdialog.h"
@@ -24,6 +23,7 @@
 #include <vmUtils/fileops.h>
 #include <vmUtils/configops.h>
 #include <vmUtils/crashrestore.h>
+#include <vmUtils/imageviewer.h>
 #include <vmNotify/vmnotify.h>
 #include <vmDocumentEditor/spreadsheet.h>
 #include <vmDocumentEditor/reportgenerator.h>
@@ -134,11 +134,10 @@ MainWindow::~MainWindow ()
 void MainWindow::continueStartUp ()
 {
 	setStatusBar ( nullptr ); // we do not want a statusbar
-	setupCustomControls ();
-	restoreLastSession ();
-
 	CONFIG ()->getWindowGeometry ( this, Ui::mw_configSectionName, Ui::mw_configCategoryWindowGeometry );
 	show ();
+	setupCustomControls ();
+	restoreLastSession ();
 	
 	// connect for last to avoid unnecessary signal emission when we are removing tabs
 	static_cast<void>( connect ( ui->tabMain, &QTabWidget::currentChanged, this, &MainWindow::tabMain_currentTabChanged ) );
@@ -992,7 +991,7 @@ void MainWindow::setUpJobButtons ( const QString& path )
 	if ( fileOps::exists ( path ).isOn () )
 	{
 		ui->btnJobOpenFileFolder->setEnabled ( true );
-		QStringList nameFilters ( QStringList () << QStringLiteral ( ".doc" ) << QStringLiteral ( ".docx" )
+		const QStringList nameFilters ( QStringList () << QStringLiteral ( ".doc" ) << QStringLiteral ( ".docx" )
 											<< QStringLiteral ( ".pdf" ) << QStringLiteral ( ".xls" )
 											<< QStringLiteral ( ".xlsx" ) );
 
@@ -1076,6 +1075,7 @@ void MainWindow::setupJobPictureControl ()
 	action->setChecked ( true );
 	menuJobClientsYearPictures->addAction ( action );
 	jobsPicturesMenuAction = action;
+	jobImageViewer = new imageViewer ( ui->frmJobPictureViewer, ui->layoutFrmJobImageViewer );
 
 	connect ( menuJobClientsYearPictures, &QMenu::triggered, this, [&] ( QAction* act )
 		{
@@ -1095,12 +1095,12 @@ void MainWindow::setupJobPictureControl ()
 
 	connect ( ui->btnJobPrevPicture, &QToolButton::clicked, this, [&] ()
 		{
-			return showJobImageRequested ( ui->jobImageViewer->showPrevImage () );
+			return showJobImageRequested ( jobImageViewer->showPrevImage () );
 		} );
 
 	connect ( ui->btnJobNextPicture, &QToolButton::clicked, this, [&] ()
 		{
-			return showJobImageRequested ( ui->jobImageViewer->showNextImage () );
+			return showJobImageRequested ( jobImageViewer->showNextImage () );
 		} );
 
 	connect ( ui->btnJobOpenPictureFolder, &QToolButton::clicked, this, [&] ()
@@ -1111,13 +1111,13 @@ void MainWindow::setupJobPictureControl ()
 
 	connect ( ui->btnJobOpenPictureViewer, &QToolButton::clicked, this, [&] ()
 		{
-			QStringList args ( QStringList () << ui->jobImageViewer->imageCompletePath () );
+			QStringList args ( QStringList () << jobImageViewer->imageCompletePath () );
 			return fileOps::executeFork ( args, CONFIG ()->pictureViewer () );
 		} );
 
 	connect ( ui->btnJobOpenPictureEditor, &QToolButton::clicked, this, [&] ()
 		{
-			QStringList args ( QStringList () << ui->jobImageViewer->imageCompletePath () );
+			QStringList args ( QStringList () << jobImageViewer->imageCompletePath () );
 			return fileOps::executeFork ( args, CONFIG ()->pictureEditor () );
 		} );
 
@@ -1142,7 +1142,11 @@ void MainWindow::setupJobPictureControl ()
 
 	connect ( ui->btnJobSeparatePicture, static_cast<void (QToolButton::*)(bool)>( &QToolButton::clicked ), this, [&] ( bool checked )
 		{
-			return checked ? showJobImageInWindow ( false ) : sepWin_JobPictures->returnToParent ();
+			if ( checked )
+				showJobImageInWindow ( false );
+			else
+				sepWin_JobPictures->returnToParent ();
+			//jobImageViewer->fitToWindow ();
 		} );
 
 	connect ( ui->btnJobSeparateReportWindow, static_cast<void (QToolButton::*)(bool)>( &QToolButton::clicked ), this, [&] ( bool checked )
@@ -1150,13 +1154,9 @@ void MainWindow::setupJobPictureControl ()
 			return btnJobSeparateReportWindow_clicked ( checked );
 		} );
 
-
 	ui->cboJobPictures->setCallbackForIndexChanged ( [&] ( const int idx ) { return showJobImage ( idx ); } );
-	ui->jobImageViewer->setCallbackForshowImageRequested ( [&] ( const int idx ) { return showJobImageRequested ( idx ); } );
-	ui->jobImageViewer->setCallbackForshowMaximized ( [&] ( const bool maximized ) { return showJobImageInWindow ( maximized ); } );
-
-	// Start off with an empty image. This will prevent the image viewer from crashing
-	ui->jobImageViewer->showImage ( -1, emptyString );
+	jobImageViewer->setCallbackForshowImageRequested ( [&] ( const int idx ) { return showJobImageRequested ( idx ); } );
+	jobImageViewer->setCallbackForshowMaximized ( [&] ( const bool maximized ) { return showJobImageInWindow ( maximized ); } );
 }
 
 void MainWindow::displayJobFromCalendar ( dbListItem* cal_item )
@@ -1325,7 +1325,7 @@ bool MainWindow::saveJob ( jobListItem* job_item, const bool b_dbsave )
 		{
 			if ( job_item->action () == ACTION_ADD )
 			{
-				ui->jobImageViewer->setID ( recIntValue ( job_item->jobRecord (), FLD_JOB_ID ) );
+				jobImageViewer->setID ( recIntValue ( job_item->jobRecord (), FLD_JOB_ID ) );
 				saveJobPayment ( job_item );
 			}
 			else
@@ -1494,7 +1494,7 @@ void MainWindow::loadJobInfo ( const Job* const job )
 		ui->txtJobTotalAllDaysTime->setText ( job->time ( FLD_JOB_TIME ).toTime ( vmNumber::VTF_FANCY ) );
 		ui->txtJobProjectPath->setText ( CONFIG ()->projectsBaseDir () + recStrValue ( job, FLD_JOB_PROJECT_PATH ) );
 		ui->txtJobPicturesPath->setText ( CONFIG ()->projectsBaseDir () + recStrValue ( job, FLD_JOB_PICTURE_PATH ) );
-		ui->jobImageViewer->showImage ( recIntValue ( job, FLD_JOB_ID ), ui->txtJobPicturesPath->text () );
+		jobImageViewer->prepareToShowImages ( recIntValue ( job, FLD_JOB_ID ), ui->txtJobPicturesPath->text () );
 	}
 	else
 	{
@@ -1505,7 +1505,7 @@ void MainWindow::loadJobInfo ( const Job* const job )
 		ui->txtJobProjectPath->lineControl ()->clear ();
 		ui->txtJobPicturesPath->clear ();
 		ui->txtJobProjectID->clear ();
-		ui->jobImageViewer->showImage ( -1, emptyString );
+		jobImageViewer->prepareToShowImages ( -1, emptyString );
 		ui->cboJobPictures->clearEditText ();
 		ui->cboJobPictures->clear ();
 		ui->dteJobStart->setDate ( vmNumber () );
@@ -1537,7 +1537,7 @@ void MainWindow::scanJobImages ()
 {
 	ui->cboJobPictures->setIgnoreChanges ( true );
 	ui->cboJobPictures->clear ();
-	ui->jobImageViewer->addImagesList ( ui->cboJobPictures );
+	jobImageViewer->addImagesList ( ui->cboJobPictures );
 	if ( ui->cboJobPictures->count () == 0 )
 	{
 		const auto year ( static_cast<uint>( vmNumber::currentDate ().year () ) );
@@ -1550,7 +1550,7 @@ void MainWindow::scanJobImages ()
 				fileOps::isDir ( picturePath + QString::number ( y ) ).isOn () );
 		}
 	}
-	ui->cboJobPictures->setEditText ( ui->jobImageViewer->imageFileName () );
+	ui->cboJobPictures->setEditText ( jobImageViewer->imageFileName () );
 	controlJobPictureControls ();
 	ui->cboJobPictures->setIgnoreChanges ( false );
 }
@@ -3920,7 +3920,7 @@ void MainWindow::reOrderTabSequence ()
 	setTabOrder ( ui->txtJobKeyWords, ui->lstJobKeyWords );
 	setTabOrder ( ui->btnJobNextDay, ui->dteJobAddDate );
 	setTabOrder ( ui->dteJobAddDate, ui->btnJobAddDay );
-	setTabOrder ( ui->btnJobSeparatePicture, ui->jobImageViewer );
+	setTabOrder ( ui->btnJobSeparatePicture, jobImageViewer );
 	
 	setTabOrder ( ui->buysJobList, ui->dteBuyDate );
 	setTabOrder ( ui->dteBuyDate, ui->dteBuyDeliveryDate );
@@ -4824,10 +4824,10 @@ void MainWindow::addJobPictures ()
 
 void MainWindow::btnJobReloadPictures_clicked ()
 {
-	ui->jobImageViewer->reload ( ui->txtJobPicturesPath->text () );
+	jobImageViewer->reload ( ui->txtJobPicturesPath->text () );
 	ui->cboJobPictures->setIgnoreChanges ( true );
 	ui->cboJobPictures->clear ();
-	ui->jobImageViewer->addImagesList ( ui->cboJobPictures );
+	jobImageViewer->addImagesList ( ui->cboJobPictures );
 	controlJobPictureControls ();
 	ui->cboJobPictures->setIgnoreChanges ( false );
 }
@@ -4853,12 +4853,12 @@ void MainWindow::showClientsYearPictures ( QAction* action )
 	}
 	ui->btnJobNextPicture->setEnabled ( true );
 	ui->btnJobPrevPicture->setEnabled ( true );
-	ui->jobImageViewer->showImage ( -1, picturePath );
+	jobImageViewer->prepareToShowImages ( -1, picturePath );
 	ui->cboJobPictures->setIgnoreChanges ( true );
 	ui->cboJobPictures->clear ();
 	ui->cboJobPictures->clearEditText ();
-	ui->cboJobPictures->setEditText ( ui->jobImageViewer->imageFileName () );
-	ui->jobImageViewer->addImagesList ( ui->cboJobPictures );
+	ui->cboJobPictures->setEditText ( jobImageViewer->imageFileName () );
+	jobImageViewer->addImagesList ( ui->cboJobPictures );
 	ui->cboJobPictures->setIgnoreChanges ( false );
 	ui->lblJobPictures->setText ( str_lbljobpicture );
 	ui->txtJobPicturesPath->setText ( picturePath );
@@ -4912,7 +4912,7 @@ void MainWindow::showDayPictures ( const vmNumber& date )
 
 void MainWindow::showJobImage ( const int index )
 {
-	ui->jobImageViewer->showSpecificImage ( index );
+	jobImageViewer->showSpecificImage ( index );
 	showJobImageRequested ( index );
 }
 
@@ -4925,7 +4925,7 @@ void MainWindow::showJobImageRequested ( const int index )
 	if ( sepWin_JobPictures && index != -1 )
 	{
 		if ( !sepWin_JobPictures->isHidden () )
-			sepWin_JobPictures->setWindowTitle ( ui->jobImageViewer->imageFileName () );
+			sepWin_JobPictures->setWindowTitle ( jobImageViewer->imageFileName () );
 	}
 }
 
@@ -4943,7 +4943,7 @@ void MainWindow::btnJobRenamePicture_clicked ( const bool checked )
 	}
 	else
 	{
-		const int new_index ( ui->jobImageViewer->rename ( ui->cboJobPictures->text () ) );
+		const int new_index ( jobImageViewer->rename ( ui->cboJobPictures->text () ) );
 		if ( new_index != -1 )
 		{
 			ui->cboJobPictures->removeItem ( ui->cboJobPictures->currentIndex () );
@@ -4962,7 +4962,7 @@ void MainWindow::showJobImageInWindow ( const bool maximized )
 		sepWin_JobPictures = new separateWindow ( ui->frmJobPicturesControls );
 		sepWin_JobPictures->setCallbackForReturningToParent ( [&] ( QWidget* widget ) { return receiveWidgetBack ( widget ); } );
 	}
-	sepWin_JobPictures->showSeparate ( ui->jobImageViewer->imageFileName (), false, maximized ? Qt::WindowMaximized : Qt::WindowNoState );
+	sepWin_JobPictures->showSeparate ( jobImageViewer->imageFileName (), false, maximized ? Qt::WindowMaximized : Qt::WindowNoState );
 	if ( !ui->btnJobSeparatePicture->isChecked () )
 		ui->btnJobSeparatePicture->setChecked ( true );
 }

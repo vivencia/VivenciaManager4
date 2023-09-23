@@ -1,26 +1,26 @@
-#ifndef DB_IMAGE_H
-#define DB_IMAGE_H
+#ifndef IMAGEVIEWER_H
+#define IMAGEVIEWER_H
 
 #include <vmlist.h>
-#include <vmUtils/fileops.h>
+#include "fileops.h"
 
-#include <QtWidgets/QFrame>
+#include <QtWidgets/QLabel>
+#include <QtGui/QPixmap>
 
 #include <functional>
 
 class vmComboBox;
-
-class QLabel;
 class QScrollArea;
+class QGridLayout;
 
-class DB_Image final : public QFrame
+class imageViewer final : public QLabel
 {
 
 public:
-	explicit DB_Image ( QWidget* parent = nullptr );
-	virtual ~DB_Image () final = default;
+	explicit imageViewer ( QWidget* parent, QGridLayout* parentLayout );
+	virtual ~imageViewer () final = default;
 
-	void showImage ( const int rec_id = -1, const QString& path = QString () );
+	void prepareToShowImages ( const int rec_id = -1, const QString& path = QString () );
 
 	const QString imageFileName () const;
 	const QString imageCompletePath () const;
@@ -42,6 +42,8 @@ public:
 
 	void addImagesList ( vmComboBox* combo ) const;
 
+	void loadImage ( const QString& picture_path );
+	void loadImage ( QPixmap& picture );
 	void showSpecificImage ( const int index );
 	int showPrevImage ();
 	int showNextImage ();
@@ -49,10 +51,6 @@ public:
 	int showLastImage ();
 	int rename ( const QString& newName );
 
-	void zoomIn ();
-	void zoomOut ();
-	void normalSize ();
-	void fitToWindow ();
 	inline void setMaximized ( const bool maximized ) {
 		mb_maximized = maximized;
 	}
@@ -64,11 +62,8 @@ protected:
 	bool eventFilter ( QObject* o, QEvent* e ) override;
 
 private:
-	QLabel* imageViewer;
-	QScrollArea* scrollArea;
-
 	struct RECORD_IMAGES
-	{ 
+	{
 		pointersList<fileOps::st_fileInfo*> files;
 		QString path;
 		int rec_id;
@@ -81,20 +76,13 @@ private:
 	void reloadInternal ( RECORD_IMAGES* ri, const QString& path );
 	bool hookUpDir ( const int rec_id, const QString& path );
 
-	void loadImage ( const QPixmap& );
-	void loadImage ( const QString& );
-	void scrollBy ( const int x, const int y );
-	void adjustScrollBar ( const double factor );
-	void scaleImage ( const double factor );
-
+	QScrollArea* mScrollArea;
 	QStringList name_filters;
-	int mouse_ex, mouse_ey;
-	bool mb_fitToWindow, mb_maximized;
-	double scaleFactor;
+	bool mb_maximized;
 	pointersList <RECORD_IMAGES*> images_array;
 
 	std::function<void ( const int )> funcImageRequested;
 	std::function<void ( const bool )> funcShowMaximized;
 };
 
-#endif // DB_IMAGE_H
+#endif // IMAGEVIEWER_H
