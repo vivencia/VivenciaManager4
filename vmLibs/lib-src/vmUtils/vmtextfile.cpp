@@ -2,7 +2,6 @@
 #include "vmlibs.h"
 #include "heapmanager.h"
 #include "fileops.h"
-#include "vmfilemonitor.h"
 
 #include <vmNotify/vmnotify.h>
 
@@ -30,7 +29,7 @@ static const QString DATA_TYPE_LINE ( QStringLiteral ( "@CSV\n" ) );
 //--------------------------------------------TEXT-FILE--------------------------------
 textFile::textFile ()
 	: m_open ( false ), m_needsaving ( false ), mb_needRechecking ( false ), m_headerSize ( 0 ),
-	  m_type ( TF_UNKNOWN ), m_filemonitor ( nullptr ), mb_IgnoreEvents ( false ), m_readTime ( VMNT_TIME ), m_readDate ( VMNT_DATE )
+	  m_type ( TF_UNKNOWN ), m_readTime ( VMNT_TIME ), m_readDate ( VMNT_DATE )
 {}
 
 textFile::textFile ( const QString& filename )
@@ -41,8 +40,6 @@ textFile::textFile ( const QString& filename )
 
 textFile::~textFile ()
 {
-	setIgnoreEvents ( true );
-	heap_del ( m_filemonitor );
 	close ();
 	clearData ();
 }
@@ -57,11 +54,8 @@ bool textFile::isTextFile ( const QString& filename, const TF_TYPE type )
 
 void textFile::remove ()
 {
-	const bool b_ignore ( mb_IgnoreEvents );
-	setIgnoreEvents ( true );
 	close ();
 	fileOps::removeFile ( m_filename );
-	setIgnoreEvents ( b_ignore );
 }
 
 void textFile::close ()
@@ -98,8 +92,6 @@ bool textFile::open ()
 
 bool textFile::open2 ()
 {
-	const bool b_ignore ( mb_IgnoreEvents );
-	setIgnoreEvents ( true );
 	const bool b_exists ( fileOps::exists ( m_filename ).isOn () );
 	QIODevice::OpenModeFlag openflag ( QIODevice::ReadWrite );
 
@@ -108,7 +100,6 @@ bool textFile::open2 ()
 
 	m_open = m_file.open ( openflag|QIODevice::Text );
 	readType ();
-	setIgnoreEvents ( b_ignore );
 	return m_open;
 }
 
@@ -143,33 +134,13 @@ triStateType textFile::load ()
 	if ( m_open && !mb_needRechecking )
 		return TRI_ON;
 
-	const bool b_ignore ( mb_IgnoreEvents );
-	setIgnoreEvents ( true );
-
-	if ( !m_filemonitor )
-	{
-		m_filemonitor = new vmFileMonitor;
-		m_filemonitor->setCallbackForEvent ( [&] ( const QString& filename, const uint event ) {
-							return fileExternallyAltered ( filename, event ); } );
-	}
-	else
-	{
-		if ( m_filename != m_file.fileName () )
-			m_filemonitor->stopMonitoring ( fileOps::fileNameWithoutPath ( m_file.fileName () ) );
-	}
-	m_filemonitor->startMonitoring ( m_filename, VM_IN_MODIFY | VM_IN_DELETE_SELF | VM_IN_DELETE | VM_IN_CREATE );
-
 	if ( open () )
 	{
 		if ( type () == TF_UNKNOWN || isEmpty () )
-		{
-			setIgnoreEvents ( b_ignore );
 			return TRI_OFF;
-		}
 
 		const triStateType ret ( loadData ( true ) );
 		mb_needRechecking = ( ret != TRI_ON );
-		setIgnoreEvents ( b_ignore );
 		if ( ret == TRI_ON )
 		{
 			fileOps::modifiedDateTime ( m_filename, m_readDate, m_readTime );
@@ -191,30 +162,6 @@ void textFile::writeHeader ()
 	}
 }
 
-void textFile::fileExternallyAltered ( const QString&, const uint event )
-{
-	if ( !mb_IgnoreEvents )
-	{
-		if ( event & VM_IN_DELETE )
-		{
-			mb_needRechecking = true;
-			//const bool b_ignore ( mb_IgnoreEvents );
-			//setIgnoreEvents ( true );
-			//m_needsaving = true;
-			//commit ();
-			//setIgnoreEvents ( b_ignore );
-		}
-		if ( event & VM_IN_MODIFY )
-		{
-			mb_needRechecking = true;
-			//const bool b_ignore ( mb_IgnoreEvents );
-			//setIgnoreEvents ( true );
-			//recheckData ();
-			//setIgnoreEvents ( b_ignore );
-		}
-	}
-}
-
 void textFile::commit ()
 {
 	if ( !m_needsaving ) return;
@@ -224,9 +171,6 @@ void textFile::commit ()
 
 	if ( m_readDate != modDate || m_readTime != modTime )
 		loadData ( false );
-
-	const bool b_ignore ( mb_IgnoreEvents );
-	setIgnoreEvents ( true );
 
 	remove ();
 	if ( open () )
@@ -239,25 +183,12 @@ void textFile::commit ()
 			fileOps::modifiedDateTime ( m_filename, m_readDate, m_readTime );
 		}
 	}
-	setIgnoreEvents ( b_ignore );
 }
 
 void textFile::setText ( const QString& new_file_text )
 {
 	m_data = new_file_text;
 	m_needsaving = true;
-}
-
-void textFile::setIgnoreEvents ( const bool b_ignore )
-{
-	mb_IgnoreEvents = b_ignore;
-	if ( m_filemonitor )
-	{
-		if ( b_ignore )
-			m_filemonitor->pauseMonitoring ();
-		else
-			m_filemonitor->resumeMonitoring ();
-	}
 }
 
 bool textFile::loadData ( const bool )

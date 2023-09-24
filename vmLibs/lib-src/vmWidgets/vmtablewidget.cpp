@@ -1262,6 +1262,9 @@ void vmTableWidget::keyPressEvent ( QKeyEvent* k )
 					if ( keypressed_func )
 						keypressed_func ( k, this );
 				break;
+				case Qt::Key_Delete:
+					removeRow_slot ();
+				break;
 				case Qt::Key_F2:
 				case Qt::Key_F3:
 				case Qt::Key_F4:

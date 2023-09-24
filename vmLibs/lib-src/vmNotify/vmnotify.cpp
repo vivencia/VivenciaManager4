@@ -114,9 +114,6 @@ void vmNotify::enterEventLoop ()
 
 void vmNotify::addMessage ( Message* message )
 {
-	// if a message was issued as modal or with an undefined timeout
-	// we will probably need to probe the results (which button was clicked, or some other parameter)
-	message->mbAutoRemove = ( message->timeout != -1 || !message->isModal );
 	setupWidgets ( message );
 	messageStack.append ( message );
 	if ( MAINWINDOW () != nullptr )
@@ -149,7 +146,7 @@ void vmNotify::removeMessage ( Message* message )
 		if ( message->buttonClickedfunc )
 			message->buttonClickedfunc ( message->mBtnID );
 
-		messageStack.removeOne ( message );
+		messageStack.removeOne ( message, 0, message->mbAutoRemove );
 		if ( messageStack.isEmpty () )
 		{
 			fadeTimer->start ( FADE_TIMER_TIMEOUT );
@@ -382,6 +379,7 @@ void vmNotify::notifyMessage ( const QString& title, const QString& msg, const i
 	message->title = title;
 	message->bodyText = msg;
 	message->timeout = msecs;
+	message->mbAutoRemove = true;
 	message->iconName = QStringLiteral ( ":/resources/notify-" ) + (b_critical ? QStringLiteral( "3" ) : CHR_TWO);
 	addMessage ( message );
 }

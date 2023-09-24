@@ -77,7 +77,7 @@ private:
 	bool hookUpDir ( const int rec_id, const QString& path );
 
 	QScrollArea* mScrollArea;
-	QStringList name_filters;
+	QWidget* m_parent;
 	bool mb_maximized;
 	pointersList <RECORD_IMAGES*> images_array;
 

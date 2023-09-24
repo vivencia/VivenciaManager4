@@ -374,7 +374,6 @@ private:
 	void btnJobReloadPictures_clicked ();
 	void showClientsYearPictures ( QAction* action );
 	void showDayPictures ( const vmNumber& date );
-	void showJobImage ( const int index );
 	void showJobImageRequested ( const int index );
 	void btnJobRenamePicture_clicked ( const bool checked );
 	void showJobImageInWindow ( const bool maximized );

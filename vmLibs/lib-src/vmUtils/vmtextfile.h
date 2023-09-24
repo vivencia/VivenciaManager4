@@ -9,8 +9,6 @@
 
 #include <QtCore/QFile>
 
-class vmFileMonitor;
-
 //--------------------------------------------TEXT-FILE--------------------------------
 class textFile
 {
@@ -40,15 +38,12 @@ public:
 	void setText ( const QString& new_file_text );
 	inline QString text () const { return m_data; }
 
-	void setIgnoreEvents ( const bool b_ignore );
-
 protected:
 	bool open ();
 	bool open2 ();
 	void readType ();
 	bool write ();
 	void writeHeader ();
-	void fileExternallyAltered ( const QString&, const uint event );
 
 	virtual bool loadData ( const bool b_replaceBuffers = true );
 	virtual bool writeData();
@@ -62,8 +57,6 @@ protected:
 	QString m_filename;
 	QString m_data;
 	QFile m_file;
-	vmFileMonitor* m_filemonitor;
-	bool mb_IgnoreEvents;
 	vmNumber m_readTime;
 	vmNumber m_readDate;
 };

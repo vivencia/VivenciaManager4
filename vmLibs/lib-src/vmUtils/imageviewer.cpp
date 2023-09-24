@@ -1,5 +1,4 @@
 #include "imageviewer.h"
-#include "fast_library_functions.h"
 
 #include <vmWidgets/vmwidgets.h>
 
@@ -14,16 +13,11 @@
 	return ( size1.width () > size2.width () ) | ( size2.height () > size1.height () );
 }*/
 
-imageViewer::imageViewer ( QWidget* parent, QGridLayout* parentLayout )
-	: QLabel (), mb_maximized ( false ), images_array ( 10 ), funcImageRequested ( nullptr ), funcShowMaximized ( nullptr )
-{
-	setObjectName ( "imageViewer_displayCanvas" );
-	setFocusPolicy ( Qt::WheelFocus );
-	setToolTip ( TR_FUNC ( "Zoom in (+)\nZoom out (-)\nToggle on/off Fit to Window (F)" ) );
-	installEventFilter ( this );
+static const QStringList name_filters ( QStringList () << QStringLiteral ( ".jpg" ) << QStringLiteral ( ".png" ) );
 
-	name_filters.insert ( 0, QStringLiteral ( ".jpg" ) );
-	name_filters.insert ( 1, QStringLiteral ( ".png" ) );
+imageViewer::imageViewer ( QWidget* parent, QGridLayout* parentLayout )
+	: QLabel (), m_parent ( parent ), mb_maximized ( false ), images_array ( 10 ), funcImageRequested ( nullptr ), funcShowMaximized ( nullptr )
+{
 	images_array.setAutoDeleteItem ( true );
 
 	mScrollArea = new QScrollArea ( parent );
@@ -33,6 +27,10 @@ imageViewer::imageViewer ( QWidget* parent, QGridLayout* parentLayout )
 	mScrollArea->setAlignment ( Qt::AlignHCenter | Qt::AlignVCenter );
 	mScrollArea->setWidget ( this );
 	parentLayout->addWidget ( mScrollArea, 0, 0, 1, 1 );
+
+	setFocusPolicy ( Qt::WheelFocus );
+	//installEventFilter ( this );
+	mScrollArea->installEventFilter ( this ); //Display images in accordance to the available size for the viewer
 }
 
 void imageViewer::prepareToShowImages ( const int rec_id, const QString& path )
@@ -53,7 +51,6 @@ void imageViewer::prepareToShowImages ( const int rec_id, const QString& path )
 		if ( !hookUpDir ( rec_id, path ) )
 			images_array.setCurrent ( -1 );
 	}
-	mScrollArea->installEventFilter ( this ); //Display images in accordance to the available size for the viewer
 }
 
 const QString imageViewer::imageFileName () const
@@ -178,7 +175,7 @@ void imageViewer::loadImage ( QPixmap& picture )
 {
 	double factor ( 1.0 );
 	const QSizeF imgSize ( picture.size () );
-	const QSizeF maxSize ( parentWidget ()->size () );
+	const QSizeF maxSize ( m_parent->size () );
 
 	if ( imgSize.width () > maxSize.width () )
 		factor = maxSize.width () / imgSize.width ();
@@ -317,11 +314,11 @@ bool imageViewer::eventFilter ( QObject* o, QEvent* e )
 			{
 				default:
 					return false;
-				case Qt::Key_Back:
+				case Qt::Key_Left:
 				case Qt::Key_Down:
 					showPrevImage ();
 				break;
-				case Qt::Key_Forward:
+				case Qt::Key_Right:
 				case Qt::Key_Up:
 					showNextImage ();
 				break;
@@ -330,6 +327,9 @@ bool imageViewer::eventFilter ( QObject* o, QEvent* e )
 				break;
 				case Qt::Key_End:
 					showLastImage ();
+				break;
+				case Qt::Key_F:
+					funcShowMaximized ( mb_maximized = !mb_maximized );
 				break;
 			}
 		}

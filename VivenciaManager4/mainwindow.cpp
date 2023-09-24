@@ -134,8 +134,11 @@ MainWindow::~MainWindow ()
 void MainWindow::continueStartUp ()
 {
 	setStatusBar ( nullptr ); // we do not want a statusbar
+
+	//Having the window size information before adjusting the UI works better for some widgets' placement like the imageViewer
 	CONFIG ()->getWindowGeometry ( this, Ui::mw_configSectionName, Ui::mw_configCategoryWindowGeometry );
 	show ();
+
 	setupCustomControls ();
 	restoreLastSession ();
 	
@@ -1095,12 +1098,12 @@ void MainWindow::setupJobPictureControl ()
 
 	connect ( ui->btnJobPrevPicture, &QToolButton::clicked, this, [&] ()
 		{
-			return showJobImageRequested ( jobImageViewer->showPrevImage () );
+			return jobImageViewer->showPrevImage ();
 		} );
 
 	connect ( ui->btnJobNextPicture, &QToolButton::clicked, this, [&] ()
 		{
-			return showJobImageRequested ( jobImageViewer->showNextImage () );
+			return jobImageViewer->showNextImage ();
 		} );
 
 	connect ( ui->btnJobOpenPictureFolder, &QToolButton::clicked, this, [&] ()
@@ -1146,7 +1149,6 @@ void MainWindow::setupJobPictureControl ()
 				showJobImageInWindow ( false );
 			else
 				sepWin_JobPictures->returnToParent ();
-			//jobImageViewer->fitToWindow ();
 		} );
 
 	connect ( ui->btnJobSeparateReportWindow, static_cast<void (QToolButton::*)(bool)>( &QToolButton::clicked ), this, [&] ( bool checked )
@@ -1154,7 +1156,7 @@ void MainWindow::setupJobPictureControl ()
 			return btnJobSeparateReportWindow_clicked ( checked );
 		} );
 
-	ui->cboJobPictures->setCallbackForIndexChanged ( [&] ( const int idx ) { return showJobImage ( idx ); } );
+	ui->cboJobPictures->setCallbackForIndexChanged ( [&] ( const int idx ) { return jobImageViewer->showSpecificImage ( idx ); } );
 	jobImageViewer->setCallbackForshowImageRequested ( [&] ( const int idx ) { return showJobImageRequested ( idx ); } );
 	jobImageViewer->setCallbackForshowMaximized ( [&] ( const bool maximized ) { return showJobImageInWindow ( maximized ); } );
 }
@@ -1286,7 +1288,7 @@ void MainWindow::controlJobDaySection ( const jobListItem* const job_item )
 	
 	ui->btnJobPrevDay->setEnabled ( ui->lstJobDayReport->currentRow () >= 1 );
 	ui->btnJobNextDay->setEnabled ( ui->lstJobDayReport->currentRow () < ( ui->lstJobDayReport->count () - 1 ) );
-	lstJobDayReport_currentItemChanged ( static_cast<dbListItem*>( ui->lstJobDayReport->currentItem () ) );
+	//lstJobDayReport_currentItemChanged ( static_cast<dbListItem*>( ui->lstJobDayReport->currentItem () ) );
 }
 
 void MainWindow::controlJobDayForms ( const bool b_editable )
@@ -4907,18 +4909,12 @@ void MainWindow::showDayPictures ( const vmNumber& date )
 				}
 			}
 		}
+		ui->cboJobPictures->setCurrentIndex ( ui->cboJobPictures->count () - 1 ); //when everything else fails
 	}
-}
-
-void MainWindow::showJobImage ( const int index )
-{
-	jobImageViewer->showSpecificImage ( index );
-	showJobImageRequested ( index );
 }
 
 void MainWindow::showJobImageRequested ( const int index )
 {
-	//ui->cboJobPictures->setCurrentIndex ( index );
 	ui->cboJobPictures->setCurrentText ( ui->cboJobPictures->itemText ( index ) );
 	ui->btnJobPrevPicture->setEnabled ( index > 0 );
 	ui->btnJobNextPicture->setEnabled ( index < ( ui->cboJobPictures->count () - 1 ) );

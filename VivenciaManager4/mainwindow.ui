@@ -547,7 +547,7 @@ p, li { white-space: pre-wrap; }
        <enum>QTabWidget::East</enum>
       </property>
       <property name="currentIndex">
-       <number>5</number>
+       <number>3</number>
       </property>
       <property name="usesScrollButtons">
        <bool>true</bool>
@@ -1167,7 +1167,7 @@ p, li { white-space: pre-wrap; }
             <property name="frameShadow">
              <enum>QFrame::Raised</enum>
             </property>
-            <layout class="QGridLayout" name="gridLayout_11">
+            <layout class="QGridLayout" name="gridLayout_11" columnminimumwidth="400,150,0,0">
              <property name="leftMargin">
               <number>2</number>
              </property>
@@ -1277,7 +1277,14 @@ p, li { white-space: pre-wrap; }
                  </widget>
                 </item>
                 <item>
-                 <widget class="vmDateEdit" name="dteClientStart"/>
+                 <widget class="vmDateEdit" name="dteClientStart">
+                  <property name="minimumSize">
+                   <size>
+                    <width>150</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                 </widget>
                 </item>
                 <item>
                  <widget class="QLabel" name="lblClientDateTo">
@@ -1302,7 +1309,14 @@ p, li { white-space: pre-wrap; }
                  </widget>
                 </item>
                 <item>
-                 <widget class="vmDateEdit" name="dteClientEnd"/>
+                 <widget class="vmDateEdit" name="dteClientEnd">
+                  <property name="minimumSize">
+                   <size>
+                    <width>150</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                 </widget>
                 </item>
                </layout>
               </widget>
@@ -2187,7 +2201,14 @@ p, li { white-space: pre-wrap; }
                   <number>5</number>
                  </property>
                  <item row="1" column="1">
-                  <widget class="vmDateEdit" name="dteJobEnd"/>
+                  <widget class="vmDateEdit" name="dteJobEnd">
+                   <property name="minimumSize">
+                    <size>
+                     <width>150</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                  </widget>
                  </item>
                  <item row="0" column="1">
                   <widget class="QLabel" name="lblJobDateEnd">
@@ -2207,7 +2228,7 @@ p, li { white-space: pre-wrap; }
                   <widget class="vmDateEdit" name="dteJobStart">
                    <property name="minimumSize">
                     <size>
-                     <width>100</width>
+                     <width>150</width>
                      <height>0</height>
                     </size>
                    </property>

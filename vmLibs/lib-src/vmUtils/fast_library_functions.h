@@ -54,7 +54,7 @@ inline bool allBitsSet ( T& __restrict var )
 {
 	return ( var == static_cast<T> ( 0xFFFFFFFF ) );
 }
-#include <QDebug>
+
 template <typename T>
 int insertStringIntoContainer ( const T& list, const QString& text,
 								const std::function<QString( const int i)>& get_func,

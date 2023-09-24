@@ -265,6 +265,7 @@ public:
 	inline QString text () const override { return mLineEdit->QLineEdit::text (); }
 
 	void setIgnoreChanges ( const bool b_ignore );
+	inline bool isIgnoringChanges () const { return mbIgnoreChanges; }
 	void setEditable ( const bool editable ) override;
 
 	/* Will check for existance of text and only append it if there is no match
