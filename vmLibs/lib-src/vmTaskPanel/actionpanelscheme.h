@@ -71,6 +71,11 @@ public:
 
 	/// The CSS for the ActionPanel/ActionGroup elements.
 	QString actionStyle;
+
+	/// The theme's main colors for other widgets to use.
+	QString colorStyle1, colorStyle2;
+
+	QString styleName;
 };
 
 #endif // ACTIONPANELSCHEME_H

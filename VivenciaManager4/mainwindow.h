@@ -3,6 +3,7 @@
 
 #include <dbRecords/dblistitem.h>
 #include <vmTaskPanel/vmtaskpanel.h>
+#include <vmTaskPanel/actionpanelscheme.h>
 
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QSystemTrayIcon>
@@ -245,7 +246,7 @@ public:
 	bool execRecordAction ( const int key );
 	void setupTabNavigationButtons ();
 
-	inline const QString& appMainStyle () const { return m_strStyle; }
+	inline const QString& appMainStyle () const { return mainTaskPanel->currentScheme ()->styleName; }
 	void changeSchemeStyle ( const QString& style, const bool b_save = false );
 	
 //----------------------------------SETUP-CUSTOM-CONTROLS-NAVIGATION--------------------------------------
@@ -324,8 +325,6 @@ private:
 	vmActionGroup* grpJobs;
 	vmActionGroup* grpPays;
 	vmActionGroup* grpBuys;
-
-	QString m_strStyle;
 
 	int clientSectionPos, jobSectionPos, paySectionPos, buySectionPos;
 	dbListItem* activeRecord;

@@ -29,8 +29,6 @@ imageViewer::imageViewer ( QWidget* parent, QGridLayout* parentLayout )
 	parentLayout->addWidget ( mScrollArea, 0, 0, 1, 1 );
 
 	setFocusPolicy ( Qt::WheelFocus );
-	//installEventFilter ( this );
-	mScrollArea->installEventFilter ( this ); //Display images in accordance to the available size for the viewer
 }
 
 void imageViewer::prepareToShowImages ( const int rec_id, const QString& path )
@@ -51,6 +49,7 @@ void imageViewer::prepareToShowImages ( const int rec_id, const QString& path )
 		if ( !hookUpDir ( rec_id, path ) )
 			images_array.setCurrent ( -1 );
 	}
+	mScrollArea->installEventFilter ( this ); //Display images in accordance to the available size for the viewer
 }
 
 const QString imageViewer::imageFileName () const

@@ -50,8 +50,9 @@ public:
 	virtual ~vmActionLabel () final = default;
 
 	inline QLatin1String qtClassName () const override { return QLatin1String ( "QToolButton" ); }
-	QString defaultStyleSheet () const override;
-	
+	const QString defaultStyleSheet () const override;
+	const QString alternateStyleSheet () const override;
+
 	inline void setText ( const QString& text, const bool = false ) override { QToolButton::setText ( text ); }
 	inline QString text () const override { return QToolButton::text (); }
 
@@ -86,7 +87,7 @@ public:
 	void setID ( const int id );
 	
 	inline QLatin1String qtClassName () const override { return QLatin1String ( "QDateEdit" ); }
-	QString defaultStyleSheet () const override;
+	const QString defaultStyleSheet () const override;
 
 	void setDate ( const vmNumber& date, const bool b_notify = false );
 	const QDate date () const;
@@ -122,7 +123,7 @@ public:
 	virtual ~vmTimeEdit () final = default;
 
 	inline QLatin1String qtClassName () const override { return QLatin1String ( "QTimeEdit" ); }
-	QString defaultStyleSheet () const override;
+	const QString defaultStyleSheet () const override;
 
 	void setTime ( const vmNumber& time, const bool b_notify = false );
 	inline void setText ( const QString& text, const bool b_notify = false ) override { setTime ( vmNumber ( text, VMNT_TIME ), b_notify ); }
@@ -155,7 +156,7 @@ public:
 	virtual ~vmLineEdit () override = default;
 
 	inline QLatin1String qtClassName () const override { return QLatin1String ( "QLineEdit" ); }
-	QString defaultStyleSheet () const override;
+	const QString defaultStyleSheet () const override;
 	void highlight ( const VMColors vm_color, const QString& str = QString () ) override;
 
 	void setText ( const QString& text, const bool b_notify = false ) override;
@@ -207,7 +208,7 @@ public:
 	virtual ~vmLineEditWithButton () override;
 
 	inline QLatin1String qtClassName () const override { return QLatin1String ( "QLineEdit" ); }
-	inline QString defaultStyleSheet () const override { return mLineEdit->defaultStyleSheet () ; }
+	inline const QString defaultStyleSheet () const override { return mLineEdit->defaultStyleSheet () ; }
 	inline void highlight ( const VMColors wm_color, const QString& str = QString () ) override { mLineEdit->highlight ( wm_color, str ); }
 	void setEditable ( const bool editable ) override;
 	inline void setText ( const QString& text, const bool b_notify = false ) override { mLineEdit->setText ( text, b_notify ); }
@@ -258,7 +259,7 @@ public:
 	}
 	
 	inline QLatin1String qtClassName () const override { return QLatin1String ( "QComboBox" ); }
-	QString defaultStyleSheet () const override;
+	const QString defaultStyleSheet () const override;
 	void highlight ( const VMColors vm_color, const QString& str = QString () ) override;
 
 	void setText ( const QString& text, const bool b_notify = false ) override;
@@ -322,7 +323,7 @@ public:
 	virtual ~vmCheckBox () final = default;
 
 	inline QLatin1String qtClassName () const override { return QLatin1String ( "QCheckBox" ); }
-	QString defaultStyleSheet () const override;
+	const QString defaultStyleSheet () const override;
 
 	inline void setChecked ( const bool checked, const bool b_notify = false )
 	{

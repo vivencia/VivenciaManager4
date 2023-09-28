@@ -19,6 +19,8 @@ public:
 	virtual ~vmTaskPanel () = default;
 
 	void setTitle ( const QString& new_title );
+	inline ActionPanelScheme* currentScheme () const { return mScheme; }
+
 	/** Adds a widget \a w to the vmTaskPanel's vertical layout.
 	  */
 	void addWidget ( QWidget* w );

@@ -95,10 +95,10 @@ MainWindow::MainWindow ()
 	  mainTaskPanel ( nullptr ), selJob_callback ( nullptr ), mb_jobPosActions ( false ), mClientCurItem ( nullptr ),
 	  mJobCurItem ( nullptr ), mPayCurItem ( nullptr ), mBuyCurItem ( nullptr ), dlgSaveEditItems ( nullptr )
 {
-	ui->setupUi ( this );
 	setWindowIcon ( ICON ( APP_ICON ) );
 	setWindowTitle ( PROGRAM_NAME + QStringLiteral ( " - " ) + PROGRAM_VERSION );
 	createTrayIcon (); // create the icon for NOTIFY () use
+	setStatusBar ( nullptr ); // we do not want a statusbar
 }
 
 MainWindow::~MainWindow ()
@@ -133,12 +133,20 @@ MainWindow::~MainWindow ()
 
 void MainWindow::continueStartUp ()
 {
-	setStatusBar ( nullptr ); // we do not want a statusbar
+	mainTaskPanel = new vmTaskPanel;
+	CONFIG ()->addManagedSectionName ( Ui::mw_configSectionName );
+	CONFIG ()->addManagedSectionName ( configOps::foldersSectionName () );
+	CONFIG ()->addManagedSectionName ( configOps::appDefaultsSectionName () );
+	QString strStyle ( CONFIG ()->getValue ( Ui::mw_configSectionName, Ui::mw_configCategoryAppScheme, false ) );
+	if ( strStyle.isEmpty () )
+		strStyle = ActionPanelScheme::PanelStyleStr[0];
+	changeSchemeStyle ( strStyle );
 
 	//Having the window size information before adjusting the UI works better for some widgets' placement like the imageViewer
 	CONFIG ()->getWindowGeometry ( this, Ui::mw_configSectionName, Ui::mw_configCategoryWindowGeometry );
 	show ();
 
+	ui->setupUi ( this );
 	setupCustomControls ();
 	restoreLastSession ();
 	
@@ -1305,7 +1313,7 @@ void MainWindow::controlJobPictureControls ()
 {
 	const bool b_hasPictures ( ui->cboJobPictures->count () > 0 );
 	ui->btnJobNextPicture->setEnabled ( b_hasPictures );
-	ui->btnJobPrevPicture->setEnabled ( false );
+	ui->btnJobPrevPicture->setEnabled ( ui->cboJobPictures->currentIndex () > 0 );
 	ui->btnJobOpenPictureEditor->setEnabled ( b_hasPictures );
 	ui->btnJobOpenPictureFolder->setEnabled ( b_hasPictures );
 	ui->btnJobOpenPictureViewer->setEnabled ( b_hasPictures );
@@ -3931,23 +3939,14 @@ void MainWindow::reOrderTabSequence ()
 
 void MainWindow::changeSchemeStyle ( const QString& style, const bool b_save )
 {
-	m_strStyle = style;
-	mainTaskPanel->setScheme ( m_strStyle );
+	mainTaskPanel->setScheme ( style );
+	vmWidget::changeThemeColors ( mainTaskPanel->currentScheme ()->colorStyle1, mainTaskPanel->currentScheme ()->colorStyle2 );
 	if ( b_save )
-		return CONFIG ()->setValue ( Ui::mw_configSectionName, Ui::mw_configCategoryAppScheme, m_strStyle );
+		return CONFIG ()->setValue ( Ui::mw_configSectionName, Ui::mw_configCategoryAppScheme, style );
 }
 
 void MainWindow::setupWorkFlow ()
 {
-	mainTaskPanel = new vmTaskPanel;
-	CONFIG ()->addManagedSectionName ( Ui::mw_configSectionName );
-	CONFIG ()->addManagedSectionName ( configOps::foldersSectionName () );
-	CONFIG ()->addManagedSectionName ( configOps::appDefaultsSectionName () );
-	QString strStyle ( CONFIG ()->getValue ( Ui::mw_configSectionName, Ui::mw_configCategoryAppScheme, false ) );
-	if ( strStyle.isEmpty () )
-		strStyle = ActionPanelScheme::PanelStyleStr[0];
-	changeSchemeStyle ( strStyle );
-
 	grpClients = mainTaskPanel->createGroup ( TR_FUNC ( "CLIENT INFORMATION" ), true, false );
 	grpClients->setMinimumHeight ( ui->frmClientInfo->sizeHint ().height () + 1 );
 	grpClients->addQEntry ( ui->frmClientInfo, new QHBoxLayout );
@@ -4058,10 +4057,10 @@ void MainWindow::findSectionByScrollPosition ( const int scrollBar_value )
 	
 	if ( prevLabel != curLabel )
 	{
-		curLabel->highlight ( vmBlue );
+		curLabel->highlight ( true );
 		changeFuncActionPointers ( grpActive );
 		if ( prevLabel )
-			prevLabel->highlight ( vmDefault_Color );
+			prevLabel->highlight ( false );
 	}
 }
 
@@ -4333,8 +4332,6 @@ uint MainWindow::getLastViewedRecord ( const TABLE_INFO* t_info, const uint clie
 			job_id > 0 ? ( QStringLiteral ( "AND `JOBID`='" ) + QString::number ( job_id ) + CHR_CHRMARK ) :
 				QString () ), queryRes ) )
 	{
-		//if ( !queryRes.last () ) // if successful, will return the last found record. If not, whatever record it has stored
-		//	queryRes.first ();
 		bool b_ok ( true );
 		const uint ret ( queryRes.value ( 0 ).toUInt ( &b_ok ) );
 		if ( b_ok )

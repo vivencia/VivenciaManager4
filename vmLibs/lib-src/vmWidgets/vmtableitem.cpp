@@ -97,7 +97,7 @@ void vmTableItem::copy ( const vmTableItem& src_item )
 
 vmTableItem::~vmTableItem () {}
 
-QString vmTableItem::defaultStyleSheet () const
+const QString vmTableItem::defaultStyleSheet () const
 {
 	QString colorstr;
 	if ( !table () )

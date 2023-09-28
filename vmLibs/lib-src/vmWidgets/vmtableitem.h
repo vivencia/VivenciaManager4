@@ -41,7 +41,7 @@ public:
 	inline void setTable ( vmTableWidget* table ) { m_table = table; }
 	inline vmTableWidget* table () const { return m_table; }
 	
-	QString defaultStyleSheet () const override;
+	const QString defaultStyleSheet () const override;
 	void setEditable ( const bool editable ) override;
 
 	inline vmWidget* widget () const { return m_widget; }

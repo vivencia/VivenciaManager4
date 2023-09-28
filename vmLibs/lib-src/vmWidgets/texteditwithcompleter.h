@@ -63,7 +63,7 @@ public:
 	bool searchLast ();
 
 	inline QLatin1String qtClassName () const override { return QLatin1String ( "QTextEdit" ); }
-	QString defaultStyleSheet () const override;
+	const QString defaultStyleSheet () const override;
 	void highlight ( const VMColors wm_color, const QString& str = QString () ) override;
 
 protected:

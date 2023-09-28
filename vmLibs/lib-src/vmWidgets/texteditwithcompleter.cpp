@@ -223,7 +223,7 @@ bool textEditWithCompleter::searchLast ()
 	return searchPrev ();
 }
 
-QString textEditWithCompleter::defaultStyleSheet () const
+const QString textEditWithCompleter::defaultStyleSheet () const
 {
 	QString colorstr;
 	if ( !parentWidget () )

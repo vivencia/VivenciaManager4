@@ -244,33 +244,6 @@
           <height>30</height>
          </size>
         </property>
-        <property name="styleSheet">
-         <string notr="true">background-color: transparent;
-border: 1px solid transparent;
-text-align: left;
- 
-QLabel[class='action']:!enabled
-{
-	color: #999999;
-}
-
-QLabel[class='action']:hover
-{
-        text-decoration: underline;
-}
-
-QLabel[class='action']:focus
-{
-        border: 1px dotted black;
-}
-
-QLabel[class='action']:on
-{
-        background-color: #ddeeff;
-        color: #006600;
-}
-</string>
-        </property>
         <property name="text">
          <string>TextLabel</string>
         </property>
@@ -290,33 +263,6 @@ QLabel[class='action']:on
           <width>16777215</width>
           <height>30</height>
          </size>
-        </property>
-        <property name="styleSheet">
-         <string notr="true">background-color: transparent;
-border: 1px solid transparent;
-text-align: left;
- 
-QLabel[class='action']:!enabled
-{
-	color: #999999;
-}
-
-QLabel[class='action']:hover
-{
-        text-decoration: underline;
-}
-
-QLabel[class='action']:focus
-{
-        border: 1px dotted black;
-}
-
-QLabel[class='action']:on
-{
-        background-color: #ddeeff;
-        color: #006600;
-}
-</string>
         </property>
         <property name="text">
          <string>TextLabel</string>
@@ -338,33 +284,6 @@ QLabel[class='action']:on
           <height>30</height>
          </size>
         </property>
-        <property name="styleSheet">
-         <string notr="true">background-color: transparent;
-border: 1px solid transparent;
-text-align: left;
- 
-QLabel[class='action']:!enabled
-{
-	color: #999999;
-}
-
-QLabel[class='action']:hover
-{
-        text-decoration: underline;
-}
-
-QLabel[class='action']:focus
-{
-        border: 1px dotted black;
-}
-
-QLabel[class='action']:on
-{
-        background-color: #ddeeff;
-        color: #006600;
-}
-</string>
-        </property>
         <property name="text">
          <string>TextLabel</string>
         </property>
@@ -384,33 +303,6 @@ QLabel[class='action']:on
           <width>16777215</width>
           <height>30</height>
          </size>
-        </property>
-        <property name="styleSheet">
-         <string notr="true">background-color: transparent;
-border: 1px solid transparent;
-text-align: left;
- 
-QLabel[class='action']:!enabled
-{
-	color: #999999;
-}
-
-QLabel[class='action']:hover
-{
-        text-decoration: underline;
-}
-
-QLabel[class='action']:focus
-{
-        border: 1px dotted black;
-}
-
-QLabel[class='action']:on
-{
-        background-color: #ddeeff;
-        color: #006600;
-}
-</string>
         </property>
         <property name="text">
          <string>TextLabel</string>

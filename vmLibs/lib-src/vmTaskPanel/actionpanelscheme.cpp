@@ -13,18 +13,17 @@ const QString ActionPanelScheme::PanelStyleStr[6] =
 
 const char* const ActionPanelNoStyle ( "" );
 
+const char* const colorDefault1 ( "#88b6b6" );
+const char* const colorDefault2 ( "#cad6dc" );
 const char* const ActionPanelDefaultStyle (
 
 	"QFrame[class='panel'] {"
-		//"background-color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0 #99cccc, stop: 1 #EAF7FF);"
 		"background-color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0 #88b6b6, stop: 1 #cad6dc);"
 	"}"
 
 	"vmActionGroup QFrame[class='header'] {"
-		//"background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #F9FDFF, stop: 1 #EAF7FF);"
 		"background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #cbcfd0, stop: 1 #b2bcc1);"
 		"border: 1px solid #00aa99;"
-		//"border-bottom: 1px solid #99cccc;"
 		"border-bottom: 1px solid #8ebdbd;"
 		"border-top-left-radius: 3px;"
 		"border-top-right-radius: 3px;"
@@ -49,7 +48,6 @@ const char* const ActionPanelDefaultStyle (
 	"}"
 
 	"vmActionGroup QFrame[class='content'] {"
-		//"background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #F9FDFF, stop: 1 #EAF7FF);"
 		"background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #cbcfd0, stop: 1 #b2bcc1);"
 		"border: 1px solid #00aa99;"
 	"}"
@@ -85,6 +83,8 @@ const char* const ActionPanelDefaultStyle (
 	"}"
 );
 
+const char* const colorVista1 ( "#5C9EEC" );
+const char* const colorVista2 ( "#86E78A" );
 const char* const ActionPanelVistaStyle (
 
 	"QFrame[class='panel'] {"
@@ -145,6 +145,8 @@ const char* const ActionPanelVistaStyle (
 	"}"
 );
 
+const char* const colorXP1 ( "#7ba2e7" );
+const char* const colorXP2 ( "#6375d6" );
 const char* const ActionPanelWinXPBlueStyle1 (
 
 	"QFrame[class='panel'] {"
@@ -263,6 +265,8 @@ const char* const ActionPanelWinXPBlueStyle2 (
 	"}"
 );
 
+const char* const colorDefault21 ( "#99cccc" );
+const char* const colorDefault22 ( "#EAF7FF" );
 const char* const ActionPanelDefaultStyle2 (
 		"QFrame[class='panel'] {"
 			"background-color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0 #99cccc, stop: 1 #EAF7FF);"
@@ -346,26 +350,39 @@ ActionPanelScheme::ActionPanelScheme ( const PanelStyle style )
 	groupFoldDelay = 15;
 	groupFoldEffect = SlideFolding;
 	groupFoldThaw = true;
+	styleName = PanelStyleStr[static_cast<int>(style)];
 
 	switch ( style )
 	{
 		case PANEL_NONE:
 			actionStyle = ActionPanelNoStyle;
+			colorStyle1 = emptyString;
+			colorStyle2 = emptyString;
 		break;
 		case PANEL_DEFAULT:
 			actionStyle = ActionPanelDefaultStyle;
+			colorStyle1 = colorDefault1;
+			colorStyle2 = colorDefault2;
 		break;
 		case PANEL_DEFAULT_2:
 			actionStyle = ActionPanelDefaultStyle2;
+			colorStyle1 = colorDefault21;
+			colorStyle2 = colorDefault22;
 		break;
 		case PANEL_VISTA:
 			actionStyle = ActionPanelVistaStyle;
+			colorStyle1 = colorVista1;
+			colorStyle2 = colorVista2;
 		break;
 		case PANEL_XP_1:
 			actionStyle = ActionPanelWinXPBlueStyle1;
+			colorStyle1 = colorXP1;
+			colorStyle2 = colorXP2;
 		break;
 		case PANEL_XP_2:
 			actionStyle = ActionPanelWinXPBlueStyle2;
+			colorStyle1 = colorXP1;
+			colorStyle2 = colorXP2;
 		break;
 	}
 }

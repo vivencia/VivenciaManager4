@@ -25,6 +25,12 @@
 QMenu* vmDateEdit::menuDateButtons ( nullptr );
 
 //------------------------------------------------VM-ACTION-LABEL-------------------------------------------------
+static const QString vmActionLabel_CSS_Default ( QStringLiteral ( "QToolButton {background-color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0 %1, stop: 1 %2);}"
+							"QToolButton:hover {background-color: %3;}" ) );
+
+static const QString vmActionLabel_CSS_Highlight ( QStringLiteral ( "QToolButton {background-color: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0 %1, stop: 1 %2); border: 1px solid transparent; text-decoration: underline;color: palette(link);}"
+							"QToolButton:hover {background-color: %3;}" )  );
+
 vmActionLabel::vmActionLabel ( QWidget *parent )
 	: QToolButton ( parent ), vmWidget ( WT_LABEL | WT_BUTTON, WT_ACTION ), labelActivated_func ( nullptr )
 {
@@ -45,19 +51,14 @@ vmActionLabel::vmActionLabel ( vmAction* action, QWidget* parent )
 	setDefaultAction ( static_cast<QAction*>( action ) );
 }
 
-QString vmActionLabel::defaultStyleSheet () const
+const QString vmActionLabel::defaultStyleSheet () const
 {
-	QString colorstr;
-	if ( !parentWidget () )
-		colorstr = QStringLiteral ( " ( 255, 255, 255 ) }" );
-	else
-	{
-		const auto lbl ( new vmActionLabel ( parentWidget () ) );
-		colorstr = QLatin1String ( " ( " ) + lbl->palette ().color ( lbl->backgroundRole () ).name ()
-				   + QLatin1String ( " ) }" );
-		delete lbl;
-	}
-	return ( QLatin1String ( "QToolButton { background-color: hex" ) + colorstr );
+	return vmActionLabel_CSS_Default.arg ( vmWidget::themeColor1 (), vmWidget::themeColor2 (), vmWidget::themeColor1 () );
+}
+
+const QString vmActionLabel::alternateStyleSheet () const
+{
+	return vmActionLabel_CSS_Highlight.arg ( vmWidget::themeColor1 (), vmWidget::themeColor2 (), vmWidget::themeColor1 () );
 }
 
 void vmActionLabel::init ( const bool b_action )
@@ -65,6 +66,7 @@ void vmActionLabel::init ( const bool b_action )
 	setWidgetPtr ( static_cast<QWidget*>( this ) );
 	setToolButtonStyle ( Qt::ToolButtonTextBesideIcon );
 	setSizePolicy ( QSizePolicy::Expanding, QSizePolicy::Expanding );
+	setStyleSheet ( defaultStyleSheet () );
 	
 	if ( b_action )
 	{
@@ -93,10 +95,8 @@ QSize vmActionLabel::sizeHint () const
 		s = QStringLiteral ( "XXXX" );
 
 	const QSize sz ( fontMetrics ().size ( Qt::TextShowMnemonic, s ) );
-	if ( !empty )
-		w += sz.width ();
-	if ( !empty )
-		h = qMax ( h, sz.height () );
+	w += sz.width ();
+	h = qMax ( h, sz.height () );
 	opt.rect.setSize ( QSize ( w, h ) ); // PM_MenuButtonIndicator depends on the height
 
 	if ( !icon ().isNull () )
@@ -113,7 +113,7 @@ QSize vmActionLabel::sizeHint () const
 	h += 4;
 	w += 8;
 
-	return style ()->sizeFromContents ( QStyle::CT_PushButton, &opt, QSize ( w, h ), this ).
+	return style ()->sizeFromContents ( QStyle::CT_ToolButton, &opt, QSize ( w, h ), this ).
 		   expandedTo ( QToolButton::sizeHint () );
 }
 
@@ -144,7 +144,7 @@ public:
 		return QLatin1String ( "QDateEdit" );
 	}
 
-	QString defaultStyleSheet () const final;
+	const QString defaultStyleSheet () const final;
 
 	void setDate ( const vmNumber& date, const bool b_notify = false );
 	void setEditable ( const bool editable ) final;
@@ -181,7 +181,7 @@ pvmDateEdit::pvmDateEdit ( vmDateEdit* owner )
 	setDisplayFormat ( DATE_FORMAT_HUMAN );
 }
 
-QString pvmDateEdit::defaultStyleSheet () const
+const QString pvmDateEdit::defaultStyleSheet () const
 {
 	QString colorstr;
 	if ( !parentWidget () )
@@ -367,7 +367,7 @@ void vmDateEdit::setID ( const int id )
 	vmWidget::setID ( id );
 }
 
-QString vmDateEdit::defaultStyleSheet () const
+const QString vmDateEdit::defaultStyleSheet () const
 {
 	return mDateEdit->defaultStyleSheet ();
 }
@@ -474,7 +474,7 @@ vmTimeEdit::vmTimeEdit ( QWidget* parent )
 	setWidgetPtr ( static_cast<QWidget*> ( this ) );
 }
 
-QString vmTimeEdit::defaultStyleSheet () const
+const QString vmTimeEdit::defaultStyleSheet () const
 {
 	QString colorstr;
 	if ( !parentWidget () )
@@ -553,7 +553,7 @@ vmLineEdit::vmLineEdit ( QWidget* parent, QWidget* ownerWindow )
 	}
 }
 
-QString vmLineEdit::defaultStyleSheet () const
+const QString vmLineEdit::defaultStyleSheet () const
 {
 	QString colorstr;
 	if ( !parentWidget () )
@@ -1058,7 +1058,7 @@ vmComboBox::vmComboBox ( QWidget* parent )
 	setInsertPolicy ( QComboBox::NoInsert );
 }
 
-QString vmComboBox::defaultStyleSheet () const
+const QString vmComboBox::defaultStyleSheet () const
 {
 	QString colorstr;
 	if ( !parentWidget () )
@@ -1279,7 +1279,7 @@ vmCheckBox::vmCheckBox ( const QString& text, QWidget* parent )
 	setWidgetPtr ( static_cast<QWidget*>( this ) );
 }
 
-QString vmCheckBox::defaultStyleSheet () const
+const QString vmCheckBox::defaultStyleSheet () const
 {
 	QString colorstr;
 	if ( !parentWidget () )

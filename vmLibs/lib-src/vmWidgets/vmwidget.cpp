@@ -9,6 +9,8 @@
 #include <QtWidgets/QDesktopWidget>
 
 #define TITLE_BAR_HEIGHT qApp->style ()->pixelMetric ( QStyle::PM_TitleBarHeight )
+QString vmWidget::strColor1;
+QString vmWidget::strColor2;
 
 void vmwidget_swap ( vmWidget& widget1, vmWidget& widget2 )
 {
@@ -57,6 +59,11 @@ QString vmWidget::widgetToString () const
 	strWidget.fastAppendValue ( QString::number ( subType () ) );
 	strWidget.fastAppendValue ( QString::number ( id () ) );
 	return strWidget.toString ();
+}
+
+void vmWidget::highlight ( bool b_highlight )
+{
+	toQWidget ()->setStyleSheet ( b_highlight ? alternateStyleSheet () : defaultStyleSheet () );
 }
 
 void vmWidget::highlight ( const VMColors vm_color, const QString& )

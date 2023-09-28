@@ -28,7 +28,7 @@ constexpr const QLatin1String colorsStr[6] =
 	QLatin1String ( "255, 0, 0", 9 ),			// red		- 1
 	QLatin1String ( "255, 255, 0", 11 ),		// yellow	- 2
 	QLatin1String ( "0, 255, 0", 9 ),			// green	- 3
-	QLatin1String ( "0, 0, 255", 9 ),			// blue		- 4
+	QLatin1String ( "#006600", 7 ),			// blue		- 4
 	QLatin1String ( "255, 255, 255", 13 )		// white	- 5
 };
 
@@ -88,9 +88,11 @@ public:
 	inline virtual void setText ( const QString& /*text*/, const bool /*b_notify*/, const bool /*extra_param_1*/, const bool /*extra_param_2*/ ) {}
 	inline virtual QString text () const { return QString (); }
 	inline virtual QLatin1String qtClassName () const { return QLatin1String (); }
-	inline virtual QString defaultStyleSheet () const { return QString (); }
+	inline virtual const QString defaultStyleSheet () const { return QString (); }
+	inline virtual const QString alternateStyleSheet () const { return QString (); }
 	virtual QString widgetToString () const;
-	virtual void highlight ( const VMColors vm_color, const QString& str = QString () );
+	virtual void highlight ( bool b_highlight );
+	virtual void highlight ( const VMColors vm_color, const QString& = QString () );
 	inline virtual QMenu* standardContextMenu () const { return nullptr; }
 
 	// Can be implemented downstream to produce specific widgets with their particularities.
@@ -106,6 +108,12 @@ public:
 	inline bool isEditable () const { return mb_editable; }
 
 	void setFontAttributes ( const bool italic, const bool bold = false );
+	static inline void changeThemeColors ( const QString& color1, const QString& color2 )
+	{
+		vmWidget::strColor1 = color1; vmWidget::strColor2 = color2;
+	}
+	inline const QString& themeColor1 () const { return vmWidget::strColor1; }
+	inline const QString& themeColor2 () const { return vmWidget::strColor2; }
 
 	void setTextType ( const TEXT_TYPE t_type );
 	inline TEXT_TYPE textType () const { return mTextType; }
@@ -161,6 +169,7 @@ private:
 	QVBoxLayout* m_LayoutUtilities;
 	pointersList<QWidget*> m_UtilityWidgetsList;
 	TEXT_TYPE mTextType;
+	static QString strColor1, strColor2;
 };
 
 #endif // VMWIDGET_H
