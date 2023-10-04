@@ -117,8 +117,6 @@ int Buy::searchCategoryTranslate ( const SEARCH_CATEGORIES sc ) const
 		case SC_PRICE_1:	return FLD_BUY_PRICE;
 		case SC_DATE_1:		return FLD_BUY_DATE;
 		case SC_DATE_3:		return FLD_BUY_DELIVERDATE;
-		case SC_EXTRA_1:	return FLD_BUY_CLIENTID;
-		case SC_EXTRA_2:	return FLD_BUY_JOBID;
 		default:			return -1;
 	}
 }

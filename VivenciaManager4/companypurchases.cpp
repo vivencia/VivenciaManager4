@@ -50,22 +50,22 @@ companyPurchasesUI::~companyPurchasesUI ()
 	heap_del ( ui );
 }
 
-void companyPurchasesUI::showSearchResult ( dbListItem* item, const bool bshow )
+void companyPurchasesUI::showSearchResult ( const uint id, const bool bshow )
 {
 	if ( bshow )
 	{
-		if ( cp_rec->readRecord ( item->dbRecID () ) )
+		if ( cp_rec->readRecord ( id ) )
 		{
 			if ( !isVisible () )
 				showNormal ();
 			fillForms ();
 		}
 	}
-	for ( uint i ( 0 ); i < COMPANY_PURCHASES_FIELD_COUNT; ++i )
+	/*for ( uint i ( 0 ); i < COMPANY_PURCHASES_FIELD_COUNT; ++i )
 	{
 		if ( item->searchFieldStatus ( i ) == SS_SEARCH_FOUND )
 			widgetList.at ( i )->highlight ( bshow ? vmBlue : vmDefault_Color, SEARCH_UI ()->searchTerm () );
-	}
+	}*/
 }
 
 void companyPurchasesUI::showSearchResult_internal ( const bool bshow )

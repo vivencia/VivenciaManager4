@@ -58,18 +58,10 @@ int Payment::searchCategoryTranslate ( const SEARCH_CATEGORIES sc ) const
 {
 	switch ( sc )
 	{
-		case SC_ID:
-			return FLD_PAY_ID;
-		case SC_REPORT_2:
-			return FLD_PAY_OBS;
-		case SC_PRICE_1:
-			return FLD_PAY_PRICE;
-		case SC_EXTRA_1:
-			return FLD_PAY_CLIENTID;
-		case SC_EXTRA_2:
-			return FLD_PAY_JOBID;
-		default:
-			return -1;
+		case SC_ID:				return FLD_PAY_ID;
+		case SC_REPORT_2:		return FLD_PAY_OBS;
+		case SC_PRICE_1:		return FLD_PAY_PRICE;
+		default:				return -1;
 	}
 }
 

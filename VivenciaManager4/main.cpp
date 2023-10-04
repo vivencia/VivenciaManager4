@@ -16,6 +16,7 @@ finish = clock();
 qDebug() << ( (finish - start) );
 */
 
+#include <vmUtils/fast_library_functions.h>
 int main ( int argc, char *argv[] )
 {
 	QApplication app ( argc, argv );

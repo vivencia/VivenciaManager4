@@ -26,7 +26,7 @@ public:
 	void displaySupplier ( const QString& supName, const bool b_showdlg );
 	static void supplierInfo ( const QString& name, QString& info );
 	void hideDialog ();
-	void showSearchResult ( dbListItem* item, const bool bshow );
+	void showSearchResult ( const uint id, const bool bshow );
 
 private:
 	supplierRecord* supRec;

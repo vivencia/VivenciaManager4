@@ -11,10 +11,6 @@ dbTableWidget::dbTableWidget ( QWidget* parent )
 	: vmTableWidget ( parent ), mbDoNotUpdateCompleters ( false )
 {}
 
-dbTableWidget::dbTableWidget ( const uint rows, QWidget* parent )
-	: vmTableWidget ( rows, parent ), mbDoNotUpdateCompleters ( false )
-{}
-
 dbTableWidget::~dbTableWidget () {}
 
 void dbTableWidget::setIgnoreChanges ( const bool b_ignore )

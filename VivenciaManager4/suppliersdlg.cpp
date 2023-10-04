@@ -372,20 +372,20 @@ void suppliersDlg::hideDialog ()
 	hide ();
 }
 
-void suppliersDlg::showSearchResult ( dbListItem* item, const bool bshow )
+void suppliersDlg::showSearchResult ( const uint id, const bool bshow )
 {
 	if ( bshow )
 	{
-		if ( supRec->readRecord ( item->dbRecID () ) )
+		if ( supRec->readRecord ( id ) )
 		{
 			displaySupplier ( recStrValue ( supRec, FLD_SUPPLIER_NAME ), true );
 		}
 	}
-	for ( uint i ( 0 ); i < SUPPLIER_FIELD_COUNT; ++i )
+	/*for ( uint i ( 0 ); i < SUPPLIER_FIELD_COUNT; ++i )
 	{
 		if ( item->searchFieldStatus ( i ) == SS_SEARCH_FOUND )
 			widgetList.at ( i )->highlight ( bshow ? vmBlue : vmDefault_Color, SEARCH_UI ()->searchTerm () );
-	}
+	}*/
 }
 
 void suppliersDlg::supplierInfo ( const QString& name, QString& info )

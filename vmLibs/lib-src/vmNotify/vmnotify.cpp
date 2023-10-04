@@ -80,7 +80,7 @@ vmNotify::vmNotify ( const QString& position, QWidget* const parent )
 	  fadeTimer ( new QTimer ), m_parent ( parent ), mPos ( position ), mEventLoop ( nullptr ), messageStack ( 5 )
 {
 	auto mainLayout ( new QHBoxLayout );
-	mainLayout->setMargin ( 0 );
+	mainLayout->setContentsMargins ( 0, 0, 0, 0 );
 	mainLayout->setSpacing ( 0 );
 	mainLayout->addWidget ( mPanel, 1 );
 	setLayout ( mainLayout );

@@ -6,6 +6,7 @@
 #include "estimates.h"
 #include "configdialog.h"
 #include "backupdialog.h"
+#include "searchui.h"
 
 #include <dbRecords/vivenciadb.h>
 #include <vmDocumentEditor/documenteditor.h>
@@ -45,6 +46,7 @@ namespace Sys_Init
 	extern companyPurchasesUI* cp_instance;
 	extern suppliersDlg* sup_instance;
 	extern estimateDlg* estimates_instance;
+	extern searchUI* search_instance;
 	extern simpleCalculator* calc_instance;
 	extern configDialog* configdlg_instance;
 	extern spreadSheetEditor* qp_instance;
@@ -105,6 +107,13 @@ inline estimateDlg *ESTIMATES ()
 	if ( Sys_Init::estimates_instance == nullptr )
 		Sys_Init::estimates_instance = new estimateDlg;
 	return Sys_Init::estimates_instance;
+}
+
+inline searchUI *SEARCH_UI ()
+{
+	if ( Sys_Init::search_instance == nullptr )
+		Sys_Init::search_instance = new searchUI;
+	return Sys_Init::search_instance;
 }
 
 inline simpleCalculator *CALCULATOR ()

@@ -58,7 +58,6 @@ friend class vmLineEdit;
 
 public:
 	explicit vmTableWidget ( QWidget* parent = nullptr ); // constructor for promoted widgets used by QtDesigner
-	vmTableWidget ( const uint rows, QWidget* parent = nullptr );
 	virtual ~vmTableWidget () override;
 
 	vmTableColumn* createColumns ( const uint nCols );
@@ -103,7 +102,7 @@ public:
 	}
 
 	virtual void setIgnoreChanges ( const bool b_ignore );
-	virtual inline bool isIgnoringChanges () const { return mbIgnoreChanges; } 
+	virtual inline bool isIgnoringChanges () const { return mbIgnoreChanges; }
 	void rowActivatedConnection ( const bool b_activate );
 	void setCellValue ( const QString& value, const uint row, const uint col );
 	void setSimpleCellText ( vmTableItem* const item );
@@ -132,7 +131,7 @@ public:
 	inline bool isPlainTable () const { return mbPlainTable; }
 	void setEnableSorting ( const bool b_enable );
 	inline bool isSortEnabled () const { return mbIsSorted; }
-	
+
 	inline void setKeepModificationRecords ( const bool bkeeprec ) { mbKeepModRec = bkeeprec; }
 
 	void setEditable ( const bool editable ) override;
@@ -176,6 +175,7 @@ public:
 	void setCellColor ( const uint row, const uint col, const Qt::GlobalColor color );
 	void highlight ( const VMColors color, const QString& text ) override;
 
+	inline QSize preferredSize () const { return mPreferredSize; }
 	inline bool autoResizeColumns () const { return mbColumnAutoResize; }
 	inline void setColumnsAutoResize ( const bool b_autoresize ) { mbColumnAutoResize = b_autoresize; }
 	void resizeColumn ( const uint col, const QString& text );
@@ -204,12 +204,11 @@ public:
 			if ( m_filterPanel ) m_filterPanel->setCallbackForNewViewAfterFilter ( newView_func ); }
 
 	inline void callRowActivated_func ( const int row ) const { if ( rowActivated_func ) rowActivated_func ( row ); }
-	
+
 private:
 	void initList ();
 	void initTable2 ();
 	void enableOrDisableActionsForCell ( const vmTableItem* sheetItem );
-	void sharedContructorsCode ();
 	void fixTotalsRow ();
 	void reScanItem ( vmTableItem* const sheet_item );
 	void undoChange ();
@@ -265,13 +264,14 @@ private:
 			  *mDeleteRowAction, *mClearRowAction, *mClearTableAction,
 			  *mUndoAction, *mOverrideFormulaAction, *mSetFormulaAction, *mFormulaTitleAction;
 
+	QSize mPreferredSize;
 	QString mSearchTerm;
 	QLayout* mParentLayout;
 	QAction* mSeparator, *mDatesSeparator;
 	vmTableSearchPanel* m_searchPanel;
 	vmTableFilterPanel* m_filterPanel;
 	vmTableItem* mContextMenuCell;
-	
+
 protected:
 	void keyPressEvent ( QKeyEvent* k ) override;
 	inline void setVisibleRows ( const uint n ) { m_nVisibleRows = n; }

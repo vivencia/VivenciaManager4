@@ -132,6 +132,16 @@ int VivenciaDB::getTableColumnIndex ( const TABLE_INFO* t_info, const QString& c
 	return -1;
 }
 
+uint VivenciaDB::tableIDFromTableName ( const QString& strTableName )
+{
+	for ( uint i ( 0 ); i < TABLES_IN_DB; ++i )
+	{
+		if ( table_info[i]->table_name == strTableName )
+			return table_info[i]->table_id;
+	}
+	return 0;
+}
+
 QString VivenciaDB::tableName ( const TABLE_ORDER table )
 {	
 	QString ret;

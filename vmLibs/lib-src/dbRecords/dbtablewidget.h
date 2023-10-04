@@ -14,7 +14,6 @@ class dbTableWidget : public vmTableWidget
 
 public:
 	explicit dbTableWidget ( QWidget* parent = nullptr );
-	dbTableWidget ( const uint rows, QWidget* parent = nullptr );
 	virtual ~dbTableWidget () override;
 
 	void setIgnoreChanges ( const bool b_ignore ) override;

@@ -42,6 +42,7 @@ public:
 	static QString getTableColumnFlags ( const TABLE_INFO* t_info, uint column );
 	static QString getTableColumnLabel ( const TABLE_INFO* t_info, uint column );
 	static int getTableColumnIndex ( const TABLE_INFO* t_info, const QString& column_name );
+	static uint tableIDFromTableName ( const QString& strTableName );
 	static QString tableName ( const TABLE_ORDER table );
 
 	static inline const TABLE_INFO* tableInfo ( const uint to ) //to = table order

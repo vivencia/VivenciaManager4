@@ -3740,12 +3740,6 @@ void MainWindow::cboBuySuppliers_indexChanged ( const int idx )
 void MainWindow::setupCustomControls ()
 {
 	APP_RESTORER ()->addRestoreInfo ( m_crash = new crashRestore ( QStringLiteral ( "vmmain" ) ) );
-	ui->txtSearch->setEditable ( true );
-	static_cast<void>( connect ( ui->txtSearch, &QLineEdit::textEdited, this, [&] ( const QString& text ) { return on_txtSearch_textEdited ( text ); } ) );
-	ui->txtSearch->setCallbackForRelevantKeyPressed ( [&] ( const QKeyEvent* const ke, const vmWidget* const ) {
-		return searchCallbackSelector ( ke ); } );
-	static_cast<void>( connect ( ui->btnSearchStart, &QToolButton::clicked, this, [&] () { return on_btnSearchStart_clicked (); } ) );
-	static_cast<void>( connect ( ui->btnSearchCancel, &QToolButton::clicked, this, [&] () { return on_btnSearchCancel_clicked (); } ) );
 
 	setupClientPanel ();
 	setupJobPanel ();
@@ -3756,6 +3750,7 @@ void MainWindow::setupCustomControls ()
 
 	static_cast<void>( connect ( ui->btnReportGenerator, &QToolButton::clicked, this, [&] () { return btnReportGenerator_clicked (); } ) );
 	static_cast<void>( connect ( ui->btnBackupRestore, &QToolButton::clicked, this, [&] () { return btnBackupRestore_clicked (); } ) );
+	static_cast<void>( connect ( ui->btnSearch, &QToolButton::clicked, this, [&] () { return btnSearch_clicked (); } ) );
 	static_cast<void>( connect ( ui->btnCalculator, &QToolButton::clicked, this, [&] () { return btnCalculator_clicked (); } ) );
 	static_cast<void>( connect ( ui->btnEstimates, &QToolButton::clicked, this, [&] () { return btnEstimates_clicked (); } ) );
 	static_cast<void>( connect ( ui->btnCompanyPurchases, &QToolButton::clicked, this, [&] () { return btnCompanyPurchases_clicked (); } ) );
@@ -3909,14 +3904,6 @@ void MainWindow::restoreLastSession ()
 	findSectionByScrollPosition ( 0 ); // when I implement the code to restore screen controls' position, this function will not be called with a hard-coded number
 	displayClient ( client_item, true, job_item, buy_item );
 	ui->clientsList->setFocus ();
-}
-
-void MainWindow::searchCallbackSelector ( const QKeyEvent* ke )
-{
-	if ( ke->key () == Qt::Key_Escape )
-		on_btnSearchCancel_clicked ();
-	else
-		on_btnSearchStart_clicked ();
 }
 
 void MainWindow::reOrderTabSequence ()
@@ -4228,8 +4215,8 @@ bool MainWindow::eventFilter ( QObject* o, QEvent* e )
 				{
 					if ( k->key () == Qt::Key_F )
 					{
-						ui->txtSearch->setFocus ();
 						b_accepted = true;
+						btnSearch_clicked ();
 					}
 					else
 						b_accepted = execRecordAction ( k->key () );
@@ -4539,6 +4526,9 @@ inline void MainWindow::btnReportGenerator_clicked ()
 inline void MainWindow::btnBackupRestore_clicked () { BACKUP ()->isVisible () ? 
 		BACKUP ()->hide () : BACKUP ()->showWindow (); }
 
+inline void MainWindow::btnSearch_clicked () { SEARCH_UI ()->isVisible () ?
+		SEARCH_UI ()->hide () : SEARCH_UI ()->show (); }
+
 inline void MainWindow::btnCalculator_clicked () { CALCULATOR ()->isVisible () ?
 		CALCULATOR ()->hide () : CALCULATOR ()->showCalc ( emptyString, mapToGlobal ( ui->btnCalculator->pos () ) ); }
 
@@ -4553,57 +4543,6 @@ inline void MainWindow::btnConfiguration_clicked () { CONFIG_DIALOG ()->isVisibl
 
 inline void MainWindow::btnExitProgram_clicked () { Sys_Init::deInit (); }
 //--------------------------------------------SLOTS------------------------------------------------------------
-
-//--------------------------------------------SEARCH------------------------------------------------------------
-
-void MainWindow::on_txtSearch_textEdited ( const QString& text )
-{
-	if ( text.length () >= 5 )
-	{
-		ui->btnSearchStart->setEnabled ( text.length () >= 2 );
-		/*vmNotify* pBox ( nullptr );
-		const uint max_steps ( 100 );
-		pBox = vmNotify::progressBox ( this, max_steps,
-			QStringLiteral ( "Updating the Completers database. This might take a while..." )
-		);
-
-		for ( uint step ( 0 ); step <= max_steps; step++ )
-		{
-			if ( pBox->logProgress( max_steps, step, text + "   " + QString::number( step ) ) )
-				msleep ( 100 );
-			else
-				break;
-		}
-		QStringList btns ( QStringList () << "Button 1" << "Button 2" << "Button 3" << "Button 4" );
-		NOTIFY ()->messageBox ( text, "This is an example", vmNotify::CRITICAL, btns, 10000, [&] ( const int btn_idx ) { qDebug() << "Button pressed: " << btn_idx; } );
-		QString result;
-		NOTIFY ()->inputBox ( result, this, text, "This is an example" );
-		qDebug () << result;
-		NOTIFY()->notifyMessage( text, "This an example" );*/
-	}
-}
-
-void MainWindow::on_btnSearchStart_clicked ()
-{
-	searchUI::init ();
-	SEARCH_UI ()->prepareSearch ( ui->txtSearch->text (), ui->txtSearch );
-	if ( SEARCH_UI ()->canSearch () )
-		SEARCH_UI ()->search ();
-	ui->btnSearchStart->setEnabled ( SEARCH_UI ()->canSearch () );
-	ui->btnSearchCancel->setEnabled ( SEARCH_UI ()->isSearching () );
-}
-
-void MainWindow::on_btnSearchCancel_clicked ()
-{
-	if ( SEARCH_UI () )
-	{
-		SEARCH_UI ()->searchCancel ();
-		ui->txtSearch->clear ();
-		ui->btnSearchCancel->setEnabled ( false );
-		ui->btnSearchStart->setEnabled ( false );
-	}
-}
-//--------------------------------------------SEARCH------------------------------------------------------------
 
 //--------------------------------------------TRAY-----------------------------------------------------------
 void MainWindow::createTrayIcon ()
@@ -4648,6 +4587,7 @@ void MainWindow::createFloatToolBar ()
 	auto utilitiesToolBar ( new QToolBar ( this ) );
 	utilitiesToolBar->addWidget ( ui->btnReportGenerator );
 	utilitiesToolBar->addWidget ( ui->btnBackupRestore );
+	utilitiesToolBar->addWidget ( ui->btnSearch );
 	utilitiesToolBar->addWidget ( ui->btnCalculator );
 	utilitiesToolBar->addWidget ( ui->btnServicesPrices );
 	utilitiesToolBar->addWidget ( ui->btnEstimates );
@@ -4666,13 +4606,6 @@ void MainWindow::createFloatToolBar ()
 	sectionsToolBar->addWidget ( ui->lblCurInfoBuy );
 	addToolBar ( Qt::TopToolBarArea, sectionsToolBar );
 	addToolBarBreak ( Qt::TopToolBarArea );
-	
-	auto searchToolBar ( new QToolBar ( this ) );
-	searchToolBar->addWidget ( ui->lblFastSearch );
-	searchToolBar->addWidget ( ui->txtSearch );
-	searchToolBar->addWidget ( ui->btnSearchStart );
-	searchToolBar->addWidget ( ui->btnSearchCancel );
-	addToolBar ( Qt::TopToolBarArea, searchToolBar );
 }
 
 void MainWindow::trayMenuTriggered ( QAction* action )
@@ -4769,7 +4702,7 @@ void MainWindow::postFieldAlterationActions ( dbListItem* item )
 void MainWindow::updateWindowBeforeSave ()
 {
 	QWidget* wdgFocus ( this->focusWidget () );
-	ui->txtSearch->setFocus ();
+	ui->tabStatistics->setFocus ();
 	qApp->sendPostedEvents();
 	wdgFocus->setFocus ();
 	qApp->sendPostedEvents();

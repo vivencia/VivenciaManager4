@@ -36,23 +36,59 @@ vmTableWidget::vmTableWidget ( QWidget* parent )
 	  monitoredCellChanged_func ( nullptr ), rowRemoved_func ( nullptr ), rowInserted_func ( nullptr ),
 	  rowActivated_func ( nullptr ), completer_func ( nullptr )
 {
-	sharedContructorsCode ();
-}
+	setWidgetPtr ( static_cast<QWidget*>( this ) );
+	//setSelectionMode ( QAbstractItemView::ExtendedSelection );
+	//setSelectionBehavior ( QAbstractItemView::SelectItems );
+	setAlternatingRowColors ( true );
+	setAttribute ( Qt::WA_KeyCompression );
+	setFrameShape ( QFrame::NoFrame );
+	setFrameShadow ( QFrame::Plain );
 
-vmTableWidget::vmTableWidget ( const uint rows, QWidget* parent )
-	: QTableWidget ( static_cast<int>(rows) + 1, 0, parent ), vmWidget ( WT_TABLE, static_cast<int>(rows) ),
-	  mCols ( nullptr ), mTotalsRow ( -1 ), m_lastUsedRow ( -1 ),m_nVisibleRows ( 0 ), m_ncols ( 0 ), mAddedItems ( 0 ),
-	  mTableChanged ( false ), mb_TableInit ( true ), mbKeepModRec ( true ), mbPlainTable ( false ), mbIsSorted ( false ),
-	  mbUseWidgets ( true ), mbTableIsList ( false ), mbColumnAutoResize ( false ), mbIgnoreChanges ( true ), readOnlyColumnsMask ( 0 ),
-	  modifiedRows ( 0, 10 ), mMonitoredCells ( 2 ), m_highlightedCells ( 5 ), m_itemsToReScan ( rows + 1 ), mSearchList ( 10 ),
-	  mContextMenu ( nullptr ), mOverrideFormulaAction ( nullptr ), mSetFormulaAction ( nullptr ),
-	  mFormulaTitleAction ( nullptr ), mParentLayout ( nullptr ), m_searchPanel ( nullptr ), m_filterPanel ( nullptr ),
-	  mContextMenuCell ( nullptr ), cellChanged_func ( nullptr ), cellNavigation_func ( nullptr ),
-	  monitoredCellChanged_func ( nullptr ), rowRemoved_func ( nullptr ), rowInserted_func ( nullptr ),
-	  rowActivated_func ( nullptr ), completer_func ( nullptr )
-{
-	sharedContructorsCode ();
-	initTable ( rows );
+	setContextMenuPolicy ( Qt::CustomContextMenu );
+	static_cast<void>( connect ( this, &QTableWidget::customContextMenuRequested, this,
+						[&] ( const QPoint pos ) { displayContextMenuForCell ( pos ); } ) );
+
+	setEditable ( false );
+
+	mUndoAction = new vmAction ( UNDO, TR_FUNC ( "Undo change (CTRL+Z)" ), this );
+	static_cast<void>( connect ( mUndoAction, &vmAction::triggered, this, [&] () { undoChange (); } ) );
+
+	mCopyCellAction = new vmAction ( COPY_CELL, TR_FUNC ( "Copy cell contents to clipboard (CTRL+C)" ), this );
+	static_cast<void>( connect ( mCopyCellAction, &vmAction::triggered, this, [&] () { copyCellContents (); } ) );
+
+	mCopyRowContents = new vmAction ( COPY_ROW, TR_FUNC ( "Copy row contents to clipboard (CTRL+B)" ), this );
+	static_cast<void>( connect ( mCopyRowContents, &vmAction::triggered, this, [&] () { copyRowContents (); } ) );
+
+	mInsertRowAction = new vmAction ( ADD_ROW, TR_FUNC ( "Insert line here (CTRL+I)" ), this );
+	static_cast<void>( connect ( mInsertRowAction, &vmAction::triggered, this, [&] () { insertRow_slot (); } ) );
+
+	mAppendRowAction = new vmAction ( APPEND_ROW, TR_FUNC ( "Append line (CTRL+O)" ), this );
+	static_cast<void>( connect ( mAppendRowAction, &vmAction::triggered, this, [&] () { appendRow (); } ) );
+
+	mDeleteRowAction = new vmAction ( DEL_ROW, TR_FUNC ( "Remove this line (CTRL+R)" ), this );
+	static_cast<void>( connect ( mDeleteRowAction, &vmAction::triggered, this, [&] () { removeRow_slot (); } ) );
+
+	mClearRowAction = new vmAction ( CLEAR_ROW, TR_FUNC ( "Clear line (CTRL+D)" ), this );
+	static_cast<void>( connect ( mClearRowAction, &vmAction::triggered, this, [&] () { clearRow_slot (); } ) );
+
+	mClearTableAction = new vmAction ( CLEAR_TABLE, TR_FUNC ( "Clear table (CTRL+T)" ), this );
+	static_cast<void>( connect ( mClearTableAction, &vmAction::triggered, this, [&] () { clearTable_slot (); } ) );
+
+	mSubMenuFormula = new QMenu ( QStringLiteral ( "Formula" ) );
+
+	mContextMenu = new QMenu ( this );
+	mContextMenu->addAction ( mUndoAction );
+	mContextMenu->addSeparator ();
+	mContextMenu->addAction ( mCopyCellAction );
+	mContextMenu->addAction ( mCopyRowContents );
+	mContextMenu->addSeparator ();
+	mContextMenu->addAction ( mAppendRowAction );
+	mContextMenu->addAction ( mInsertRowAction );
+	mContextMenu->addAction ( mDeleteRowAction );
+	mContextMenu->addAction ( mClearRowAction );
+	mContextMenu->addAction ( mClearTableAction );
+	mContextMenu->addSeparator ();
+	mContextMenu->addMenu ( mSubMenuFormula );
 }
 
 vmTableWidget::~vmTableWidget ()
@@ -85,12 +121,12 @@ void vmTableWidget::initTable ( const uint rows )
 {
 	setUpdatesEnabled ( false );
 	m_nVisibleRows = rows + static_cast<uint>( !mbPlainTable );
-	
+
 	if ( isList () )
 		initList ();
 	else
 		initTable2 ();
-	
+
 	setUpdatesEnabled ( true );
 	mb_TableInit = false;
 }
@@ -173,7 +209,7 @@ bool vmTableWidget::searchLast ()
 int vmTableWidget::getRow ( const QString& cellText, const Qt::CaseSensitivity cs, const uint startrow, uint nth_find )
 {
 	if ( isEmpty () ) return -1;
-	
+
 	for ( uint row ( startrow ); row <= static_cast<uint>( lastUsedRow () ); ++row )
 	{
 		for ( uint col ( 0 ); col < colCount (); ++col )
@@ -232,7 +268,7 @@ void vmTableWidget::insertRow ( const uint row, const uint n )
 			{
 				new_SheetItem = new vmTableItem ( mCols[i_col].wtype, mCols[i_col].text_type, mCols[i_col].default_value, this );
 				setItem ( static_cast<int>( row + i_row ), static_cast<int>( i_col ), new_SheetItem );
-				
+
 				if ( mbUseWidgets )
 				{
 					new_SheetItem->setButtonType ( mCols[i_col].button_type );
@@ -326,7 +362,7 @@ void vmTableWidget::removeRow ( const uint row, const uint n )
 				m_lastUsedRow -= actual_n;
 			//if ( static_cast<int>( row + actual_n ) >= lastUsedRow () )
 			//	setLastUsedRow ( static_cast<int>( row - 1 ) );
-			
+
 			if ( !isPlainTable () )
 			{
 				mTotalsRow -= actual_n;
@@ -348,14 +384,14 @@ void vmTableWidget::removeRow ( const uint row, const uint n )
 					}
 				}
 				fixTotalsRow ();
-			
+
 				const uint modified_rows ( modifiedRows.count () );
 				if ( modified_rows > 0 )
 				{
 					uint i ( 0 ), list_value ( 0 ), start_modification ( 0 );
 					for ( i = 0 ; i < modifiedRows.count (); ++i )
 					{
-						if ( row < modifiedRows.at ( i ) ) 
+						if ( row < modifiedRows.at ( i ) )
 							break;
 						start_modification++; // modified rows above deletion start point are not affected
 					}
@@ -402,7 +438,7 @@ void vmTableWidget::clearRow ( const uint row, const uint n )
 					if ( !rowRemoved_func ( i_row ) )
 						continue;
 				}
-				
+
 				for ( uint i_col ( 0 ); i_col <= ( colCount () - 1 ); ++i_col )
 				{
 					if ( !isBitSet ( readOnlyColumnsMask, static_cast<uchar>( i_col ) ) )
@@ -472,7 +508,7 @@ void vmTableWidget::setIgnoreChanges ( const bool b_ignore )
 	{
 		if ( isPlainTable () )
 		{
-			static_cast<void>( connect ( this, &QTableWidget::itemChanged, this, [&] ( QTableWidgetItem *item ) { 
+			static_cast<void>( connect ( this, &QTableWidget::itemChanged, this, [&] ( QTableWidgetItem *item ) {
 					cellModified ( dynamic_cast<vmTableItem*>( item ) ); } ) );
 		}
 		if ( cellNavigation_func != nullptr )
@@ -824,11 +860,11 @@ void vmTableWidget::setIsList ()
 	setIsPlainTable ( false );
 }
 
-void vmTableWidget::setIsPlainTable ( const bool b_usewidgets ) 
-{ 
-	mbUseWidgets = b_usewidgets; 
+void vmTableWidget::setIsPlainTable ( const bool b_usewidgets )
+{
+	mbUseWidgets = b_usewidgets;
 	mbPlainTable = true;
-	setKeepModificationRecords ( false ); 
+	setKeepModificationRecords ( false );
 	setSelectionMode ( QAbstractItemView::SingleSelection );
 	setSelectionBehavior ( QAbstractItemView::SelectRows );
 }
@@ -1054,7 +1090,7 @@ void vmTableWidget::insertMonitoredCell ( const uint row, const uint col )
 		*/
 		if ( isBitSet ( readOnlyColumnsMask, static_cast<uchar>(col) ) || row == static_cast<uint>(totalsRow ()) )
 		{
-			if ( item->widget () ) 
+			if ( item->widget () )
 			{ // call setCallbackForMonitoredCellChanged with nullptr as argument when you wish to handle the monitoring outside this class
 				item->widget ()->setCallbackForContentsAltered ( [&, item] ( const vmWidget* const ) {
 						monitoredCellChanged_func ( item ); } );
@@ -1190,7 +1226,7 @@ void vmTableWidget::keyPressEvent ( QKeyEvent* k )
 			}
 			b_accept = toggleUtilityPanel ( m_searchPanel->utilityIndex () );
 		}
-		
+
 		else if ( k->key () == Qt::Key_L )
 		{
 			if ( !m_filterPanel )
@@ -1210,12 +1246,12 @@ void vmTableWidget::keyPressEvent ( QKeyEvent* k )
 			actionsBeforeClearing ();
 			b_accept = true;
 		}
-		
+
 		k->setAccepted ( b_accept );
 		if ( b_accept )
 			return;
 	}
-	
+
 	if ( isEditable () )
 	{
 		if ( ctrlKey )
@@ -1301,12 +1337,12 @@ void vmTableWidget::initTable2 ()
 	headerItem->setCallbackForCheckStateChange ( [&] ( const uint col, const bool checked ) {
 		return headerItemToggled ( col, checked ); } );
 	setHorizontalHeader ( headerItem );*/
-	
+
 	uint i_col ( 0 );
 
 	vmTableColumn* column ( nullptr );
 	QString col_header;
-	
+
 	do
 	{
 		column = &mCols[i_col];
@@ -1317,7 +1353,7 @@ void vmTableWidget::initTable2 ()
 
 		//setHorizontalHeaderItem ( static_cast<int>( i_col ), new vmTableItem ( WT_TABLE_ITEM, vmLineEdit::TT_TEXT, column->label, this ) );
 		setHorizontalHeaderItem ( static_cast<int>( i_col ), new vmTableItem ( column->label, this ) ); //TEST
-		
+
 		uint colWidth ( column->width );
 		if ( colWidth == 0 )
 		{
@@ -1338,6 +1374,7 @@ void vmTableWidget::initTable2 ()
 			}
 		}
 		setColumnWidth ( static_cast<int>( i_col ), static_cast<int>( colWidth ) );
+		mPreferredSize.setWidth ( mPreferredSize.width () + colWidth );
 		++i_col;
 	}
 	while ( i_col < m_ncols );
@@ -1345,6 +1382,7 @@ void vmTableWidget::initTable2 ()
 	mTotalsRow = static_cast<int>( visibleRows () - 1 );
 	// If the table is a spreadsheet (not plain table) then the last row will be special and inserted in the code block below, after this line
 	insertRow ( 0, isPlainTable () ? static_cast<uint>( visibleRows () ) : static_cast<uint>( totalsRow () ) );
+	mPreferredSize.setHeight ( visibleRows () * rowHeight ( 0 ) );
 
 	if ( !isPlainTable () )
 	{
@@ -1361,7 +1399,7 @@ void vmTableWidget::initTable2 ()
 				{
 					setCellWidget ( sheet_item );
 					col_header = QChar ( 'A' + i_col );
-					sheet_item->setFormula ( QLatin1String ( "sum " ) + col_header + CHR_ZERO + CHR_SPACE + col_header + 
+					sheet_item->setFormula ( QLatin1String ( "sum " ) + col_header + CHR_ZERO + CHR_SPACE + col_header +
 										 QLatin1String ( "%1" ), QString::number ( mTotalsRow - 1 ) );
 				}
 			}
@@ -1405,63 +1443,6 @@ void vmTableWidget::enableOrDisableActionsForCell ( const vmTableItem* sheetItem
 		mOverrideFormulaAction->setEnabled ( sheetItem->hasFormula () );
 		mOverrideFormulaAction->setChecked ( sheetItem->formulaOverride () );
 	}
-}
-
-void vmTableWidget::sharedContructorsCode ()
-{
-	setWidgetPtr ( static_cast<QWidget*>( this ) );
-	//setSelectionMode ( QAbstractItemView::ExtendedSelection );
-	//setSelectionBehavior ( QAbstractItemView::SelectItems );
-	setAlternatingRowColors ( true );
-	setAttribute ( Qt::WA_KeyCompression );
-	setFrameShape ( QFrame::NoFrame );
-	setFrameShadow ( QFrame::Plain );
-
-	setContextMenuPolicy ( Qt::CustomContextMenu );
-	static_cast<void>( connect ( this, &QTableWidget::customContextMenuRequested, this,
-						[&] ( const QPoint pos ) { displayContextMenuForCell ( pos ); } ) );
-	
-	setEditable ( false );
-
-	mUndoAction = new vmAction ( UNDO, TR_FUNC ( "Undo change (CTRL+Z)" ), this );
-	static_cast<void>( connect ( mUndoAction, &vmAction::triggered, this, [&] () { undoChange (); } ) );
-
-	mCopyCellAction = new vmAction ( COPY_CELL, TR_FUNC ( "Copy cell contents to clipboard (CTRL+C)" ), this );
-	static_cast<void>( connect ( mCopyCellAction, &vmAction::triggered, this, [&] () { copyCellContents (); } ) );
-
-	mCopyRowContents = new vmAction ( COPY_ROW, TR_FUNC ( "Copy row contents to clipboard (CTRL+B)" ), this );
-	static_cast<void>( connect ( mCopyRowContents, &vmAction::triggered, this, [&] () { copyRowContents (); } ) );
-
-	mInsertRowAction = new vmAction ( ADD_ROW, TR_FUNC ( "Insert line here (CTRL+I)" ), this );
-	static_cast<void>( connect ( mInsertRowAction, &vmAction::triggered, this, [&] () { insertRow_slot (); } ) );
-
-	mAppendRowAction = new vmAction ( APPEND_ROW, TR_FUNC ( "Append line (CTRL+O)" ), this );
-	static_cast<void>( connect ( mAppendRowAction, &vmAction::triggered, this, [&] () { appendRow (); } ) );
-
-	mDeleteRowAction = new vmAction ( DEL_ROW, TR_FUNC ( "Remove this line (CTRL+R)" ), this );
-	static_cast<void>( connect ( mDeleteRowAction, &vmAction::triggered, this, [&] () { removeRow_slot (); } ) );
-
-	mClearRowAction = new vmAction ( CLEAR_ROW, TR_FUNC ( "Clear line (CTRL+D)" ), this );
-	static_cast<void>( connect ( mClearRowAction, &vmAction::triggered, this, [&] () { clearRow_slot (); } ) );
-
-	mClearTableAction = new vmAction ( CLEAR_TABLE, TR_FUNC ( "Clear table (CTRL+T)" ), this );
-	static_cast<void>( connect ( mClearTableAction, &vmAction::triggered, this, [&] () { clearTable_slot (); } ) );
-
-	mSubMenuFormula = new QMenu ( QStringLiteral ( "Formula" ) );
-
-	mContextMenu = new QMenu ( this );
-	mContextMenu->addAction ( mUndoAction );
-	mContextMenu->addSeparator ();
-	mContextMenu->addAction ( mCopyCellAction );
-	mContextMenu->addAction ( mCopyRowContents );
-	mContextMenu->addSeparator ();
-	mContextMenu->addAction ( mAppendRowAction );
-	mContextMenu->addAction ( mInsertRowAction );
-	mContextMenu->addAction ( mDeleteRowAction );
-	mContextMenu->addAction ( mClearRowAction );
-	mContextMenu->addAction ( mClearTableAction );
-	mContextMenu->addSeparator ();
-	mContextMenu->addMenu ( mSubMenuFormula );
 }
 
 void vmTableWidget::fixTotalsRow ()

@@ -269,7 +269,7 @@ int Client::searchCategoryTranslate ( const SEARCH_CATEGORIES sc ) const
 		case SC_DATE_1:		return FLD_CLIENT_STARTDATE;
 		case SC_DATE_2:		return FLD_CLIENT_ENDDATE;
 		case SC_TYPE:		return FLD_CLIENT_NAME;
-		case SC_EXTRA_1:	return FLD_CLIENT_EMAIL;
+		case SC_EXTRA:		return FLD_CLIENT_EMAIL;
 		default:			return -1;
 	}
 }

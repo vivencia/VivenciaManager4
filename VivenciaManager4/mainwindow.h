@@ -236,7 +236,6 @@ public:
 	void setupCustomControls ();
 	void restoreCrashedItems ( crashRestore* const crash, clientListItem* &client_item, jobListItem* &job_item, buyListItem* &buy_item );
 	void restoreLastSession ();
-	void searchCallbackSelector ( const QKeyEvent* ke );
 	void reOrderTabSequence ();
 	void setupWorkFlow ();
 	void setupSectionNavigation ();
@@ -383,18 +382,13 @@ private:
 	void receiveWidgetBack ( QWidget* widget );
 	void btnReportGenerator_clicked ();
 	void btnBackupRestore_clicked ();
+	void btnSearch_clicked ();
 	void btnCalculator_clicked ();
 	void btnEstimates_clicked ();
 	void btnCompanyPurchases_clicked ();
 	void btnConfiguration_clicked ();
 	void btnExitProgram_clicked ();
 //--------------------------------------------SLOTS-----------------------------------------------------------
-
-//--------------------------------------------SEARCH-----------------------------------------------------------
-	void on_txtSearch_textEdited ( const QString& text );
-	void on_btnSearchStart_clicked ();
-	void on_btnSearchCancel_clicked ();
-//--------------------------------------------SEARCH-----------------------------------------------------------
 
 //--------------------------------------------TRAY-----------------------------------------------------------
 	void createTrayIcon ();

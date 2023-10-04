@@ -32,6 +32,7 @@ documentEditor* Sys_Init::editor_instance ( nullptr );
 companyPurchasesUI* Sys_Init::cp_instance ( nullptr );
 suppliersDlg* Sys_Init::sup_instance ( nullptr );
 estimateDlg* Sys_Init::estimates_instance ( nullptr );
+searchUI* Sys_Init::search_instance ( nullptr );
 simpleCalculator* Sys_Init::calc_instance ( nullptr );
 configDialog* Sys_Init::configdlg_instance ( nullptr );
 spreadSheetEditor* Sys_Init::qp_instance ( nullptr );
@@ -46,6 +47,7 @@ void deleteInstances ()
 	heap_del ( Sys_Init::sup_instance );
 	heap_del ( Sys_Init::estimates_instance );
 	heap_del ( Sys_Init::qp_instance );
+	heap_del ( Sys_Init::search_instance );
 	heap_del ( Sys_Init::calc_instance );
 	heap_del ( Sys_Init::completers_instance );
 	heap_del ( Sys_Init::backup_instance );

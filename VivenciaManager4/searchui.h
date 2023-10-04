@@ -4,6 +4,7 @@
 #include <vmlist.h>
 #include <dbRecords/dblistitem.h>
 #include <vmUtils/tristatetype.h>
+#include <vmStringRecord/stringrecord.h>
 
 #include <QtWidgets/QDialog>
 
@@ -11,9 +12,11 @@
 
 class vmWidget;
 class vmTableWidget;
+class vmLineEdit;
 
 class QToolButton;
 class QPushButton;
+class QKeyEvent;
 
 enum SEARCH_STEPS
 {
@@ -25,23 +28,17 @@ class searchUI : public QDialog
 {
 
 public:
+	explicit searchUI ();
 	virtual ~searchUI () override;
-
-	static void init ()
-	{
-		if ( searchUI::s_instance == nullptr )
-			searchUI::s_instance = new searchUI ();
-	}
 
 	inline bool canSearch () const { return static_cast<SEARCH_STATUS>( searchStatus.state () ) == SS_NOT_FOUND; }
 	inline bool isSearching () const { return static_cast<SEARCH_STATUS>( searchStatus.state () ) == SS_SEARCH_FOUND; }
 	inline const QString& searchTerm () const { return mSearchTerm; }
 
 	void searchCancel ();
-	void prepareSearch ( const QString& searchTerm, QWidget* widget );
+	void prepareSearch ( const QString& searchTerm );
 	void parseSearchTerm ( const QString& searchTerm );
 	void search ( uint search_start = SS_CLIENT, const uint search_end = SS_SUPPLIERS );
-	void fillList ();
 	bool searchFirst ();
 	bool searchPrev ();
 	bool searchNext ();
@@ -51,40 +48,32 @@ public:
 	bool isFirst () const;
 
 private:
-	explicit searchUI ();
-	friend searchUI* SEARCH_UI ();
-	friend void deleteSearchUIInstance ();
-	static searchUI* s_instance;
-
 	void setupUI ();
 	void createTable ();
+	void on_txtSearch_textEdited ( const QString& text );
+	void searchCallbackSelector ( const QKeyEvent* const ke );
+	void btnSearchClicked ();
 	void btnPrevClicked ();
 	void btnNextClicked ();
 	void listRowSelected ( const int row );
-	dbListItem* getOtherItem ( const uint typeID, const uint id ) const;
-	void getClientInfo ( const clientListItem* const client_rec, vmList<QString>& cellData );
-	bool getJobInfo (jobListItem* job_item, vmList<QString>& cellData );
-	bool getPayInfo ( payListItem* pay_item, vmList<QString>& cellData );
-	bool getBuyInfo ( buyListItem* buy_item, vmList<QString>& cellData );
-	bool getOtherInfo ( dbListItem* item, vmList<QString>& cellData );
+	void searchClients ();
+	void searchJobs ();
+	void searchPayments ();
+	void searchPurchases ();
+	void searchInventory ();
+	void searchSupplies ();
+	void searchSuppliers ();
 
 	QString mSearchTerm;
-	bool mbShow;
 	uint mSearchFields;
+	int mCurRow;
 	triStateType searchStatus;
 	vmTableWidget* mFoundList;
+	vmLineEdit* mtxtSearch;
+	QToolButton* mBtnSearch;
 	QToolButton* mBtnNext;
 	QToolButton* mBtnPrev;
 	QPushButton* mBtnClose;
-	QWidget* mWidget;
-	pointersList<dbListItem*> mFoundItems;
-	vmTableItem* mPreviusItemActivated;
-	std::function<void ( dbListItem* item, const bool bshow )> displayFunc;
+	stringTable mFoundItems;
 };
-
-inline searchUI* SEARCH_UI ()
-{
-	return searchUI::s_instance;
-}
-
 #endif // SEARCHUI_H
