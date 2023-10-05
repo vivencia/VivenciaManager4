@@ -239,7 +239,7 @@ const QString textEditWithCompleter::defaultStyleSheet () const
 
 void textEditWithCompleter::highlight ( const VMColors wm_color, const QString& str )
 {
-	//vmWidget::highlight ( wm_color ); // maybe not needed and/or a stupid idea. Test to see if should be removed
+	vmWidget::highlight ( wm_color );
 	if ( !str.isEmpty () && wm_color != vmDefault_Color )
 	{
 		mHighlightedWord = str;

@@ -81,6 +81,22 @@ supplierRecord::supplierRecord ( const bool connect_helper_funcs )
 
 supplierRecord::~supplierRecord () {}
 
+int supplierRecord::searchCategoryTranslate ( const SEARCH_CATEGORIES sc ) const
+{
+	switch ( sc )
+	{
+		case SC_ID:					return FLD_SUPPLIER_ID;
+		case SC_ADDRESS_1:			return FLD_SUPPLIER_STREET;
+		case SC_ADDRESS_2:			return FLD_SUPPLIER_NUMBER;
+		case SC_ADDRESS_3:			return FLD_SUPPLIER_DISTRICT;
+		case SC_ADDRESS_4:			return FLD_SUPPLIER_CITY;
+		case SC_TYPE:				return FLD_SUPPLIER_NAME;
+		case SC_PHONES:				return FLD_SUPPLIER_PHONES;
+		case SC_ONLINE_ADDRESS:		return FLD_SUPPLIER_EMAIL;
+		default:					return -1;
+	}
+}
+
 void supplierRecord::insertIfSupplierInexistent ( const QString& supplier )
 {
 	QSqlQuery query;

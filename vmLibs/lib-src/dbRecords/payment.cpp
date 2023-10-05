@@ -6,20 +6,23 @@
 
 #include <vmStringRecord/stringrecord.h>
 
-static const unsigned int TABLE_VERSION ( 'A' );
+static const unsigned int TABLE_VERSION ( 'B' );
 
 constexpr DB_FIELD_TYPE PAYS_FIELDS_TYPE[PAY_FIELD_COUNT] = {
 	DBTYPE_ID, DBTYPE_ID, DBTYPE_ID, DBTYPE_PRICE, DBTYPE_NUMBER, DBTYPE_PRICE,
-	DBTYPE_SHORTTEXT, DBTYPE_SUBRECORD, DBTYPE_YESNO, DBTYPE_PRICE
+	DBTYPE_SHORTTEXT, DBTYPE_SUBRECORD, DBTYPE_YESNO, DBTYPE_PRICE, DBTYPE_NUMBER
 };
 
-#ifdef PAYMENT_TABLE_UPDATE_AVAILABLE
-bool updatePaymentTable ()
+bool updatePaymentTable ( const unsigned char /*current_table_version*/ )
 {
-	VDB ()->optimizeTable ( &Payment::t_info );
-	return true;
+	/*if ( current_table_version == 'A')
+	{
+		DBRecord::databaseManager ()->insertColumn ( FLD_PAY_SEARCH_STATUS, &Payment::t_info );
+		VivenciaDB::optimizeTable ( &Payment::t_info );
+		return true;
+	}*/
+	return false;
 }
-#endif //PAYMENT_TABLE_UPDATE_AVAILABLE
 
 const TABLE_INFO Payment::t_info =
 {
@@ -27,17 +30,13 @@ const TABLE_INFO Payment::t_info =
 	QStringLiteral ( "PAYMENTS" ),
 	QStringLiteral ( " ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" ),
 	QStringLiteral ( " PRIMARY KEY ( `ID` ) , UNIQUE KEY `id` ( `ID` ) " ),
-	QStringLiteral ( "`ID`|`CLIENTID`|`JOBID`|`PRICE`|`TOTALPAYS`|`TOTALPAID`|`OBS`|`INFO`|`OVERDUE`|`OVERDUE_VALUE`|" ),
+	QStringLiteral ( "`ID`|`CLIENTID`|`JOBID`|`PRICE`|`TOTALPAYS`|`TOTALPAID`|`OBS`|`INFO`|`OVERDUE`|`OVERDUE_VALUE`|`SEARCH_STATUS`|" ),
 	QStringLiteral ( " int ( 9 ) NOT NULL, | int ( 9 ) NOT NULL, | int ( 9 ) DEFAULT NULL, | varchar ( 30 ) DEFAULT NULL, |"
 	" varchar ( 30 ) DEFAULT NULL, | varchar ( 30 ) DEFAULT NULL, | varchar ( 100 ) COLLATE utf8_unicode_ci DEFAULT NULL, |"
-	" longtext COLLATE utf8_unicode_ci DEFAULT NULL, | varchar ( 4 ) DEFAULT NULL, | varchar ( 30 ) DEFAULT NULL, |" ),
-	QStringLiteral ( "ID|Client ID|Job ID|Price|Number of payments|Total paid|Observations|Info|Overdue|Overdue value|" ),
+	" longtext COLLATE utf8_unicode_ci DEFAULT NULL, | varchar ( 4 ) DEFAULT NULL, | varchar ( 30 ) DEFAULT NULL, | int ( 9 ) DEFAULT 0, |" ),
+	QStringLiteral ( "ID|Client ID|Job ID|Price|Number of payments|Total paid|Observations|Info|Overdue|Overdue value|Search Status|" ),
 	PAYS_FIELDS_TYPE, TABLE_VERSION, PAY_FIELD_COUNT, TABLE_PAY_ORDER, 
-	#ifdef PAYMENT_TABLE_UPDATE_AVAILABLE
 	&updatePaymentTable
-	#else
-	nullptr
-	#endif //PAYMENT_TABLE_UPDATE_AVAILABLE
 	#ifdef TRANSITION_PERIOD
 	, true
 	#endif

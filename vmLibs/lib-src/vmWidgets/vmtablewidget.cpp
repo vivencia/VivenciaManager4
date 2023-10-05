@@ -1382,7 +1382,7 @@ void vmTableWidget::initTable2 ()
 	mTotalsRow = static_cast<int>( visibleRows () - 1 );
 	// If the table is a spreadsheet (not plain table) then the last row will be special and inserted in the code block below, after this line
 	insertRow ( 0, isPlainTable () ? static_cast<uint>( visibleRows () ) : static_cast<uint>( totalsRow () ) );
-	mPreferredSize.setHeight ( visibleRows () * rowHeight ( 0 ) );
+	mPreferredSize.setHeight ( 2 * visibleRows () * rowHeight ( 0 ) );
 
 	if ( !isPlainTable () )
 	{

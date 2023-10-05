@@ -21,6 +21,8 @@ friend class companyPurchasesUI;
 public:
 	explicit companyPurchases ( const bool connect_helper_funcs = false );
 	virtual ~companyPurchases ();
+
+	int searchCategoryTranslate ( const SEARCH_CATEGORIES sc ) const override;
 	void exportToInventory ();
 
 private:

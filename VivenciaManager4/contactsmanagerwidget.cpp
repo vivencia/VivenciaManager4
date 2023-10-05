@@ -43,6 +43,7 @@ void contactsManagerWidget::initInterface ()
 	cboInfoData->setCallbackForRelevantKeyPressed ( [&] ( const QKeyEvent* const ke, const vmWidget* const sender ) { return keyPressedSelector ( ke, sender ); } );
 	cboInfoData->setCallbackForEnterKeyPressed ( [&] () { return btnAdd_clicked ( false ); } );
 	cboInfoData->setCallbackForEscKeyPressed ( [&] () { return btnDel_clicked (); } );
+	setWidgetPtr ( static_cast<QWidget*>( cboInfoData ) );
 
 	btnAdd = new QToolButton ( this );
 	btnAdd->setCheckable ( true );

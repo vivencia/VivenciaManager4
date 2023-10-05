@@ -73,6 +73,23 @@ companyPurchases::companyPurchases ( const bool connect_helper_funcs )
 
 companyPurchases::~companyPurchases () {}
 
+int companyPurchases::searchCategoryTranslate ( const SEARCH_CATEGORIES sc ) const
+{
+	switch ( sc )
+	{
+		case SC_ID:			return FLD_CP_ID;
+		case SC_REPORT_1:	return FLD_CP_ITEMS_REPORT;
+		case SC_REPORT_2:	return FLD_CP_PAY_REPORT;
+		case SC_DATE_1:		return FLD_CP_DATE;
+		case SC_DATE_2:		return FLD_CP_DELIVERY_DATE;
+		case SC_TYPE:		return FLD_CP_DELIVERY_METHOD;
+		case SC_PRICE_1:	return FLD_CP_TOTAL_PRICE;
+		case SC_PRICE_2:	return FLD_CP_PAY_VALUE;
+		case SC_EXTRA:		return FLD_CP_SUPPLIER;
+		default:			return -1;
+	}
+}
+
 void companyPurchases::exportToInventory ()
 {
 	Inventory inv_rec;

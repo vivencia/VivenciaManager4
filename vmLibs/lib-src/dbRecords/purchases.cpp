@@ -6,26 +6,23 @@
 
 #include <vmStringRecord/stringrecord.h>
 
-static const unsigned int TABLE_VERSION ( 'B' );
+static const unsigned int TABLE_VERSION ( 'C' );
 
 constexpr DB_FIELD_TYPE BUYS_FIELDS_TYPE[BUY_FIELD_COUNT] = {
 	DBTYPE_ID, DBTYPE_ID, DBTYPE_ID, DBTYPE_DATE, DBTYPE_DATE, DBTYPE_PRICE,
 	DBTYPE_PRICE, DBTYPE_NUMBER, DBTYPE_LIST, DBTYPE_LIST, DBTYPE_SHORTTEXT,
-	DBTYPE_SUBRECORD, DBTYPE_SUBRECORD, DBTYPE_YESNO
+	DBTYPE_SUBRECORD, DBTYPE_SUBRECORD, DBTYPE_YESNO, DBTYPE_NUMBER
 };
 
 bool updatePurchaseTable ( const unsigned char /*current_table_version*/ )
 {
-	/*if ( current_table_version == 'A')
+	/*if ( current_table_version == 'B')
 	{
-		if ( DBRecord::databaseManager ()->insertColumn ( FLD_BUY_LAST_VIEWED, &Buy::t_info ) )
-		{
-			VivenciaDB::optimizeTable ( &Buy::t_info );
-			return true;
-		}
-	}
-	return false;*/
-	return true;
+		DBRecord::databaseManager ()->insertColumn ( FLD_BUY_SEARCH_STATUS, &Buy::t_info );
+		VivenciaDB::optimizeTable ( &Buy::t_info );
+		return true;
+	}*/
+	return false;
 }
 
 const TABLE_INFO Buy::t_info =
@@ -34,12 +31,12 @@ const TABLE_INFO Buy::t_info =
 	QStringLiteral ( "PURCHASES" ),
 	QStringLiteral ( " ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" ),
 	QStringLiteral ( " PRIMARY KEY ( `ID` ), UNIQUE KEY `id` ( `ID` ) " ),
-	QStringLiteral ( "`ID`|`CLIENTID`|`JOBID`|`DATE`|`DELIVERDATE`|`PRICE`|`TOTAL_PAID`|`TOTALPAYS`|`DELIVERMETHOD`|`SUPPLIER`|`NOTES`|`REPORT`|`PAYINFO`|`LAST_VIEWED`|" ),
+	QStringLiteral ( "`ID`|`CLIENTID`|`JOBID`|`DATE`|`DELIVERDATE`|`PRICE`|`TOTAL_PAID`|`TOTALPAYS`|`DELIVERMETHOD`|`SUPPLIER`|`NOTES`|`REPORT`|`PAYINFO`|`LAST_VIEWED`|`SEARCH_STATUS`|" ),
 	QStringLiteral ( " int ( 9 ) NOT NULL, | int ( 9 ) NOT NULL, | int ( 9 ) DEFAULT NULL, | varchar ( 30 ) DEFAULT NULL, |"
 	" varchar ( 30 ) DEFAULT NULL, | varchar ( 30 ) DEFAULT NULL, | varchar ( 30 ) DEFAULT NULL, | varchar ( 10 ) DEFAULT NULL, |"
 	" varchar ( 40 ) DEFAULT NULL, | varchar ( 100 ) DEFAULT NULL, | varchar ( 200 ) DEFAULT NULL, |"
-	" longtext COLLATE utf8_unicode_ci, | longtext COLLATE utf8_unicode_ci, | int ( 2 ) DEFAULT 0, |" ),
-	QStringLiteral ( "ID|Client ID|Job ID|Purchase date|Delivery date|Price|Price paid|Number of payments|Delivery method|Supplier|Notes|Report|Pay info|Last Viewed|" ),
+	" longtext COLLATE utf8_unicode_ci, | longtext COLLATE utf8_unicode_ci, | int ( 2 ) DEFAULT 0, | int ( 9 ) DEFAULT 0, |" ),
+	QStringLiteral ( "ID|Client ID|Job ID|Purchase date|Delivery date|Price|Price paid|Number of payments|Delivery method|Supplier|Notes|Report|Pay info|Last Viewed|Search Status|" ),
 	BUYS_FIELDS_TYPE,
 	TABLE_VERSION, BUY_FIELD_COUNT, TABLE_BUY_ORDER,
 	&updatePurchaseTable

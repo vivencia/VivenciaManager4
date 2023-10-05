@@ -3,6 +3,8 @@
 #include "vivenciadb.h"
 #include "dblistitem.h"
 
+#include <vmUtils/fast_library_functions.h>
+
 #include <QtSql/QSqlRecord>
 
 VivenciaDB* DBRecord::VDB ( nullptr );
@@ -459,4 +461,39 @@ void DBRecord::contains ( const QString& value, podList<uint>& fields ) const
 		if ( recStrValue ( this, i ).contains ( value, Qt::CaseInsensitive ) )
 			fields.append ( i );
 	}
+}
+
+void DBRecord::setSearchStatus ( const uint field, const bool b_found )
+{
+	QString query_cmd ( QStringLiteral ( "SELECT SEARCH_STATUS FROM " ) + tableInfo ()->table_name + QStringLiteral ( " WHERE ID=" ) + actualRecordStr ( 0 ) );
+	QSqlQuery query;
+	if ( VDB->runSelectLikeQuery ( query_cmd, query ) )
+	{
+			int search_status ( query.value ( 0 ).toInt () );
+			if  ( b_found )
+				setBit ( search_status, field );
+			else
+				unSetBit ( search_status, field );
+			query_cmd = QStringLiteral ( "UPDATE " ) + tableInfo ()->table_name +
+				QStringLiteral ( " SET SEARCH_STATUS=\'" ) + QString::number ( search_status ) + QStringLiteral ("\' WHERE ID=") + actualRecordStr ( 0 );
+			query.exec ( query_cmd );
+	}
+}
+
+bool DBRecord::searchStatus ( const uint field ) const
+{
+	QString query_cmd ( QStringLiteral ( "SELECT SEARCH_STATUS FROM " ) + tableInfo ()->table_name + QStringLiteral ( " WHERE ID=" ) + actualRecordStr ( 0 ) );
+	QSqlQuery query;
+	if ( VDB->runSelectLikeQuery ( query_cmd, query ) )
+	{
+		int search_status ( query.value ( 0 ).toInt () );
+		return isBitSet ( search_status, field );
+	}
+	return false;
+}
+
+	void DBRecord::clearSearchStatus ()
+{
+	const QString query_cmd ( QStringLiteral ( "UPDATE " ) + tableInfo ()->table_name + QStringLiteral ( " SET SEARCH_STATUS=\'0\' WHERE ID=") + actualRecordStr ( 0 ) );
+	VDB->database ()->exec ( query_cmd );
 }

@@ -52,8 +52,6 @@ class MainWindow;
 class MainWindow : public QMainWindow
 {
 
-friend class searchUI;
-
 public:
 
 	enum TAB_INDEXES { TI_MAIN = 0, TI_CALENDAR = 1, TI_STATISTICS = 2, TI_TABLEWIEW = 3 };
@@ -66,7 +64,6 @@ public:
 
 //--------------------------------------------CLIENT------------------------------------------------------------
 	void saveClientWidget ( vmWidget* widget, const int id );
-	void showClientSearchResult ( dbListItem* item, const bool bshow );
 	void setupClientPanel ();
 	void clientsListWidget_currentItemChanged ( dbListItem* item );
 	void controlClientForms ( const clientListItem* const client_item );
@@ -96,7 +93,6 @@ public:
 
 //--------------------------------------------JOB------------------------------------------------------------
 	void saveJobWidget ( vmWidget* widget, const int id );
-	void showJobSearchResult ( dbListItem* item, const bool bshow );
 	void setupJobPanel ();
 	void setUpJobButtons ( const QString& path );
 	void setupJobPictureControl ();
@@ -163,7 +159,6 @@ public:
 
 //--------------------------------------------PAY------------------------------------------------------------
 	void savePayWidget ( vmWidget* widget, const int id );
-	void showPaySearchResult ( dbListItem* item, const bool bshow );
 	void setupPayPanel ();
 	void displayPayFromCalendar ( dbListItem* cal_item );
 	void paysListWidget_currentItemChanged ( dbListItem* item );
@@ -198,7 +193,6 @@ public:
 
 //--------------------------------------------BUY------------------------------------------------------------
 	void saveBuyWidget ( vmWidget* widget, const int id );
-	void showBuySearchResult ( dbListItem* item, const bool bshow );
 	void setupBuyPanel ();
 	void displayBuyFromCalendar ( dbListItem* cal_item );
 	void buysListWidget_currentItemChanged ( dbListItem* item );
@@ -239,11 +233,14 @@ public:
 	void reOrderTabSequence ();
 	void setupWorkFlow ();
 	void setupSectionNavigation ();
+	void navigateToClient ();
+	void navigateToJob ();
+	void navigateToPay ();
+	void navigateToBuy ();
 	void findSectionByScrollPosition ( const int scrollBar_value );
 	void changeFuncActionPointers ( vmActionGroup* grpActive );
 	void updateActionButtonsState ();
 	bool execRecordAction ( const int key );
-	void setupTabNavigationButtons ();
 
 	inline const QString& appMainStyle () const { return mainTaskPanel->currentScheme ()->styleName; }
 	void changeSchemeStyle ( const QString& style, const bool b_save = false );

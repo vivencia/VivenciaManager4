@@ -30,6 +30,7 @@ class searchUI : public QDialog
 public:
 	explicit searchUI ();
 	virtual ~searchUI () override;
+	void setupUI ();
 
 	inline bool canSearch () const { return static_cast<SEARCH_STATUS>( searchStatus.state () ) == SS_NOT_FOUND; }
 	inline bool isSearching () const { return static_cast<SEARCH_STATUS>( searchStatus.state () ) == SS_SEARCH_FOUND; }
@@ -48,7 +49,6 @@ public:
 	bool isFirst () const;
 
 private:
-	void setupUI ();
 	void createTable ();
 	void on_txtSearch_textEdited ( const QString& text );
 	void searchCallbackSelector ( const QKeyEvent* const ke );
@@ -75,5 +75,6 @@ private:
 	QToolButton* mBtnPrev;
 	QPushButton* mBtnClose;
 	stringTable mFoundItems;
+	DBRecord* mCurrentDisplayedRec;
 };
 #endif // SEARCHUI_H

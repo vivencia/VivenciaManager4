@@ -21,6 +21,7 @@ public:
 	explicit supplierRecord ( const bool connect_helper_funcs = false );
 	virtual ~supplierRecord ();
 
+	int searchCategoryTranslate ( const SEARCH_CATEGORIES sc ) const;
 	static void insertIfSupplierInexistent ( const QString& supplier );
 
 	static const TABLE_INFO t_info;

@@ -12,7 +12,7 @@
 #include <dbRecords/dblistitem.h>
 #include <dbRecords/dbsupplies.h>
 #include <dbRecords/supplierrecord.h>
-#include <dbRecords/inventory.h>
+#include <dbRecords/companypurchases.h>
 #include <dbRecords/vivenciadb.h>
 #include <vmNotify/vmnotify.h>
 
@@ -42,19 +42,72 @@ static const QString TYPE_NAMES[9] = {
 };
 
 searchUI::searchUI ()
-	: QDialog (), mSearchFields ( 0 ), mCurRow ( -1 )
+	: QDialog (), mSearchFields ( 0 ), mCurRow ( -1 ), mFoundList ( nullptr ), mCurrentDisplayedRec ( nullptr )
+{}
+
+searchUI::~searchUI ()
 {
+	if ( mCurrentDisplayedRec )
+		mCurrentDisplayedRec->clearSearchStatus (); //Otherwise the information will be left on the database
+}
+
+void searchUI::setupUI ()
+{
+	if ( mFoundList != nullptr )
+		return;
+
 	setWindowTitle ( PROGRAM_NAME + TR_FUNC ( " Search results" ) );
 	setWindowIcon ( ICON ( "search" ) );
 	setWindowModality ( Qt::WindowModal );
-	setupUI ();
-}
 
-searchUI::~searchUI ()
-{}
+	createTable ();
+
+	mtxtSearch = new vmLineEdit;
+	mtxtSearch->setEditable ( true );
+	static_cast<void>( connect ( mtxtSearch, &QLineEdit::textEdited, this, [&] ( const QString& text ) { return on_txtSearch_textEdited ( text ); } ) );
+	mtxtSearch->setCallbackForRelevantKeyPressed ( [&] ( const QKeyEvent* const ke, const vmWidget* const ) { return searchCallbackSelector ( ke ); } );
+
+	mBtnSearch = new QToolButton;
+	mBtnSearch->setIcon ( ICON ( "search" ) );
+	connect ( mBtnSearch,  &QPushButton::clicked, this, [&] () { return btnSearchClicked (); } );
+	mBtnPrev = new QToolButton;
+	mBtnPrev->setIcon ( ICON ( "arrow-left" ) );
+	connect ( mBtnPrev,  &QPushButton::clicked, this, [&] () { return btnPrevClicked (); } );
+	mBtnNext = new QToolButton;
+	mBtnNext->setIcon ( ICON ( "arrow-right" ) );
+	connect ( mBtnNext,  &QPushButton::clicked, this, [&] () { return btnNextClicked (); } );
+	mBtnClose = new QPushButton ( APP_TR_FUNC ( "Hide" ) );
+	connect ( mBtnClose, &QPushButton::clicked, this, [&] () { hide (); } );
+
+	vmTaskPanel* panel ( new vmTaskPanel ( emptyString, this ) );
+	auto mainLayout ( new QVBoxLayout );
+	mainLayout->setContentsMargins ( 0, 0, 0, 0 );
+	mainLayout->setSpacing ( 0 );
+	mainLayout->addWidget ( panel, 1 );
+	setLayout ( mainLayout );
+	vmActionGroup* group = panel->createGroup ( ICON ( "search"), APP_TR_FUNC ( "Database search" ), false, true );
+	group->addEntry ( mFoundList, nullptr, true );
+
+	auto hLayout ( new QHBoxLayout );
+	hLayout->setSpacing ( 1 );
+	hLayout->setContentsMargins ( 0, 0, 0, 0 );
+	hLayout->addWidget ( mtxtSearch, 1, Qt::AlignLeft );
+	hLayout->addWidget ( mBtnSearch, 0, Qt::AlignLeft );
+	hLayout->addWidget ( mBtnPrev, 0, Qt::AlignLeft );
+	hLayout->addWidget ( mBtnNext, 0, Qt::AlignLeft );
+	hLayout->addStretch ( 2 );
+	hLayout->addWidget ( mBtnClose, 1, Qt::AlignRight );
+	group->addLayout ( hLayout );
+
+	panel->setScheme ( MAINWINDOW ()->appMainStyle () );
+	resize ( mFoundList->preferredSize () );
+	mtxtSearch->setFocus ();
+}
 
 void searchUI::searchCancel ()
 {
+	if ( mCurrentDisplayedRec )
+		mCurrentDisplayedRec->clearSearchStatus ();
 	mFoundItems.clear ();
 	mFoundList->clear ();
 	mCurRow = -1;
@@ -96,20 +149,20 @@ void searchUI::parseSearchTerm ( const QString& searchTerm )
 				case 'N':
 					setBit ( mSearchFields, SC_TYPE );
 				break;
-				case 'e': // client address
+				case 'e': // addresses, including street, number, district, city
 				case 'E':
 					setBit ( mSearchFields, SC_ADDRESS_1 );
 					setBit ( mSearchFields, SC_ADDRESS_2 );
 					setBit ( mSearchFields, SC_ADDRESS_3 );
 					setBit ( mSearchFields, SC_ADDRESS_4 );
 					setBit ( mSearchFields, SC_ADDRESS_5 );
-					setBit ( mSearchFields, SC_EXTRA );
 				break;
-				case 'f': // client phones
+				case 'f': // phone numbers
 				case 'F':
-					setBit ( mSearchFields, SC_PHONE_1 );
-					setBit ( mSearchFields, SC_PHONE_2 );
-					setBit ( mSearchFields, SC_PHONE_3 );
+					setBit ( mSearchFields, SC_PHONES );
+				break;
+				case '@':
+					setBit ( mSearchFields, SC_ONLINE_ADDRESS );
 				break;
 				case 'i': // client, job, sched, pay, buy ids
 				case 'I':
@@ -198,7 +251,7 @@ void searchUI::searchJobs ()
 	QString strColName;
 
 	QString strQuery ( searchQueryTemplate );
-	strQuery.replace ( QStringLiteral( "#1#" ), ",TYPE,STARTDATE" ); // Fields (columns) to display in table
+	strQuery.replace ( QStringLiteral( "#1#" ), ",CLIENTID,TYPE,STARTDATE" ); // Fields (columns) to display in table
 	strQuery.replace ( QStringLiteral( "#2#" ), job.tableInfo ()->table_name ); // Table name
 	strQuery.replace ( QStringLiteral( "#4#" ), mSearchTerm ); //The searched string
 	QString strQuery2 ( strQuery );
@@ -217,10 +270,10 @@ void searchUI::searchJobs ()
 			{
 				do
 				{
-					itemInfo.insertField ( COL_ID, query.value ( 0 ).toString () );
-					itemInfo.insertField ( COL_INFO, query.value ( 1 ).toString () );
+					itemInfo.insertField ( COL_ID, query.value ( 0 ).toString () + CHR_COMMA + query.value ( 1 ).toString () );
+					itemInfo.insertField ( COL_INFO, query.value ( 2 ).toString () + CHR_HYPHEN + Client::clientName ( query.value ( 1 ).toString () ) );
 					itemInfo.insertField ( COL_TABLE, job.tableInfo ()->table_name );
-					itemInfo.insertField ( COL_DATE, query.value ( 2 ).toString () );
+					itemInfo.insertField ( COL_DATE, query.value ( 3 ).toString () );
 					itemInfo.insertField ( COL_FIELD, strColName );
 					mFoundItems.fastAppendRecord ( itemInfo );
 					itemInfo.clear ();
@@ -233,17 +286,128 @@ void searchUI::searchJobs ()
 
 void searchUI::searchPayments ()
 {
+	Payment pay;
+	int recordcategory ( -1 );
+	QSqlQuery query;
+	stringRecord itemInfo;
+	QString strColName;
 
+	QString strQuery ( searchQueryTemplate );
+	strQuery.replace ( QStringLiteral( "#1#" ), ",CLIENTID,PRICE" ); // Fields (columns) to display in table
+	strQuery.replace ( QStringLiteral( "#2#" ), pay.tableInfo ()->table_name ); // Table name
+	strQuery.replace ( QStringLiteral( "#4#" ), mSearchTerm ); //The searched string
+	QString strQuery2 ( strQuery );
+
+	for ( uint i ( SC_REPORT_1 ); i <= SC_EXTRA; ++i )
+	{
+		if ( isBitSet ( mSearchFields, i ) )
+		{
+			recordcategory = pay.searchCategoryTranslate ( static_cast<SEARCH_CATEGORIES> ( i ) );
+			if ( recordcategory <= 0 )
+				continue;
+
+			strColName = VDB ()->getTableColumnName ( pay.tableInfo (), static_cast<uint>(recordcategory) );
+			strQuery.replace ( QStringLiteral( "#3#" ), strColName ); //Field (column) in which to search for the search term
+			if ( VDB ()->runSelectLikeQuery ( strQuery, query ) )
+			{
+				do
+				{
+					itemInfo.insertField ( COL_ID, query.value ( 0 ).toString () + CHR_COMMA + query.value ( 1 ).toString () );
+					itemInfo.insertField ( COL_INFO, Client::clientName ( query.value ( 1 ).toString () ) + CHR_HYPHEN + query.value ( 2 ).toString () );
+					itemInfo.insertField ( COL_TABLE, pay.tableInfo ()->table_name );
+					itemInfo.insertField ( COL_DATE, emptyString );
+					itemInfo.insertField ( COL_FIELD, strColName );
+					mFoundItems.fastAppendRecord ( itemInfo );
+					itemInfo.clear ();
+				} while ( query.next () );
+			}
+			strQuery = strQuery2;
+		}
+	}
 }
 
 void searchUI::searchPurchases ()
 {
+	Buy buy;
+	int recordcategory ( -1 );
+	QSqlQuery query;
+	stringRecord itemInfo;
+	QString strColName;
 
+	QString strQuery ( searchQueryTemplate );
+	strQuery.replace ( QStringLiteral( "#1#" ), ",CLIENTID,PRICE,DATE" ); // Fields (columns) to display in table
+	strQuery.replace ( QStringLiteral( "#2#" ), buy.tableInfo ()->table_name ); // Table name
+	strQuery.replace ( QStringLiteral( "#4#" ), mSearchTerm ); //The searched string
+	QString strQuery2 ( strQuery );
+
+	for ( uint i ( SC_REPORT_1 ); i <= SC_EXTRA; ++i )
+	{
+		if ( isBitSet ( mSearchFields, i ) )
+		{
+			recordcategory = buy.searchCategoryTranslate ( static_cast<SEARCH_CATEGORIES> ( i ) );
+			if ( recordcategory <= 0 )
+				continue;
+
+			strColName = VDB ()->getTableColumnName ( buy.tableInfo (), static_cast<uint>(recordcategory) );
+			strQuery.replace ( QStringLiteral( "#3#" ), strColName ); //Field (column) in which to search for the search term
+			if ( VDB ()->runSelectLikeQuery ( strQuery, query ) )
+			{
+				do
+				{
+					itemInfo.insertField ( COL_ID, query.value ( 0 ).toString () + CHR_COMMA + query.value ( 1 ).toString () );
+					itemInfo.insertField ( COL_INFO, Client::clientName ( query.value ( 1 ).toString () ) + CHR_HYPHEN + query.value ( 2 ).toString () );
+					itemInfo.insertField ( COL_TABLE, buy.tableInfo ()->table_name );
+					itemInfo.insertField ( COL_DATE, query.value ( 3 ).toString () );
+					itemInfo.insertField ( COL_FIELD, strColName );
+					mFoundItems.fastAppendRecord ( itemInfo );
+					itemInfo.clear ();
+				} while ( query.next () );
+			}
+			strQuery = strQuery2;
+		}
+	}
 }
 
 void searchUI::searchInventory ()
 {
+	companyPurchases cp_rec;
+	int recordcategory ( -1 );
+	QSqlQuery query;
+	stringRecord itemInfo;
+	QString strColName;
 
+	QString strQuery ( searchQueryTemplate );
+	strQuery.replace ( QStringLiteral( "#1#" ), ",SUPPLIER,DELIVERY_METHOD,TOTAL_PRICE,DATE" ); // Fields (columns) to display in table
+	strQuery.replace ( QStringLiteral( "#2#" ), cp_rec.tableInfo ()->table_name ); // Table name
+	strQuery.replace ( QStringLiteral( "#4#" ), mSearchTerm ); //The searched string
+	QString strQuery2 ( strQuery );
+
+	for ( uint i ( SC_REPORT_1 ); i <= SC_EXTRA; ++i )
+	{
+		if ( isBitSet ( mSearchFields, i ) )
+		{
+			recordcategory = cp_rec.searchCategoryTranslate ( static_cast<SEARCH_CATEGORIES> ( i ) );
+			if ( recordcategory <= 0 )
+				continue;
+
+			strColName = VDB ()->getTableColumnName ( cp_rec.tableInfo (), static_cast<uint>(recordcategory) );
+			strQuery.replace ( QStringLiteral( "#3#" ), strColName ); //Field (column) in which to search for the search term
+			if ( VDB ()->runSelectLikeQuery ( strQuery, query ) )
+			{
+				do
+				{
+					itemInfo.insertField ( COL_ID, query.value ( 0 ).toString () );
+					itemInfo.insertField ( COL_INFO, query.value ( 1 ).toString () + CHR_HYPHEN + query.value ( 2 ).toString () + query.value ( 3 ).toString () );
+					itemInfo.insertField ( COL_TABLE, cp_rec.tableInfo ()->table_name );
+					itemInfo.insertField ( COL_DATE, query.value ( 4 ).toString () );
+					itemInfo.insertField ( COL_FIELD, strColName );
+					mFoundItems.fastAppendRecord ( itemInfo );
+					itemInfo.clear ();
+				} while ( query.next () );
+			}
+			strQuery = strQuery2;
+		}
+	}
 }
 
 void searchUI::searchSupplies ()
@@ -253,7 +417,44 @@ void searchUI::searchSupplies ()
 
 void searchUI::searchSuppliers ()
 {
+	supplierRecord sup_rec;
+	int recordcategory ( -1 );
+	QSqlQuery query;
+	stringRecord itemInfo;
+	QString strColName;
 
+	QString strQuery ( searchQueryTemplate );
+	strQuery.replace ( QStringLiteral( "#1#" ), ",NAME" ); // Fields (columns) to display in table
+	strQuery.replace ( QStringLiteral( "#2#" ), sup_rec.tableInfo ()->table_name ); // Table name
+	strQuery.replace ( QStringLiteral( "#4#" ), mSearchTerm ); //The searched string
+	QString strQuery2 ( strQuery );
+
+	for ( uint i ( SC_REPORT_1 ); i <= SC_EXTRA; ++i )
+	{
+		if ( isBitSet ( mSearchFields, i ) )
+		{
+			recordcategory = sup_rec.searchCategoryTranslate ( static_cast<SEARCH_CATEGORIES> ( i ) );
+			if ( recordcategory <= 0 )
+				continue;
+
+			strColName = VDB ()->getTableColumnName ( sup_rec.tableInfo (), static_cast<uint>(recordcategory) );
+			strQuery.replace ( QStringLiteral( "#3#" ), strColName ); //Field (column) in which to search for the search term
+			if ( VDB ()->runSelectLikeQuery ( strQuery, query ) )
+			{
+				do
+				{
+					itemInfo.insertField ( COL_ID, query.value ( 0 ).toString () );
+					itemInfo.insertField ( COL_INFO, query.value ( 1 ).toString () );
+					itemInfo.insertField ( COL_TABLE, sup_rec.tableInfo ()->table_name );
+					itemInfo.insertField ( COL_DATE, emptyString );
+					itemInfo.insertField ( COL_FIELD, strColName );
+					mFoundItems.fastAppendRecord ( itemInfo );
+					itemInfo.clear ();
+				} while ( query.next () );
+			}
+			strQuery = strQuery2;
+		}
+	}
 }
 
 void searchUI::search ( const uint search_start, const uint search_end )
@@ -351,52 +552,6 @@ bool searchUI::isFirst () const
 	return mFoundList->currentRow () == 0;
 }
 
-void searchUI::setupUI ()
-{
-	createTable ();
-
-	mtxtSearch = new vmLineEdit;
-	mtxtSearch->setEditable ( true );
-	static_cast<void>( connect ( mtxtSearch, &QLineEdit::textEdited, this, [&] ( const QString& text ) { return on_txtSearch_textEdited ( text ); } ) );
-	mtxtSearch->setCallbackForRelevantKeyPressed ( [&] ( const QKeyEvent* const ke, const vmWidget* const ) { return searchCallbackSelector ( ke ); } );
-
-	mBtnSearch = new QToolButton;
-	mBtnSearch->setIcon ( ICON ( "search" ) );
-	connect ( mBtnSearch,  &QPushButton::clicked, this, [&] () { return btnSearchClicked (); } );
-	mBtnPrev = new QToolButton;
-	mBtnPrev->setIcon ( ICON ( "arrow-left" ) );
-	connect ( mBtnPrev,  &QPushButton::clicked, this, [&] () { return btnPrevClicked (); } );
-	mBtnNext = new QToolButton;
-	mBtnNext->setIcon ( ICON ( "arrow-right" ) );
-	connect ( mBtnNext,  &QPushButton::clicked, this, [&] () { return btnNextClicked (); } );
-	mBtnClose = new QPushButton ( APP_TR_FUNC ( "Hide" ) );
-	connect ( mBtnClose, &QPushButton::clicked, this, [&] () { searchCancel (); setResult ( QDialog::Accepted ); close (); } );
-
-	vmTaskPanel* panel ( new vmTaskPanel ( emptyString, this ) );
-	auto mainLayout ( new QVBoxLayout );
-	mainLayout->setContentsMargins ( 0, 0, 0, 0 );
-	mainLayout->setSpacing ( 0 );
-	mainLayout->addWidget ( panel, 1 );
-	setLayout ( mainLayout );
-	vmActionGroup* group = panel->createGroup ( ICON ( "search"), APP_TR_FUNC ( "Database search" ), false, true );
-	group->addEntry ( mFoundList, nullptr, true );
-
-	auto hLayout ( new QHBoxLayout );
-	hLayout->setSpacing ( 1 );
-	hLayout->setContentsMargins ( 0, 0, 0, 0 );
-	hLayout->addWidget ( mtxtSearch, 1, Qt::AlignLeft );
-	hLayout->addWidget ( mBtnSearch, 0, Qt::AlignLeft );
-	hLayout->addWidget ( mBtnPrev, 0, Qt::AlignLeft );
-	hLayout->addWidget ( mBtnNext, 0, Qt::AlignLeft );
-	hLayout->addStretch ( 2 );
-	hLayout->addWidget ( mBtnClose, 1, Qt::AlignRight );
-	group->addLayout ( hLayout );
-
-	panel->setScheme ( MAINWINDOW ()->appMainStyle () );
-	setMinimumSize ( mFoundList->preferredSize () );
-	mtxtSearch->setFocus ();
-}
-
 void searchUI::createTable ()
 {
 	mFoundList = new vmTableWidget;
@@ -442,6 +597,8 @@ void searchUI::on_txtSearch_textEdited ( const QString& text )
 		if ( mSearchTerm != text )
 			mBtnSearch->setEnabled ( true );
 	}
+	else if ( text.length () == 0 )
+		searchCancel ();
 	mBtnPrev->setEnabled ( false );
 	mBtnNext->setEnabled ( false );
 }
@@ -503,33 +660,57 @@ void searchUI::listRowSelected ( const int row )
 		return;
 	mCurRow = row;
 	uint table_id ( VivenciaDB::tableIDFromTableName ( mFoundList->sheetItem ( row, COL_TABLE )->text () ) );
-	const uint dBRec_id ( mFoundList->sheetItem ( row, COL_ID )->text ().toUInt () );
+	QString str_id ( mFoundList->sheetItem ( row, COL_ID )->text () );
+	uint dbrec_id ( 0 );
 	clientListItem* client_item ( nullptr );
-	if ( table_id >= JOB_TABLE && table_id <= PAYMENT_TABLE )
+	dbListItem* item ( nullptr );
+
+	if ( str_id.contains ( CHR_COMMA ) )
 	{
-		client_item = MAINWINDOW ()->getClientItem ( mFoundList->sheetItem ( row, COL_INFO )->text ().toUInt () );
+		dbrec_id = str_id.right ( str_id.length () - ( str_id.indexOf ( CHR_COMMA ) + 1 ) ).toUInt (); // client id, the number after the comma
+		client_item = MAINWINDOW ()->getClientItem ( dbrec_id );
 		MAINWINDOW ()->displayClient ( client_item, true );
 	}
+	dbrec_id = str_id.left ( str_id.indexOf ( CHR_COMMA ) ).toUInt (); //record id, the number before the comma
+	if ( mCurrentDisplayedRec )
+		mCurrentDisplayedRec->clearSearchStatus ();
 
 	switch ( table_id )
 	{
 		case CLIENT_TABLE:
-			MAINWINDOW ()->showClientSearchResult ( MAINWINDOW ()->getClientItem ( dBRec_id ), true );
+			item = MAINWINDOW ()->getClientItem ( dbrec_id );
+			mCurrentDisplayedRec = static_cast<DBRecord*>(item->dbRec ());
+			mCurrentDisplayedRec->setSearchStatus ( VivenciaDB::getTableColumnIndex ( mCurrentDisplayedRec->tableInfo (), mFoundList->sheetItem ( row, COL_FIELD )->text () ) , true );
+			MAINWINDOW ()->displayClient ( static_cast<clientListItem*>(item), true );
+			MAINWINDOW ()->navigateToClient ();
 		break;
 		case JOB_TABLE:
-			MAINWINDOW ()->showJobSearchResult ( MAINWINDOW ()->getJobItem ( client_item, dBRec_id ), true );
+			item = MAINWINDOW ()->getJobItem ( client_item, dbrec_id );
+			mCurrentDisplayedRec = static_cast<DBRecord*>(item->dbRec ());
+			mCurrentDisplayedRec->setSearchStatus ( VivenciaDB::getTableColumnIndex ( mCurrentDisplayedRec->tableInfo (), mFoundList->sheetItem ( row, COL_FIELD )->text () ) , true );
+			MAINWINDOW ()->displayClient ( client_item, true, static_cast<jobListItem*>(item) );
+			MAINWINDOW ()->navigateToJob ();
 		break;
 		case PAYMENT_TABLE:
-			MAINWINDOW ()->showPaySearchResult ( MAINWINDOW ()->getPayItem ( client_item, dBRec_id ), true );
+			item = MAINWINDOW ()->getPayItem ( client_item, dbrec_id );
+			mCurrentDisplayedRec = static_cast<DBRecord*>(item->dbRec ());
+			mCurrentDisplayedRec->setSearchStatus ( VivenciaDB::getTableColumnIndex ( mCurrentDisplayedRec->tableInfo (), mFoundList->sheetItem ( row, COL_FIELD )->text () ) , true );
+			MAINWINDOW ()->displayClient ( client_item, true, static_cast<jobListItem*>(item->relatedItem(RLI_JOBPARENT) ) );
+			MAINWINDOW ()->displayPay ( static_cast<payListItem*>(item), true );
+			MAINWINDOW ()->navigateToPay ();
 		break;
 		case PURCHASE_TABLE:
-			MAINWINDOW ()->showBuySearchResult ( MAINWINDOW ()->getBuyItem ( client_item, dBRec_id ), true );
+			item = MAINWINDOW ()->getBuyItem ( client_item, dbrec_id );
+			mCurrentDisplayedRec = static_cast<DBRecord*>(item->dbRec ());
+			mCurrentDisplayedRec->setSearchStatus ( VivenciaDB::getTableColumnIndex ( mCurrentDisplayedRec->tableInfo (), mFoundList->sheetItem ( row, COL_FIELD )->text () ) , true );
+			MAINWINDOW ()->displayClient ( client_item, true, static_cast<jobListItem*>(item->relatedItem (RLI_JOBPARENT)), static_cast<buyListItem*>(item) );
+			MAINWINDOW ()->navigateToBuy ();
 		break;
-		case INVENTORY_TABLE:
-			COMPANY_PURCHASES ()->showSearchResult ( dBRec_id, true );
+		case COMPANY_PURCHASES_TABLE:
+			COMPANY_PURCHASES ()->showSearchResult ( dbrec_id, true );
 		break;
 		case SUPPLIER_TABLE:
-			SUPPLIERS ()->showSearchResult ( dBRec_id, true );
+			SUPPLIERS ()->displaySupplier ( mFoundList->sheetItem ( row, COL_INFO )->text (), true );
 		break;
 		//case SUPPLIES_TABLE:
 		//	SUPPLIES ()->showSearchResult ( strDBRec_id.toUInt (), bshow );

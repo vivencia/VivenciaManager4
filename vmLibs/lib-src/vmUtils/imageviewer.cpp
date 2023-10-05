@@ -33,23 +33,32 @@ imageViewer::imageViewer ( QWidget* parent, QGridLayout* parentLayout )
 
 void imageViewer::prepareToShowImages ( const int rec_id, const QString& path )
 {
-	bool b_exists ( false );
+	bool b_alreadyHooked ( false );
 	if ( rec_id != -1 )
 	{
-		if ( ( b_exists = findImagesByID ( rec_id ) ) )
+		b_alreadyHooked = findImagesByID ( rec_id );
+		if ( b_alreadyHooked )
 		{
 			if ( images_array.current ()->path != path )
 				removeDir (); // in editing, the image path changed
 		}
 	}
-	else if ( !path.isEmpty () )
-		b_exists = findImagesByPath ( path );
-	if ( !b_exists )
+	if ( !b_alreadyHooked && !path.isEmpty ())
 	{
-		if ( !hookUpDir ( rec_id, path ) )
-			images_array.setCurrent ( -1 );
+		b_alreadyHooked = findImagesByPath ( path );
 	}
-	mScrollArea->installEventFilter ( this ); //Display images in accordance to the available size for the viewer
+
+	if ( !b_alreadyHooked )
+	{
+		b_alreadyHooked = hookUpDir ( rec_id, path );
+	}
+	if ( b_alreadyHooked )
+		mScrollArea->installEventFilter ( this ); //Display images in accordance to the available size for the viewer
+	else
+	{
+		images_array.setCurrent ( -1 );
+		mScrollArea->removeEventFilter ( this );
+	}
 }
 
 const QString imageViewer::imageFileName () const
@@ -296,9 +305,12 @@ bool imageViewer::eventFilter ( QObject* o, QEvent* e )
 	{
 		if ( e->type () == QEvent::Resize )
 		{
-			loadImage ( images_array.current ()->files.current ()->fullpath );
-			e->accept ();
-			return true;
+			//if ( images_array.current () )
+			//{
+				loadImage ( images_array.current ()->files.current ()->fullpath );
+				e->accept ();
+				return true;
+			//}
 		}
 		return false;
 	}

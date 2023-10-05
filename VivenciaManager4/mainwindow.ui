@@ -107,7 +107,8 @@
            <string>...</string>
           </property>
           <property name="icon">
-           <iconset theme="search"/>
+           <iconset theme="search">
+            <normaloff>.</normaloff>.</iconset>
           </property>
           <property name="checkable">
            <bool>false</bool>
@@ -347,7 +348,7 @@
        <enum>QTabWidget::East</enum>
       </property>
       <property name="currentIndex">
-       <number>4</number>
+       <number>5</number>
       </property>
       <property name="usesScrollButtons">
        <bool>true</bool>
@@ -592,7 +593,7 @@
                     </widget>
                    </item>
                    <item>
-                    <widget class="QLineEdit" name="txtClientPayOverdueTotals"/>
+                    <widget class="vmLineEdit" name="txtClientPayOverdueTotals"/>
                    </item>
                   </layout>
                  </item>
@@ -2735,7 +2736,7 @@
                  <widget class="vmComboBox" name="cboJobPictures">
                   <property name="minimumSize">
                    <size>
-                    <width>200</width>
+                    <width>300</width>
                     <height>0</height>
                    </size>
                   </property>

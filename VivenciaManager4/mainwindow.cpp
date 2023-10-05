@@ -163,18 +163,6 @@ void MainWindow::saveClientWidget ( vmWidget* widget, const int id )
 	clientWidgetList[id] = widget;
 }
 
-void MainWindow::showClientSearchResult ( dbListItem* item, const bool bshow )
-{
-	if ( bshow )
-		displayClient ( static_cast<clientListItem*> ( const_cast<dbListItem*> ( item ) ), true );
-
-	for ( uint i ( 0 ); i < CLIENT_FIELD_COUNT; ++i )
-	{
-		if ( item->searchFieldStatus ( i ) == SS_SEARCH_FOUND )
-			clientWidgetList.at ( i )->highlight ( bshow ? vmBlue : vmDefault_Color, SEARCH_UI ()->searchTerm () );
-	}
-}
-
 void MainWindow::setupClientPanel ()
 {
 	ui->clientsList->setParentLayout ( ui->gLayoutClientListPanel );
@@ -222,7 +210,7 @@ void MainWindow::setupClientPanel ()
 		return contactsClientAdd ( phone, sender ); } );
 	ui->contactsClientPhones->setCallbackForRemoval ( [&] ( const int idx, const vmWidget* const sender ) {
 		return contactsClientDel ( idx, sender ); } );
-	ui->contactsClientEmails->setID ( FLD_CLIENT_EMAIL );
+	saveClientWidget ( ui->contactsClientEmails, FLD_CLIENT_EMAIL );
 	ui->contactsClientEmails->setContactType ( contactsManagerWidget::CMW_EMAIL );
 	ui->contactsClientEmails->initInterface ();
 	ui->contactsClientEmails->setCallbackForInsertion ( [&] ( const QString& addrs, const vmWidget* const sender ) {
@@ -233,7 +221,9 @@ void MainWindow::setupClientPanel ()
 	saveClientWidget ( ui->dteClientStart, FLD_CLIENT_STARTDATE );
 	ui->dteClientStart->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) {
 		return dteClient_dateAltered ( sender ); } );
-	ui->dteClientEnd->setID ( FLD_CLIENT_ENDDATE );
+	saveClientWidget ( ui->dteClientEnd, FLD_CLIENT_ENDDATE );
+	ui->dteClientEnd->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) {
+		return dteClient_dateAltered ( sender ); } );
 
 	saveClientWidget ( ui->chkClientActive, FLD_CLIENT_STATUS );
 	ui->chkClientActive->setLabel ( TR_FUNC ( "Currently active" ) );
@@ -272,6 +262,9 @@ void MainWindow::controlClientForms ( const clientListItem* const client_item )
 
 	ui->txtClientName->highlight ( editing_action.isOn () ? ( client_item->isGoodToSave () ?
 			vmDefault_Color : vmRed ) : ( ui->chkClientActive->isChecked () ? vmGreen : vmDefault_Color ) );
+
+	for ( uint i ( FLD_CLIENT_NAME ); i <= FLD_CLIENT_STATUS; ++i )
+		clientWidgetList.at ( i )->highlight ( client_item->dbRec ()->searchStatus ( i ) ? vmBlue : vmDefault_Color, SEARCH_UI ()->searchTerm () );
 }
 
 bool MainWindow::saveClient ( clientListItem* client_item, const bool b_dbsave )
@@ -384,8 +377,8 @@ bool MainWindow::displayClient ( clientListItem* client_item, const bool b_selec
 				mClientCurItem = client_item;
 				fillAllLists ( client_item, job_item, buy_item, job_id, buy_id );
 			}
-			controlClientForms ( client_item );
 			loadClientInfo ( client_item->clientRecord () );
+			controlClientForms ( client_item );
 			if ( job_item == nullptr )
 				job_item = client_item->jobs->last ();
 			displayJob ( job_item, true, buy_item );
@@ -858,37 +851,6 @@ void MainWindow::saveJobWidget ( vmWidget* widget, const int id )
 	jobWidgetList[id] = widget;
 }
 
-void MainWindow::showJobSearchResult ( dbListItem* item, const bool bshow )
-{
-	if ( item != nullptr  )
-	{
-		auto job_item ( static_cast<jobListItem*> ( item ) );
-
-		if ( bshow )
-			displayClient ( static_cast<clientListItem*> ( item->relatedItem ( RLI_CLIENTPARENT ) ), true, job_item );
-
-		for ( uint i ( 0 ); i < JOB_FIELD_COUNT; ++i )
-		{
-			if ( job_item->searchFieldStatus ( i ) == SS_SEARCH_FOUND )
-			{
-				if ( i == FLD_JOB_REPORT )
-				{
-					for ( uint day ( 0 ); day < job_item->searchSubFields ()->count (); ++day )
-					{
-						if ( job_item->searchSubFields ()->at ( day ) != job_item->searchSubFields ()->defaultValue () )
-						{
-							static_cast<dbListItem*>( ui->lstJobDayReport->item( static_cast<int>(day) ) )->highlight ( bshow ? vmBlue : vmDefault_Color );
-							//jobWidgetList.at ( FLD_JOB_REPORT + job_item->searchSubFields ()->at ( day ) )->highlight ( bshow ? vmBlue : vmDefault_Color, SEARCH_UI ()->searchTerm () );
-						}
-					}
-				}
-				else
-					jobWidgetList.at ( i )->highlight ( bshow ? vmBlue : vmDefault_Color, SEARCH_UI ()->searchTerm () );
-			}
-		}
-	}
-}
-
 void MainWindow::setupJobPanel ()
 {
 	actJobSelectJob = new QAction ( ICON ( "project-nbr.png" ), emptyString );
@@ -935,25 +897,21 @@ void MainWindow::setupJobPanel ()
 	ui->txtJobPicturesPath->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) {
 		return txtJob_textAltered ( sender ); } );
 
-	saveJobWidget ( ui->txtJobWheather, FLD_JOB_REPORT + Job::JRF_WHEATHER );
 	ui->txtJobWheather->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) {
 		return txtJobWheather_textAltered ( sender ); } );
 
-	saveJobWidget ( ui->txtJobTotalDayTime, FLD_JOB_REPORT + Job::JRF_REPORT + 1 );
 	ui->txtJobTotalDayTime->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) {
 		return txtJobTotalDayTime_textAltered ( sender ); } );
 
-	saveJobWidget ( ui->txtJobReport, FLD_JOB_REPORT + Job::JRF_REPORT );
+	saveJobWidget ( ui->txtJobReport, FLD_JOB_REPORT );
 	ui->txtJobReport->setCallbackForContentsAltered ( [&] ( const vmWidget* const widget ) {
 		return updateJobInfo ( static_cast<textEditWithCompleter*>( const_cast<vmWidget*>( widget ) )->currentText (), JILUR_REPORT ); } );
 	ui->txtJobReport->setUtilitiesPlaceLayout ( ui->layoutTxtJobUtilities );
 	ui->txtJobReport->setCompleter ( COMPLETERS (), CC_ALL_CATEGORIES );
 
-	saveJobWidget ( ui->timeJobStart, FLD_JOB_REPORT + Job::JRF_START_TIME );
+	saveJobWidget ( ui->timeJobStart, FLD_JOB_TIME );
 	ui->timeJobStart->setCallbackForContentsAltered ( [&] ( const vmWidget* const ) {
 		return timeJobStart_timeAltered (); } );
-
-	saveJobWidget ( ui->timeJobEnd, FLD_JOB_REPORT + Job::JRF_END_TIME );
 	ui->timeJobEnd->setCallbackForContentsAltered ( [&] ( const vmWidget* const ) {
 		return timeJobEnd_timeAltered (); } );
 
@@ -1280,6 +1238,9 @@ void MainWindow::controlJobForms ( const jobListItem* const job_item )
 	
 	controlJobDaySection ( job_item );
 	controlJobPictureControls ();
+
+	for ( uint i ( FLD_JOB_TYPE ); i <= FLD_JOB_REPORT; ++i )
+		jobWidgetList.at ( i )->highlight ( job_item->dbRec ()->searchStatus ( i ) ? vmBlue : vmDefault_Color, SEARCH_UI ()->searchTerm () );
 }
 
 void MainWindow::controlJobDaySection ( const jobListItem* const job_item )
@@ -2240,31 +2201,6 @@ void MainWindow::savePayWidget ( vmWidget* widget, const int id )
 	payWidgetList[id] = widget;
 }
 
-void MainWindow::showPaySearchResult ( dbListItem* item, const bool bshow )
-{
-	auto pay_item ( static_cast<payListItem*>( item ) );
-	if ( bshow ) {
-		displayClient ( static_cast<clientListItem*>( item->relatedItem ( RLI_CLIENTPARENT ) ), true,
-						static_cast<jobListItem*>( item->relatedItem ( RLI_JOBPARENT ) ) );
-		displayPay ( pay_item, true );
-	}
-	for ( uint i ( 0 ); i < PAY_FIELD_COUNT; ++i )
-	{
-		if ( pay_item->searchFieldStatus ( i ) == SS_SEARCH_FOUND )
-		{
-			if ( i != FLD_PAY_INFO )
-				payWidgetList.at ( i )->highlight ( bshow ? vmBlue : vmDefault_Color, SEARCH_UI ()->searchTerm () );
-			else
-			{
-				if ( bshow )
-					ui->tablePayments->searchStart ( SEARCH_UI ()->searchTerm () );
-				else
-					ui->tablePayments->searchCancel ();
-			}
-		}
-	}
-}
-
 void MainWindow::setupPayPanel ()
 {
 	savePayWidget ( ui->txtPayID, FLD_PAY_ID );
@@ -2308,6 +2244,8 @@ void MainWindow::setupPayPanel ()
 	ui->tablePayments->setUtilitiesPlaceLayout ( ui->layoutPayTableUtility );
 	ui->tablePayments->setCallbackForCellChanged ( [&] ( const vmTableItem* const item ) {
 		return interceptPaymentCellChange ( item ); } );
+
+	savePayWidget ( ui->txtClientPayOverdueTotals, FLD_PAY_OVERDUE_VALUE );
 
 	static_cast<void>( connect ( ui->tabPaysLists, &QTabWidget::currentChanged, this, [&] ( const int index ) { return tabPaysLists_currentChanged ( index ); } ) );
 
@@ -2536,6 +2474,15 @@ void MainWindow::controlPayForms ( const payListItem* const pay_item )
 	ui->txtPayTotalPaid->highlight ( paid_price < total_price ? vmYellow : vmDefault_Color );
 
 	ui->tablePayments->scrollTo ( ui->tablePayments->indexAt ( QPoint ( 0, 0 ) ) );
+
+	if ( pay_item != nullptr )
+	{
+		payWidgetList.at ( FLD_PAY_PRICE )->highlight ( pay_item->dbRec ()->searchStatus ( FLD_PAY_PRICE ) ? vmBlue : vmDefault_Color, SEARCH_UI ()->searchTerm () );
+		payWidgetList.at ( FLD_PAY_TOTALPAID )->highlight ( pay_item->dbRec ()->searchStatus ( FLD_PAY_TOTALPAID ) ? vmBlue : vmDefault_Color, SEARCH_UI ()->searchTerm () );
+		payWidgetList.at ( FLD_PAY_OBS )->highlight ( pay_item->dbRec ()->searchStatus ( FLD_PAY_OBS ) ? vmBlue : vmDefault_Color, SEARCH_UI ()->searchTerm () );
+		payWidgetList.at ( FLD_PAY_INFO )->highlight ( pay_item->dbRec ()->searchStatus ( FLD_PAY_INFO ) ? vmBlue : vmDefault_Color, SEARCH_UI ()->searchTerm () );
+		payWidgetList.at ( FLD_PAY_OVERDUE_VALUE )->highlight ( pay_item->dbRec ()->searchStatus ( FLD_PAY_OVERDUE_VALUE ) ? vmBlue : vmDefault_Color, SEARCH_UI ()->searchTerm () );
+	}
 }
 
 bool MainWindow::savePay ( payListItem* pay_item )
@@ -2984,40 +2931,6 @@ void MainWindow::saveBuyWidget ( vmWidget* widget, const int id )
 	buyWidgetList[id] = widget;
 }
 
-void MainWindow::showBuySearchResult ( dbListItem* item, const bool bshow )
-{
-	auto buy_item ( static_cast<buyListItem*> ( item ) );
-	if ( bshow )
-	{
-		displayClient ( static_cast<clientListItem*>( buy_item->relatedItem ( RLI_CLIENTPARENT ) ), true,
-						static_cast<jobListItem*>( buy_item->relatedItem ( RLI_JOBPARENT ) ),
-						buy_item );
-	}
-
-	for ( uint i ( 0 ); i < BUY_FIELD_COUNT; ++i )
-	{
-		if ( buy_item->searchFieldStatus ( i ) == SS_SEARCH_FOUND )
-		{
-			if ( i == FLD_BUY_PAYINFO )
-			{
-				if ( bshow )
-					ui->tableBuyPayments->searchStart ( SEARCH_UI ()->searchTerm () );
-				else
-					ui->tableBuyPayments->searchCancel ();
-			}
-			else if ( i == FLD_BUY_REPORT )
-			{
-				if ( bshow)
-					ui->tableBuyItems->searchStart ( SEARCH_UI ()->searchTerm () );
-				else
-					ui->tableBuyItems->searchCancel ();
-			}
-			else
-				buyWidgetList.at ( i )->highlight ( bshow ? vmBlue : vmDefault_Color, SEARCH_UI ()->searchTerm () );
-		}
-	}
-}
-
 void MainWindow::setupBuyPanel ()
 {
 	ui->buysList->setUtilitiesPlaceLayout ( ui->layoutBuysListUtility );
@@ -3235,6 +3148,12 @@ void MainWindow::controlBuyForms ( const buyListItem* const buy_item )
 
 	ui->tableBuyItems->scrollTo ( ui->tableBuyItems->indexAt ( QPoint ( 0, 0 ) ) );
 	ui->tableBuyPayments->scrollTo ( ui->tableBuyPayments->indexAt ( QPoint ( 0, 0 ) ) );
+
+	if ( buy_item != nullptr )
+	{
+		for ( uint i ( FLD_BUY_DATE ); i <= FLD_BUY_PAYINFO && i != FLD_BUY_TOTALPAYS; ++i )
+			buyWidgetList.at ( i )->highlight ( buy->searchStatus ( i ) ? vmBlue : vmDefault_Color, SEARCH_UI ()->searchTerm () );
+	}
 }
 
 bool MainWindow::saveBuy ( buyListItem* buy_item, const bool b_dbsave )
@@ -3971,49 +3890,53 @@ void MainWindow::setupSectionNavigation ()
 	paySectionPos = grpPays->pos ().y () + grpPays->height () - 200;
 	buySectionPos = grpBuys->pos ().y () + grpBuys->height () - 100;
 
-	ui->lblCurInfoClient->setCallbackForLabelActivated ( [&] ()
-	{
-		if ( grpActive != grpClients )
-		{
-			ui->scrollWorkFlow->verticalScrollBar ()->setValue ( grpClients->pos ().y () );
-			ui->clientsList->setFocus ();
-			ui->tabMain->setCurrentIndex ( static_cast<int>( TI_MAIN ) );
-		}
-	} );
-
-	ui->lblCurInfoJob->setCallbackForLabelActivated ( [&] ()
-	{
-		if ( grpActive != grpJobs )
-		{
-			ui->scrollWorkFlow->verticalScrollBar ()->setValue ( grpJobs->pos ().y () );
-			ui->jobsList->setFocus ();
-			ui->tabMain->setCurrentIndex ( static_cast<int>( TI_MAIN ) );
-		}
-	} );
-
-	ui->lblCurInfoPay->setCallbackForLabelActivated ( [&] ()
-	{
-		if ( grpActive != grpPays )
-		{
-			ui->scrollWorkFlow->verticalScrollBar ()->setValue ( grpPays->pos ().y () );
-			ui->paysList->setFocus ();
-			ui->tabMain->setCurrentIndex ( static_cast<int>( TI_MAIN ) );
-		}
-	} );
-
-	ui->lblCurInfoBuy->setCallbackForLabelActivated ( [&] ()
-	{
-		if ( grpActive != grpBuys )
-		{
-			ui->scrollWorkFlow->verticalScrollBar ()->setValue ( grpBuys->pos ().y () );
-			ui->buysList->setFocus ();
-			ui->tabMain->setCurrentIndex ( static_cast<int>( TI_MAIN ) );
-		}
-	} );
+	ui->lblCurInfoClient->setCallbackForLabelActivated ( [&] () { navigateToClient (); } );
+	ui->lblCurInfoJob->setCallbackForLabelActivated ( [&] () { navigateToJob (); } );
+	ui->lblCurInfoPay->setCallbackForLabelActivated ( [&] () { navigateToPay (); } );
+	ui->lblCurInfoBuy->setCallbackForLabelActivated ( [&] () { navigateToBuy (); } );
 
 	static_cast<void>( connect ( ui->scrollWorkFlow->verticalScrollBar (), &QScrollBar::valueChanged, 
 						this, [&] ( const int value ) { findSectionByScrollPosition ( value ); } ) );
-	setupTabNavigationButtons ();
+}
+
+void MainWindow::navigateToClient ()
+{
+	if ( grpActive != grpClients )
+	{
+		ui->scrollWorkFlow->verticalScrollBar ()->setValue ( grpClients->pos ().y () );
+		ui->clientsList->setFocus ();
+		ui->tabMain->setCurrentIndex ( static_cast<int>( TI_MAIN ) );
+	}
+}
+
+void MainWindow::navigateToJob ()
+{
+	if ( grpActive != grpJobs )
+	{
+		ui->scrollWorkFlow->verticalScrollBar ()->setValue ( grpJobs->pos ().y () );
+		ui->jobsList->setFocus ();
+		ui->tabMain->setCurrentIndex ( static_cast<int>( TI_MAIN ) );
+	}
+}
+
+void MainWindow::navigateToPay ()
+{
+	if ( grpActive != grpPays )
+	{
+		ui->scrollWorkFlow->verticalScrollBar ()->setValue ( grpPays->pos ().y () );
+		ui->paysList->setFocus ();
+		ui->tabMain->setCurrentIndex ( static_cast<int>( TI_MAIN ) );
+	}
+}
+
+void MainWindow::navigateToBuy ()
+{
+	if ( grpActive != grpBuys )
+	{
+		ui->scrollWorkFlow->verticalScrollBar ()->setValue ( grpBuys->pos ().y () );
+		ui->buysList->setFocus ();
+		ui->tabMain->setCurrentIndex ( static_cast<int>( TI_MAIN ) );
+	}
 }
 
 void MainWindow::findSectionByScrollPosition ( const int scrollBar_value )
@@ -4166,29 +4089,6 @@ bool MainWindow::execRecordAction ( const int key )
 			return false;
 	}
 	return true;
-}
-
-void MainWindow::setupTabNavigationButtons ()
-{
-	mBtnNavPrev = new QToolButton;
-	mBtnNavPrev->setIcon ( ICON ( "go-previous" ) );
-	mBtnNavPrev->setEnabled ( false );
-	static_cast<void>( connect ( mBtnNavPrev, &QToolButton::clicked, this, [&] () { return navigatePrev (); } ) );
-	mBtnNavNext = new QToolButton;
-	mBtnNavNext->setIcon ( ICON ( "go-next" ) );
-	mBtnNavNext->setEnabled ( false );
-	static_cast<void>( connect ( mBtnNavNext, &QToolButton::clicked, this, [&] () { return navigateNext (); } ) );
-
-	auto lButtons ( new QHBoxLayout );
-	lButtons->setContentsMargins ( 1, 1, 1, 1 );
-	lButtons->setSpacing ( 1 );
-	lButtons->addWidget ( mBtnNavPrev );
-	lButtons->addWidget ( mBtnNavNext );
-	QFrame* frmContainer ( new QFrame );
-	frmContainer->setLayout ( lButtons );
-	ui->tabMain->tabBar ()->setTabButton ( 0, QTabBar::LeftSide, frmContainer );
-	navItems.setPreAllocNumber ( 50 );
-	editItems.setPreAllocNumber ( 10 );
 }
 //----------------------------------SETUP-CUSTOM-CONTROLS-NAVIGATION--------------------------------------
 
@@ -4527,7 +4427,7 @@ inline void MainWindow::btnBackupRestore_clicked () { BACKUP ()->isVisible () ?
 		BACKUP ()->hide () : BACKUP ()->showWindow (); }
 
 inline void MainWindow::btnSearch_clicked () { SEARCH_UI ()->isVisible () ?
-		SEARCH_UI ()->hide () : SEARCH_UI ()->show (); }
+		SEARCH_UI ()->hide () : SEARCH_UI ()->setupUI (); SEARCH_UI ()->show (); }
 
 inline void MainWindow::btnCalculator_clicked () { CALCULATOR ()->isVisible () ?
 		CALCULATOR ()->hide () : CALCULATOR ()->showCalc ( emptyString, mapToGlobal ( ui->btnCalculator->pos () ) ); }
@@ -4604,6 +4504,29 @@ void MainWindow::createFloatToolBar ()
 	sectionsToolBar->addWidget ( ui->lblCurInfoPay );
 	sectionsToolBar->addWidget ( ui->line_4 );
 	sectionsToolBar->addWidget ( ui->lblCurInfoBuy );
+
+	mBtnNavPrev = new QToolButton;
+	mBtnNavPrev->setIcon ( ICON ( "go-previous" ) );
+	mBtnNavPrev->setEnabled ( false );
+	static_cast<void>( connect ( mBtnNavPrev, &QToolButton::clicked, this, [&] () { return navigatePrev (); } ) );
+	mBtnNavNext = new QToolButton;
+	mBtnNavNext->setIcon ( ICON ( "go-next" ) );
+	mBtnNavNext->setEnabled ( false );
+	static_cast<void>( connect ( mBtnNavNext, &QToolButton::clicked, this, [&] () { return navigateNext (); } ) );
+
+	auto lButtons ( new QHBoxLayout );
+	lButtons->setContentsMargins ( 1, 1, 1, 1 );
+	lButtons->setSpacing ( 1 );
+	lButtons->addWidget ( mBtnNavPrev );
+	lButtons->addWidget ( mBtnNavNext );
+	QFrame* frmContainer ( new QFrame );
+	frmContainer->setLayout ( lButtons );
+	navItems.setPreAllocNumber ( 50 );
+	editItems.setPreAllocNumber ( 10 );
+
+	sectionsToolBar->addSeparator ();
+	sectionsToolBar->addWidget ( frmContainer );
+
 	addToolBar ( Qt::TopToolBarArea, sectionsToolBar );
 	addToolBarBreak ( Qt::TopToolBarArea );
 }

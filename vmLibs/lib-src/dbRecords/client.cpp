@@ -2,6 +2,7 @@
 
 #include <vmUtils/configops.h>
 #include <vmUtils/fileops.h>
+#include <vmUtils/fast_library_functions.h>
 
 #include "dblistitem.h"
 #include "vivenciadb.h"
@@ -11,174 +12,171 @@ const unsigned char TABLE_VERSION ( 'B' );
 constexpr DB_FIELD_TYPE CLIENTS_FIELDS_TYPE[CLIENT_FIELD_COUNT] = {
 	DBTYPE_ID, DBTYPE_LIST, DBTYPE_LIST, DBTYPE_NUMBER, DBTYPE_LIST, DBTYPE_LIST,
 	DBTYPE_NUMBER, DBTYPE_SUBRECORD, DBTYPE_SUBRECORD, DBTYPE_DATE, DBTYPE_DATE,
-	DBTYPE_YESNO, DBTYPE_YESNO
+	DBTYPE_YESNO, DBTYPE_YESNO, DBTYPE_NUMBER
 };
 
 bool updateClientTable ( const unsigned char /*current_table_version*/ )
 {
 	return false;
-	Client client;
-	if ( client.readFirstRecord () )
+	/*
+	if ( current_table_version == 'A' )
 	{
-		QString name, city;
-		do
-		{
-			name = recStrValue ( &client, FLD_CLIENT_NAME );
-			if ( !name.isEmpty () )
-			{
-				client.setAction ( ACTION_EDIT );
-				if ( name.startsWith ( "Viv" ) )
-				{
-					setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Vivência" ) );
-				}
-				if ( name.contains ( "Anast" ) )
-				{
-					if ( name.contains ( "Marcelo" ) )
-						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Marcelo da Anastácia" ) );
-					else
-						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Anastácia" ) );
-				}
-				else if ( name.contains ( "nio Carlos" ) )
-				{
-					setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Antônio Carlos" ) );
-				}
-				else if ( name.contains ( "rbara" ) )
-				{
-					setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Bárbara" ) );
-				}
-				else if ( name.contains ( "udia" ) )
-				{
-					setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Cláudia" ) );
-				}
-				else if ( name.contains ( "Maria L" ) )
-				{
-					setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "D. Maria Lúcia" ) );
-				}
-				else if ( name.contains ( "Delc" ) )
-				{
-					setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Delcílio Azevedo" ) );
-				}
-				else if ( name.contains ( "Esth" ) )
-				{
-					if ( name.contains ( "rcio" ) )
-						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Laércio e Esthér" ) );
-					else if ( name.contains ( "Ant" ) )
-						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Esthér e Antônia" ) );
-				}
-				else if ( name.contains ( "Expor" ) )
-				{
-					setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Exporádicos" ) );
-				}
-				else if ( name.contains ( "Crepaldi" ) )
-				{
-					if ( name.contains ( "Arnaldo" ) )
-						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Inês e Arnaldo Crepaldi" ) );
-					else
-						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Inês Crepaldi" ) );
-				}
-				else if ( name.contains ( "e Carlos" ) )
-				{
-					setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Inês e Carlos" ) );
-				}
-				else if ( name.contains ( "Jos" ) )
-				{
-					if ( name.contains ( "Cabana" ) )
-						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "José Cabana" ) );
-					else if ( name.contains ( "Roseli" ) )
-						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "José Carlos Fontanelli e Roseli" ) );
-					else if ( name.contains ( "Gomes" ) )
-						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "José Gomes Verrengia - Escritório São Pedro" ) );
-				}
-				else if ( name.contains ( "Luis Ant" ) )
-				{
-					setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Luis Antônio" ) );
-				}
-				else if ( name.contains ( "gia Cabana" ) )
-				{
-					setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Lígia Cabana" ) );
-				}
-				else if ( name.contains ( "Buffab" ) )
-				{
-					setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Lígia Maria Buffab" ) );
-				}
-				else if ( name.endsWith ( "dia" ) )
-				{
-					setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Lídia" ) );
-				}
-				else if ( name.contains ( "Marta" ) )
-				{
-					setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Marta Lúcia" ) );
-				}
-				else if ( name.contains ( "Prefeitura" ) )
-				{
-					setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Prefeitura de São Pedro" ) );
-				}
-				else if ( name.contains ( "ngela" ) )
-				{
-					if ( name.contains ( "Barbosa" ) )
-						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Rozângela Barbosa" ) );
-					else if ( name.contains ( "Rotiroti" ) )
-						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Rubens e Rosângela Rotiroti" ) );
-					else if ( name.endsWith ( "ngela" ) )
-						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Ângela" ) );
-				}
-				else if ( name.contains ( "Toninho" ) )
-				{
-					setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Sr. Antònio \"Toninho\"" ) );
-				}
-				else if ( name.endsWith ( "vio" ) )
-				{
-					setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Sr. Otávio" ) );
-				}
-				else if ( name.contains ( "lvia" ) )
-				{
-					setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Sílvia Liberali" ) );
-				}
-				else if ( name.endsWith ( "nia" ) )
-				{
-					setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Sônia" ) );
-				}
-				else if ( name.contains ( "Tide" ) )
-				{
-					setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Tide e Sérgio" ) );
-				}
-				else if ( name.contains ( "Meneghini" ) )
-				{
-					setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Wálter Meneghini" ) );
-				}
-				else if ( name.contains ( "nia Amaral" ) )
-				{
-					setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Vânia Amaral" ) );
-				}
-				else if ( name.contains ( "Galo" ) )
-				{
-					setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Ângelo Galo" ) );
-				}
-			}
-			city = recStrValue ( &client, FLD_CLIENT_CITY );
-			if ( city.endsWith ( "Pedro" ) )
-			{
-				setRecValue ( &client, FLD_CLIENT_CITY, QStringLiteral ( "São Pedro" ) );
-			}
-			else if ( city.endsWith ( "Paulo" ) )
-			{
-				setRecValue ( &client, FLD_CLIENT_CITY, QStringLiteral ( "São Paulo" ) );
-			}
-			client.saveRecord ();
-		} while ( client.readNextRecord () );
-		VivenciaDB::optimizeTable ( &Client::t_info );
-		return true;
-	}
+		if ( DBRecord::databaseManager ()->insertColumn ( FLD_CLIENT_SEARCH_STATUS, &Client::t_info ) )
 
-	/*if ( current_table_version == 'A')
-	{
-		if ( DBRecord::databaseManager ()->insertColumn ( FLD_CLIENT_LAST_VIEWED, &Client::t_info ) )
+		Client client;
+		if ( client.readFirstRecord () )
 		{
+			QString name, city;
+			do
+			{
+				name = recStrValue ( &client, FLD_CLIENT_NAME );
+				if ( !name.isEmpty () )
+				{
+					client.setAction ( ACTION_EDIT );
+					if ( name.startsWith ( "Viv" ) )
+					{
+						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Vivência" ) );
+					}
+					if ( name.contains ( "Anast" ) )
+					{
+						if ( name.contains ( "Marcelo" ) )
+							setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Marcelo da Anastácia" ) );
+						else
+							setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Anastácia" ) );
+					}
+					else if ( name.contains ( "nio Carlos" ) )
+					{
+						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Antônio Carlos" ) );
+					}
+					else if ( name.contains ( "rbara" ) )
+					{
+						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Bárbara" ) );
+					}
+					else if ( name.contains ( "udia" ) )
+					{
+						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Cláudia" ) );
+					}
+					else if ( name.contains ( "Maria L" ) )
+					{
+						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "D. Maria Lúcia" ) );
+					}
+					else if ( name.contains ( "Delc" ) )
+					{
+						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Delcílio Azevedo" ) );
+					}
+					else if ( name.contains ( "Esth" ) )
+					{
+						if ( name.contains ( "rcio" ) )
+							setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Laércio e Esthér" ) );
+						else if ( name.contains ( "Ant" ) )
+							setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Esthér e Antônia" ) );
+					}
+					else if ( name.contains ( "Expor" ) )
+					{
+						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Exporádicos" ) );
+					}
+					else if ( name.contains ( "Crepaldi" ) )
+					{
+						if ( name.contains ( "Arnaldo" ) )
+							setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Inês e Arnaldo Crepaldi" ) );
+						else
+							setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Inês Crepaldi" ) );
+					}
+					else if ( name.contains ( "e Carlos" ) )
+					{
+						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Inês e Carlos" ) );
+					}
+					else if ( name.contains ( "Jos" ) )
+					{
+						if ( name.contains ( "Cabana" ) )
+							setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "José Cabana" ) );
+						else if ( name.contains ( "Roseli" ) )
+							setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "José Carlos Fontanelli e Roseli" ) );
+						else if ( name.contains ( "Gomes" ) )
+							setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "José Gomes Verrengia - Escritório São Pedro" ) );
+					}
+					else if ( name.contains ( "Luis Ant" ) )
+					{
+						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Luis Antônio" ) );
+					}
+					else if ( name.contains ( "gia Cabana" ) )
+					{
+						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Lígia Cabana" ) );
+					}
+					else if ( name.contains ( "Buffab" ) )
+					{
+						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Lígia Maria Buffab" ) );
+					}
+					else if ( name.endsWith ( "dia" ) )
+					{
+						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Lídia" ) );
+					}
+					else if ( name.contains ( "Marta" ) )
+					{
+						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Marta Lúcia" ) );
+					}
+					else if ( name.contains ( "Prefeitura" ) )
+					{
+						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Prefeitura de São Pedro" ) );
+					}
+					else if ( name.contains ( "ngela" ) )
+					{
+						if ( name.contains ( "Barbosa" ) )
+						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Rozângela Barbosa" ) );
+						else if ( name.contains ( "Rotiroti" ) )
+							setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Rubens e Rosângela Rotiroti" ) );
+						else if ( name.endsWith ( "ngela" ) )
+							setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Ângela" ) );
+					}
+					else if ( name.contains ( "Toninho" ) )
+					{
+						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Sr. Antònio \"Toninho\"" ) );
+					}
+					else if ( name.endsWith ( "vio" ) )
+					{
+						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Sr. Otávio" ) );
+					}
+					else if ( name.contains ( "lvia" ) )
+					{
+						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Sílvia Liberali" ) );
+					}
+					else if ( name.endsWith ( "nia" ) )
+					{
+						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Sônia" ) );
+					}
+					else if ( name.contains ( "Tide" ) )
+					{
+						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Tide e Sérgio" ) );
+					}
+					else if ( name.contains ( "Meneghini" ) )
+					{
+						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Wálter Meneghini" ) );
+					}
+					else if ( name.contains ( "nia Amaral" ) )
+					{
+						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Vânia Amaral" ) );
+					}
+					else if ( name.contains ( "Galo" ) )
+					{
+						setRecValue ( &client, FLD_CLIENT_NAME, QStringLiteral ( "Ângelo Galo" ) );
+					}
+				}
+				city = recStrValue ( &client, FLD_CLIENT_CITY );
+				if ( city.endsWith ( "Pedro" ) )
+				{
+					setRecValue ( &client, FLD_CLIENT_CITY, QStringLiteral ( "São Pedro" ) );
+				}
+				else if ( city.endsWith ( "Paulo" ) )
+				{
+					setRecValue ( &client, FLD_CLIENT_CITY, QStringLiteral ( "São Paulo" ) );
+				}
+				client.saveRecord ();
+			} while ( client.readNextRecord () );
 			VivenciaDB::optimizeTable ( &Client::t_info );
 			return true;
 		}
-	}*/
 	return false;
+	*/
 }
 
 const TABLE_INFO Client::t_info =
@@ -187,12 +185,12 @@ const TABLE_INFO Client::t_info =
 	QStringLiteral ( "CLIENTS" ),
 	QStringLiteral ( " ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" ),
 	QStringLiteral ( " PRIMARY KEY ( `ID` ) , UNIQUE KEY `id` ( `ID` ) " ),
-	QStringLiteral ( "`ID`|`NAME`|`STREET`|`NUMBER`|`DISTRICT`|`CITY`|`ZIPCODE`|`PHONES`|`EMAIL`|`BEGINDATE`|`ENDDATE`|`STATUS`|`LAST_VIEWED`|" ),
+	QStringLiteral ( "`ID`|`NAME`|`STREET`|`NUMBER`|`DISTRICT`|`CITY`|`ZIPCODE`|`PHONES`|`EMAIL`|`BEGINDATE`|`ENDDATE`|`STATUS`|`LAST_VIEWED`|`SEARCH_STATUS`|" ),
 	QStringLiteral ( " int ( 9 ) NOT NULL, | varchar ( 60 ) COLLATE utf8_unicode_ci DEFAULT NULL, | varchar ( 60 ) COLLATE utf8_unicode_ci DEFAULT NULL, |"
 	" varchar ( 6 ) COLLATE utf8_unicode_ci DEFAULT NULL, | varchar ( 30 ) COLLATE utf8_unicode_ci DEFAULT NULL, | varchar ( 30 ) COLLATE utf8_unicode_ci DEFAULT NULL, |"
 	" varchar ( 20 ) COLLATE utf8_unicode_ci DEFAULT NULL, | varchar ( 200 ) COLLATE utf8_unicode_ci DEFAULT NULL, | varchar ( 200 ) COLLATE utf8_unicode_ci DEFAULT NULL, | "
-	" varchar ( 60 ) COLLATE utf8_unicode_ci DEFAULT NULL, | varchar ( 60 ) COLLATE utf8_unicode_ci DEFAULT NULL, | int ( 2 ) DEFAULT NULL, | int ( 2 ) DEFAULT 0, |" ),
-	QStringLiteral ( "ID|Name|Street|Number|District|City|Zip code|Phones|E-mail|Client since|Client to|Active|Last Viewed|" ),
+	" varchar ( 60 ) COLLATE utf8_unicode_ci DEFAULT NULL, | varchar ( 60 ) COLLATE utf8_unicode_ci DEFAULT NULL, | int ( 2 ) DEFAULT NULL, | int ( 2 ) DEFAULT 0, | int ( 9 ) DEFAULT 0, |" ),
+	QStringLiteral ( "ID|Name|Street|Number|District|City|Zip code|Phones|E-mail|Client since|Client to|Active|Last Viewed|Search Status|" ),
 	CLIENTS_FIELDS_TYPE,
 	TABLE_VERSION, CLIENT_FIELD_COUNT, TABLE_CLIENT_ORDER,
 	&updateClientTable
@@ -260,17 +258,18 @@ int Client::searchCategoryTranslate ( const SEARCH_CATEGORIES sc ) const
 {
 	switch ( sc )
 	{
-		case SC_ID:			return FLD_CLIENT_ID;
-		case SC_ADDRESS_1:	return FLD_CLIENT_STREET;
-		case SC_ADDRESS_2:	return FLD_CLIENT_NUMBER;
-		case SC_ADDRESS_3:	return FLD_CLIENT_DISTRICT;
-		case SC_ADDRESS_4:	return FLD_CLIENT_CITY;
-		case SC_ADDRESS_5:	return FLD_CLIENT_ZIP;
-		case SC_DATE_1:		return FLD_CLIENT_STARTDATE;
-		case SC_DATE_2:		return FLD_CLIENT_ENDDATE;
-		case SC_TYPE:		return FLD_CLIENT_NAME;
-		case SC_EXTRA:		return FLD_CLIENT_EMAIL;
-		default:			return -1;
+		case SC_ID:					return FLD_CLIENT_ID;
+		case SC_ADDRESS_1:			return FLD_CLIENT_STREET;
+		case SC_ADDRESS_2:			return FLD_CLIENT_NUMBER;
+		case SC_ADDRESS_3:			return FLD_CLIENT_DISTRICT;
+		case SC_ADDRESS_4:			return FLD_CLIENT_CITY;
+		case SC_ADDRESS_5:			return FLD_CLIENT_ZIP;
+		case SC_DATE_1:				return FLD_CLIENT_STARTDATE;
+		case SC_DATE_2:				return FLD_CLIENT_ENDDATE;
+		case SC_TYPE:				return FLD_CLIENT_NAME;
+		case SC_ONLINE_ADDRESS:		return FLD_CLIENT_EMAIL;
+		case SC_PHONES:				return FLD_CLIENT_PHONES;
+		default:					return -1;
 	}
 }
 

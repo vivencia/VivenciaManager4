@@ -132,6 +132,9 @@ public:
 	bool deleteRecord ();
 	bool saveRecord ( const bool b_changeAction = true, const bool b_dbaction = true );
 	void contains ( const QString& value, podList<uint>& fields ) const;
+	void setSearchStatus ( const uint field, const bool b_found );
+	bool searchStatus ( const uint field ) const;
+	void clearSearchStatus ();
 
 	inline bool isModified () const { return mb_modified; }
 	inline bool isModified ( const uint field ) const { return m_RECFIELDS[field].modified; }
@@ -144,7 +147,7 @@ public:
 	inline virtual uint isrRecordField ( const ITEMS_AND_SERVICE_RECORD ) const { return 0; }
 	virtual int searchCategoryTranslate ( const SEARCH_CATEGORIES sc ) const;
 	inline DB_FIELD_TYPE fieldType ( const uint field ) const { return mFieldsTypes[field]; }
-	
+
 	// subrec's mFastIdx must be at the right position, i.e. the start of the sub string record for this to work
 	// Therefore, this method must be called in a loop where subrec is being iterated with next ()/prev (), etc.
 	// Or, if mFastIdx(curIndex ()) is -1 it will reset the point by calling first ().

@@ -28,7 +28,7 @@ constexpr const QLatin1String colorsStr[6] =
 	QLatin1String ( "255, 0, 0", 9 ),			// red		- 1
 	QLatin1String ( "255, 255, 0", 11 ),		// yellow	- 2
 	QLatin1String ( "0, 255, 0", 9 ),			// green	- 3
-	QLatin1String ( "#006600", 7 ),			// blue		- 4
+	QLatin1String ( "0, 0, 255", 9 ),			// blue		- 4
 	QLatin1String ( "255, 255, 255", 13 )		// white	- 5
 };
 

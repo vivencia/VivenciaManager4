@@ -15,13 +15,15 @@ static const unsigned int TABLE_VERSION ( 'D' );
 constexpr DB_FIELD_TYPE JOBS_FIELDS_TYPE[JOB_FIELD_COUNT] = {
 	DBTYPE_ID, DBTYPE_ID, DBTYPE_SHORTTEXT, DBTYPE_DATE, DBTYPE_DATE, DBTYPE_TIME,
 	DBTYPE_PRICE, DBTYPE_FILE, DBTYPE_SHORTTEXT, DBTYPE_FILE, DBTYPE_SHORTTEXT,
-	DBTYPE_SUBRECORD, DBTYPE_SUBRECORD, DBTYPE_YESNO
+	DBTYPE_SUBRECORD, DBTYPE_SUBRECORD, DBTYPE_YESNO, DBTYPE_NUMBER
 };
 
-bool updateJobTable ( const unsigned char current_table_version )
+bool updateJobTable ( const unsigned char /*current_table_version*/ )
 {
-	if ( current_table_version == 'C' )
+	/*if ( current_table_version == 'C' )
 	{
+		DBRecord::databaseManager ()->insertColumn ( FLD_JOB_SEARCH_STATUS, &Job::t_info );
+		return true;
 		Job job;
 		QString new_path;
 		if ( job.readFirstRecord () )
@@ -48,7 +50,7 @@ bool updateJobTable ( const unsigned char current_table_version )
 			VivenciaDB::optimizeTable ( &Job::t_info );
 			return true;
 		}
-	}
+	}*/
 	return false;
 }
 
@@ -58,12 +60,12 @@ const TABLE_INFO Job::t_info =
 	QStringLiteral ( "JOBS" ),
 	QStringLiteral ( " ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci" ),
 	QStringLiteral ( " PRIMARY KEY ( `ID` ) , UNIQUE KEY `id` ( `ID` ) " ),
-	QStringLiteral ( "`ID`|`CLIENTID`|`TYPE`|`STARTDATE`|`ENDDATE`|`TIME`|`PRICE`|`PROJECTPATH`|`PROJECTID`|`IMAGEPATH`|`JOB_ADDRESS`|`KEYWORDS`|`REPORT`|`LAST_VIEWED`|" ),
+	QStringLiteral ( "`ID`|`CLIENTID`|`TYPE`|`STARTDATE`|`ENDDATE`|`TIME`|`PRICE`|`PROJECTPATH`|`PROJECTID`|`IMAGEPATH`|`JOB_ADDRESS`|`KEYWORDS`|`REPORT`|`LAST_VIEWED`|`SEARCH_STATUS`|" ),
 	QStringLiteral ( " int ( 9 ) NOT NULL, | int ( 9 ) NOT NULL, | varchar ( 100 ) COLLATE utf8_unicode_ci DEFAULT NULL, | varchar ( 20 ) DEFAULT NULL, |"
-	" varchar ( 20 ) DEFAULT NULL, | varchar ( 20 ) DEFAULT NULL, | varchar ( 20 ) COLLATE utf8_unicode_ci DEFAULT NULL, |"
+	" varchar ( 20 ) DEFAULT NULL, | varchar ( 20 ) DEFAULT NULL, | varchar ( 20 ) COLLATE utf8_unicode_ci DEFAULT NULL, | int ( 9 ) DEFAULT 0, |"
 	" varchar ( 255 ) COLLATE utf8_unicode_ci DEFAULT NULL, | varchar ( 30 ) DEFAULT NULL, | varchar ( 255 ) COLLATE utf8_unicode_ci DEFAULT NULL, |"
-	" varchar ( 255 ) COLLATE utf8_unicode_ci DEFAULT NULL, | longtext COLLATE utf8_unicode_ci, |longtext COLLATE utf8_unicode_ci, | int ( 2 ) DEFAULT 0, |" ),
-	QStringLiteral ( "ID|Client ID|Type|Start date|Finish date|Worked hours|Price|Project path|Project ID|Image path|Job Address|Job Keywords|Report|Last Viewed|" ),
+	" varchar ( 255 ) COLLATE utf8_unicode_ci DEFAULT NULL, | longtext COLLATE utf8_unicode_ci, | longtext COLLATE utf8_unicode_ci, | int ( 9 ) DEFAULT 0, |" ),
+	QStringLiteral ( "ID|Client ID|Type|Start date|Finish date|Worked hours|Price|Project path|Project ID|Image path|Job Address|Job Keywords|Report|Last Viewed|Search Status|" ),
 	JOBS_FIELDS_TYPE, TABLE_VERSION, JOB_FIELD_COUNT, TABLE_JOB_ORDER,
 	&updateJobTable
 	#ifdef TRANSITION_PERIOD

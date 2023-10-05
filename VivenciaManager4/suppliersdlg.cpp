@@ -372,22 +372,6 @@ void suppliersDlg::hideDialog ()
 	hide ();
 }
 
-void suppliersDlg::showSearchResult ( const uint id, const bool bshow )
-{
-	if ( bshow )
-	{
-		if ( supRec->readRecord ( id ) )
-		{
-			displaySupplier ( recStrValue ( supRec, FLD_SUPPLIER_NAME ), true );
-		}
-	}
-	/*for ( uint i ( 0 ); i < SUPPLIER_FIELD_COUNT; ++i )
-	{
-		if ( item->searchFieldStatus ( i ) == SS_SEARCH_FOUND )
-			widgetList.at ( i )->highlight ( bshow ? vmBlue : vmDefault_Color, SEARCH_UI ()->searchTerm () );
-	}*/
-}
-
 void suppliersDlg::supplierInfo ( const QString& name, QString& info )
 {
 	static const QString template_str ( QStringLiteral ( "%1%9%2, No.: %3 - %4 - %5%9Fone(s): %6 %7%9site/e=mail: %8%9%9" ) );
