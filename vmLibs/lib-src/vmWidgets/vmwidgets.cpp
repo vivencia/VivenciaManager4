@@ -870,12 +870,6 @@ void vmLineEdit::focusInEvent ( QFocusEvent* e )
 				e->ignore ();
 				return;
 			}
-			/*if ( completer ()->widget () == nullptr )
-			{
-				completer ()->setWidget ( this );
-				static_cast<void>( connect ( completer (), static_cast<void (QCompleter::*)(const QString&)>( &QCompleter::activated ),
-					this, [&] ( const QString& value ) { completerClickReceived ( value ); } ) );
-			}*/
 		}
 		mbButtonClicked = false;
 		mCurrentText = text ();
@@ -895,7 +889,7 @@ void vmLineEdit::focusInEvent ( QFocusEvent* e )
 			if ( table->isPlainTable () && ownerItem ()->row () != table->currentRow () )
 			{
 				table->setCurrentItem ( const_cast<vmTableItem*>( ownerItem () ) );
-				table->callRowActivated_func ( ownerItem ()->row () );
+				//table->callRowActivated_func ( ownerItem ()->row () );
 				e->setAccepted ( true );
 				return;
 			}

@@ -683,6 +683,7 @@ void searchUI::listRowSelected ( const int row )
 			mCurrentDisplayedRec->setSearchStatus ( VivenciaDB::getTableColumnIndex ( mCurrentDisplayedRec->tableInfo (), mFoundList->sheetItem ( row, COL_FIELD )->text () ) , true );
 			MAINWINDOW ()->displayClient ( static_cast<clientListItem*>(item), true );
 			MAINWINDOW ()->navigateToClient ();
+			MAINWINDOW ()->insertNavItem ( item );
 		break;
 		case JOB_TABLE:
 			item = MAINWINDOW ()->getJobItem ( client_item, dbrec_id );
@@ -690,6 +691,7 @@ void searchUI::listRowSelected ( const int row )
 			mCurrentDisplayedRec->setSearchStatus ( VivenciaDB::getTableColumnIndex ( mCurrentDisplayedRec->tableInfo (), mFoundList->sheetItem ( row, COL_FIELD )->text () ) , true );
 			MAINWINDOW ()->displayClient ( client_item, true, static_cast<jobListItem*>(item) );
 			MAINWINDOW ()->navigateToJob ();
+			MAINWINDOW ()->insertNavItem ( item );
 		break;
 		case PAYMENT_TABLE:
 			item = MAINWINDOW ()->getPayItem ( client_item, dbrec_id );
@@ -698,6 +700,7 @@ void searchUI::listRowSelected ( const int row )
 			MAINWINDOW ()->displayClient ( client_item, true, static_cast<jobListItem*>(item->relatedItem(RLI_JOBPARENT) ) );
 			MAINWINDOW ()->displayPay ( static_cast<payListItem*>(item), true );
 			MAINWINDOW ()->navigateToPay ();
+			MAINWINDOW ()->insertNavItem ( item );
 		break;
 		case PURCHASE_TABLE:
 			item = MAINWINDOW ()->getBuyItem ( client_item, dbrec_id );
@@ -705,6 +708,7 @@ void searchUI::listRowSelected ( const int row )
 			mCurrentDisplayedRec->setSearchStatus ( VivenciaDB::getTableColumnIndex ( mCurrentDisplayedRec->tableInfo (), mFoundList->sheetItem ( row, COL_FIELD )->text () ) , true );
 			MAINWINDOW ()->displayClient ( client_item, true, static_cast<jobListItem*>(item->relatedItem (RLI_JOBPARENT)), static_cast<buyListItem*>(item) );
 			MAINWINDOW ()->navigateToBuy ();
+			MAINWINDOW ()->insertNavItem ( item );
 		break;
 		case COMPANY_PURCHASES_TABLE:
 			COMPANY_PURCHASES ()->showSearchResult ( dbrec_id, true );

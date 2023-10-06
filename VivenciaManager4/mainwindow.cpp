@@ -169,7 +169,7 @@ void MainWindow::setupClientPanel ()
 	ui->clientsList->setUtilitiesPlaceLayout ( ui->layoutClientsList );
 	ui->clientsList->setCallbackForCurrentItemChanged ( [&] ( vmListItem* item ) {
 		return clientsListWidget_currentItemChanged ( static_cast<dbListItem*>( item ) ); } );
-	ui->clientsList->setCallbackForRowActivated ( [&] ( const uint row ) { return insertNavItem ( static_cast<dbListItem*>( ui->clientsList->item ( static_cast<int>( row ) ) ) ); } );
+	ui->clientsList->setCallbackForRowClicked ( [&] ( const uint row ) { return insertNavItem ( static_cast<dbListItem*>( ui->clientsList->item ( static_cast<int>( row ) ) ) ); } );
 	ui->clientsList->setCallbackForWidgetGettingFocus ( [&] () { ui->lblCurInfoClient->callLabelActivatedFunc (); } );
 
 	saveClientWidget ( ui->txtClientID, FLD_CLIENT_ID );
@@ -862,7 +862,7 @@ void MainWindow::setupJobPanel ()
 
 	ui->jobsList->setUtilitiesPlaceLayout ( ui->layoutJobsListUtility );
 	ui->jobsList->setCallbackForCurrentItemChanged ( [&] ( vmListItem* item ) { return jobsListWidget_currentItemChanged ( static_cast<dbListItem*>( item ) ); } );
-	ui->jobsList->setCallbackForRowActivated ( [&] ( const uint row ) { return insertNavItem ( static_cast<dbListItem*>( ui->jobsList->item ( static_cast<int>( row ) ) ) ); } );
+	ui->jobsList->setCallbackForRowClicked ( [&] ( const uint row ) { return insertNavItem ( static_cast<dbListItem*>( ui->jobsList->item ( static_cast<int>( row ) ) ) ); } );
 	ui->jobsList->setCallbackForWidgetGettingFocus ( [&] () { ui->lblCurInfoJob->callLabelActivatedFunc (); } );
 	ui->lstJobDayReport->setParentLayout ( ui->gLayoutJobExtraInfo );
 	ui->lstJobDayReport->setCallbackForCurrentItemChanged ( [&] ( vmListItem* item ) { return lstJobDayReport_currentItemChanged ( static_cast<dbListItem*>( item ) ); } );
@@ -2223,19 +2223,19 @@ void MainWindow::setupPayPanel ()
 
 	ui->paysList->setAlwaysEmitCurrentItemChanged ( true );
 	ui->paysList->setCallbackForCurrentItemChanged ( [&] ( vmListItem* item ) { return paysListWidget_currentItemChanged ( static_cast<dbListItem*>( item ) ); } );
-	ui->paysList->setCallbackForRowActivated ( [&] ( const uint row ) { return insertNavItem ( static_cast<dbListItem*>( ui->paysList->item ( static_cast<int>( row ) ) ) ); } );
+	ui->paysList->setCallbackForRowClicked ( [&] ( const uint row ) { return insertNavItem ( static_cast<dbListItem*>( ui->paysList->item ( static_cast<int>( row ) ) ) ); } );
 	ui->paysList->setUtilitiesPlaceLayout ( ui->layoutClientPaysUtility );
 	ui->paysList->setCallbackForWidgetGettingFocus ( [&] () { ui->lblCurInfoPay->callLabelActivatedFunc (); } );
 
 	ui->paysOverdueList->setAlwaysEmitCurrentItemChanged ( true );
 	ui->paysOverdueList->setCallbackForCurrentItemChanged ( [&] ( vmListItem* item ) { return paysOverdueListWidget_currentItemChanged ( static_cast<dbListItem*>( item ) ); } );
-	ui->paysOverdueList->setCallbackForRowActivated ( [&] ( const uint row ) { return insertNavItem ( static_cast<dbListItem*>(	ui->paysOverdueList->item ( static_cast<int>( row ) ) )->relatedItem ( RLI_CLIENTITEM ) ); } );
+	ui->paysOverdueList->setCallbackForRowClicked ( [&] ( const uint row ) { return insertNavItem ( static_cast<dbListItem*>(	ui->paysOverdueList->item ( static_cast<int>( row ) ) )->relatedItem ( RLI_CLIENTITEM ) ); } );
 	ui->paysOverdueList->setUtilitiesPlaceLayout ( ui->layoutOverduePaysUtility );
 	ui->paysOverdueList->setCallbackForWidgetGettingFocus ( [&] () { ui->lblCurInfoPay->callLabelActivatedFunc (); } );
 
 	ui->paysOverdueClientList->setAlwaysEmitCurrentItemChanged ( true );
 	ui->paysOverdueClientList->setCallbackForCurrentItemChanged ( [&] ( vmListItem* item ) { return paysOverdueClientListWidget_currentItemChanged ( static_cast<dbListItem*>( item ) ); } );
-	ui->paysOverdueClientList->setCallbackForRowActivated ( [&] ( const uint row ) { return insertNavItem ( static_cast<dbListItem*>( ui->paysOverdueClientList->item ( static_cast<int>( row ) ) )->relatedItem ( RLI_CLIENTITEM ) ); } );
+	ui->paysOverdueClientList->setCallbackForRowClicked ( [&] ( const uint row ) { return insertNavItem ( static_cast<dbListItem*>( ui->paysOverdueClientList->item ( static_cast<int>( row ) ) )->relatedItem ( RLI_CLIENTITEM ) ); } );
 	ui->paysOverdueClientList->setUtilitiesPlaceLayout ( ui->layoutClientOverduePaysUtility );
 	ui->paysOverdueClientList->setCallbackForWidgetGettingFocus ( [&] () { ui->lblCurInfoPay->callLabelActivatedFunc (); } );
 
@@ -2935,13 +2935,13 @@ void MainWindow::setupBuyPanel ()
 {
 	ui->buysList->setUtilitiesPlaceLayout ( ui->layoutBuysListUtility );
 	ui->buysList->setCallbackForCurrentItemChanged ( [&] ( vmListItem* item ) { return buysListWidget_currentItemChanged ( static_cast<dbListItem*>( item ) ); } );
-	ui->buysList->setCallbackForRowActivated ( [&] ( const uint row ) {
+	ui->buysList->setCallbackForRowClicked ( [&] ( const uint row ) {
 		return insertNavItem ( static_cast<dbListItem*>( ui->buysList->item ( static_cast<int>( row ) ) ) ); } );
 	ui->buysList->setCallbackForWidgetGettingFocus ( [&] () { ui->lblCurInfoBuy->callLabelActivatedFunc (); } );
 	
 	ui->buysJobList->setUtilitiesPlaceLayout ( ui->vLayoutBuyJobTotals );
 	ui->buysJobList->setCallbackForCurrentItemChanged ( [&] ( vmListItem* item ) { return buysJobListWidget_currentItemChanged ( static_cast<dbListItem*>( item ) ); } );
-	ui->buysJobList->setCallbackForRowActivated ( [&] ( const uint row ) {
+	ui->buysJobList->setCallbackForRowClicked ( [&] ( const uint row ) {
 		return insertNavItem ( static_cast<dbListItem*>( ui->buysJobList->item ( static_cast<int>( row ) ) )->relatedItem ( RLI_CLIENTITEM ) ); } );
 	ui->buysJobList->setCallbackForWidgetGettingFocus ( [&] () { ui->lblCurInfoBuy->callLabelActivatedFunc (); } );
 
@@ -4271,12 +4271,14 @@ void MainWindow::displayNav ()
 	{
 		case CLIENT_TABLE:
 			displayClient ( parentClient, true );
+			navigateToClient ();
 		break;
 		case JOB_TABLE:
 			if ( bSelectClient )
 				displayClient ( parentClient, true, static_cast<jobListItem*>( navItems.current () ) );
 			else
 				displayJob ( static_cast<jobListItem*>( navItems.current () ), true );
+			navigateToJob ();
 		break;
 		case PAYMENT_TABLE:
 			if ( bSelectClient )
@@ -4288,6 +4290,7 @@ void MainWindow::displayNav ()
 				else
 					displayPay ( static_cast<payListItem*>( navItems.current () ), true ); 
 			}
+			navigateToPay ();
 		break;
  		case PURCHASE_TABLE:
 			if ( bSelectClient )
@@ -4299,6 +4302,7 @@ void MainWindow::displayNav ()
 				else
 					displayPay ( static_cast<payListItem*>( navItems.current () ), true ); 
 			}
+			navigateToBuy ();
 		break;
 		default: break;
 	}

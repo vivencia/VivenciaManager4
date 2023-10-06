@@ -34,7 +34,7 @@ vmTableWidget::vmTableWidget ( QWidget* parent )
 	  mFormulaTitleAction ( nullptr ), mParentLayout ( nullptr ), m_searchPanel ( nullptr ), m_filterPanel ( nullptr ),
 	  mContextMenuCell ( nullptr ), cellChanged_func ( nullptr ), cellNavigation_func ( nullptr ),
 	  monitoredCellChanged_func ( nullptr ), rowRemoved_func ( nullptr ), rowInserted_func ( nullptr ),
-	  rowActivated_func ( nullptr ), completer_func ( nullptr )
+	  rowClicked_func ( nullptr ), completer_func ( nullptr )
 {
 	setWidgetPtr ( static_cast<QWidget*>( this ) );
 	//setSelectionMode ( QAbstractItemView::ExtendedSelection );
@@ -503,7 +503,7 @@ void vmTableWidget::actionsBeforeClearing ()
 
 void vmTableWidget::setIgnoreChanges ( const bool b_ignore )
 {
-	rowActivatedConnection ( !(mbIgnoreChanges = b_ignore) );
+	rowClickedConnection ( !(mbIgnoreChanges = b_ignore) );
 	if ( !b_ignore )
 	{
 		if ( isPlainTable () )
@@ -523,18 +523,17 @@ void vmTableWidget::setIgnoreChanges ( const bool b_ignore )
 	}
 }
 
-void vmTableWidget::rowActivatedConnection ( const bool b_activate )
+void vmTableWidget::rowClickedConnection ( const bool b_activate )
 {
-	// Lists have their own functions to handle item activation
-	if ( !isList () && rowActivated_func )
+	if ( rowClicked_func )
 	{
 		if ( b_activate )
 		{
-			static_cast<void>( connect ( this, &QTableWidget::itemActivated, this, [&] ( QTableWidgetItem* current ) {
-				rowActivated_func ( current->row () ); } ) );
+			static_cast<void>( connect ( this, &QTableWidget::itemClicked, this, [&] ( QTableWidgetItem* current ) {
+				rowClicked_func ( current->row () ); } ) );
 		}
 		else
-			static_cast<void>( disconnect ( this, &QTableWidget::itemActivated, nullptr, nullptr ) );
+			static_cast<void>( disconnect ( this, &QTableWidget::itemClicked, nullptr, nullptr ) );
 	}
 }
 

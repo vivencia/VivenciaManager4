@@ -103,7 +103,7 @@ public:
 
 	virtual void setIgnoreChanges ( const bool b_ignore );
 	virtual inline bool isIgnoringChanges () const { return mbIgnoreChanges; }
-	void rowActivatedConnection ( const bool b_activate );
+	void rowClickedConnection ( const bool b_activate );
 	void setCellValue ( const QString& value, const uint row, const uint col );
 	void setSimpleCellText ( vmTableItem* const item );
 	void setSimpleCellTextWithoutNotification ( vmTableItem* const item, const QString& text );
@@ -196,14 +196,12 @@ public:
 		rowRemoved_func = func; }
 	inline void setCallbackForRowInserted ( const std::function<void ( const uint row )>& func ) {
 		rowInserted_func = func; }
-	inline void setCallbackForRowActivated ( const std::function<void ( const int row )>& func ) {
-		rowActivated_func = func; }
+	inline void setCallbackForRowClicked ( const std::function<void ( const int row )>& func ) {
+		rowClicked_func = func; }
 	inline void setCallbackForSettingCompleterForWidget ( const std::function<void ( vmWidget* widget, const int completer_type )>& func ) {
 		completer_func = func; }
 	inline void setCallbackForNewViewAfterFilter ( const std::function<void ()> func ) { newView_func = func;
 			if ( m_filterPanel ) m_filterPanel->setCallbackForNewViewAfterFilter ( newView_func ); }
-
-	inline void callRowActivated_func ( const int row ) const { if ( rowActivated_func ) rowActivated_func ( row ); }
 
 private:
 	void initList ();
@@ -287,7 +285,7 @@ protected:
 	std::function<void ( const vmTableItem* const item )> monitoredCellChanged_func;
 	std::function<bool ( const uint row )> rowRemoved_func;
 	std::function<void ( const uint row )> rowInserted_func;
-	std::function<void ( const int row )> rowActivated_func;
+	std::function<void ( const int row )> rowClicked_func;
 	std::function<void ( vmWidget* widget, const int completer_type )> completer_func;
 	std::function<void ()> newView_func;
 };

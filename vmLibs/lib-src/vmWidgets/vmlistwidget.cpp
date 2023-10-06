@@ -11,7 +11,7 @@ vmListWidget::vmListWidget ( QWidget* parent, const uint nRows )
 	setIsList ();
 	static_cast<void>( createColumns ( 1 ) );
 	initTable ( nRows );
-	setIgnoreChanges ( false );
+	//setIgnoreChanges ( false );
 	setHorizontalScrollMode ( QAbstractItemView::ScrollPerPixel );
 }
 
@@ -22,7 +22,7 @@ vmListWidget::~vmListWidget ()
 
 void vmListWidget::setIgnoreChanges ( const bool b_ignore )
 {
-	rowActivatedConnection ( !(mbIgnore = b_ignore) );
+	rowClickedConnection ( !(mbIgnore = b_ignore) );
 	if ( !b_ignore )
 		static_cast<void>( connect ( this, &QTableWidget::currentCellChanged, this, [&] ( const int row, const int, const int prev_row, const int )
 				  { rowSelected ( row, prev_row ); } ) );
@@ -190,10 +190,6 @@ void vmListWidget::rowSelected ( const int row, const int prev_row )
 	{
 		if ( mCurrentItemChangedFunc )
 			mCurrentItemChangedFunc ( mCurrentItem );
-		// Borrow the activated function callback from the parent class. vmTableWidget has a switch to ignore
-		// this function if it is a list object
-		if ( rowActivated_func && mCurrentItem )
-			rowActivated_func ( mCurrentItem->row () );
 	}
 }
 
