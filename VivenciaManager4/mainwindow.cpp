@@ -3822,6 +3822,7 @@ void MainWindow::restoreLastSession ()
 
 	findSectionByScrollPosition ( 0 ); // when I implement the code to restore screen controls' position, this function will not be called with a hard-coded number
 	displayClient ( client_item, true, job_item, buy_item );
+	insertNavItem ( static_cast<dbListItem*>(client_item) );
 	ui->clientsList->setFocus ();
 }
 

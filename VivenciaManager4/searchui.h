@@ -56,12 +56,12 @@ private:
 	void btnPrevClicked ();
 	void btnNextClicked ();
 	void listRowSelected ( const int row );
+	void searchTable ( DBRecord* db_rec, const QString& columns, const std::function<void( const QSqlQuery& query_res, stringRecord& item_info )>& formatResult );
 	void searchClients ();
 	void searchJobs ();
 	void searchPayments ();
 	void searchPurchases ();
 	void searchInventory ();
-	void searchSupplies ();
 	void searchSuppliers ();
 
 	QString mSearchTerm;

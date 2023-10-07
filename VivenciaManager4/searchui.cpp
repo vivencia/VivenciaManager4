@@ -200,17 +200,16 @@ void searchUI::parseSearchTerm ( const QString& searchTerm )
 		mSearchTerm = searchTerm;
 }
 
-void searchUI::searchClients ()
+void searchUI::searchTable ( DBRecord* db_rec, const QString& columns, const std::function<void( const QSqlQuery& query_res, stringRecord& item_info )>& formatResult )
 {
-	Client client;
 	int recordcategory ( -1 );
 	QSqlQuery query;
 	stringRecord itemInfo;
 	QString strColName;
 
 	QString strQuery ( searchQueryTemplate );
-	strQuery.replace ( QStringLiteral( "#1#" ), ",NAME,BEGINDATE" ); // Fields (columns) to display in table
-	strQuery.replace ( QStringLiteral( "#2#" ), client.tableInfo ()->table_name ); // Table name
+	strQuery.replace ( QStringLiteral( "#1#" ), columns ); // Fields (columns) to display in table
+	strQuery.replace ( QStringLiteral( "#2#" ), db_rec->tableInfo ()->table_name ); // Table name
 	strQuery.replace ( QStringLiteral( "#4#" ), mSearchTerm ); //The searched string
 	QString strQuery2 ( strQuery );
 
@@ -218,20 +217,18 @@ void searchUI::searchClients ()
 	{
 		if ( isBitSet ( mSearchFields, i ) )
 		{
-			recordcategory = client.searchCategoryTranslate ( static_cast<SEARCH_CATEGORIES> ( i ) );
+			recordcategory = db_rec->searchCategoryTranslate ( static_cast<SEARCH_CATEGORIES> ( i ) );
 			if ( recordcategory <= 0 )
 				continue;
 
-			strColName = VDB ()->getTableColumnName ( client.tableInfo (), static_cast<uint>(recordcategory) );
+			strColName = VDB ()->getTableColumnName ( db_rec->tableInfo (), static_cast<uint>(recordcategory) );
 			strQuery.replace ( QStringLiteral( "#3#" ), strColName ); //Field (column) in which to search for the search term
 			if ( VDB ()->runSelectLikeQuery ( strQuery, query ) )
 			{
 				do
 				{
-					itemInfo.insertField ( COL_ID, query.value ( 0 ).toString () );
-					itemInfo.insertField ( COL_INFO, query.value ( 1 ).toString () );
-					itemInfo.insertField ( COL_TABLE, client.tableInfo ()->table_name );
-					itemInfo.insertField ( COL_DATE, query.value ( 2 ).toString () );
+					formatResult ( query, itemInfo );
+					itemInfo.insertField ( COL_TABLE, db_rec->tableInfo ()->table_name );
 					itemInfo.insertField ( COL_FIELD, strColName );
 					mFoundItems.fastAppendRecord ( itemInfo );
 					itemInfo.clear ();
@@ -241,220 +238,83 @@ void searchUI::searchClients ()
 		}
 	}
 }
+
+auto formatClientInfo = [] ( const QSqlQuery& query_res, stringRecord& item_info ) ->void {
+			item_info.insertField ( COL_ID, query_res.value ( 0 ).toString () );
+			item_info.insertField ( COL_INFO, query_res.value ( 1 ).toString () );
+			item_info.insertField ( COL_DATE, query_res.value ( 2 ).toString () );
+};
+
+void searchUI::searchClients ()
+{
+	Client client;
+	const QString searchColumns ( QStringLiteral (",NAME,BEGINDATE") );
+	searchTable ( &client, searchColumns, formatClientInfo );
+}
+
+auto formatJobInfo = [] ( const QSqlQuery& query_res, stringRecord& item_info ) ->void {
+			item_info.insertField ( COL_ID, query_res.value ( 0 ).toString () + CHR_COMMA + query_res.value ( 1 ).toString () );
+			item_info.insertField ( COL_INFO, query_res.value ( 2 ).toString () + CHR_HYPHEN + Client::clientName ( query_res.value ( 1 ).toString () ) );
+			item_info.insertField ( COL_DATE, query_res.value ( 3 ).toString () );
+};
 
 void searchUI::searchJobs ()
 {
 	Job job;
-	int recordcategory ( -1 );
-	QSqlQuery query;
-	stringRecord itemInfo;
-	QString strColName;
-
-	QString strQuery ( searchQueryTemplate );
-	strQuery.replace ( QStringLiteral( "#1#" ), ",CLIENTID,TYPE,STARTDATE" ); // Fields (columns) to display in table
-	strQuery.replace ( QStringLiteral( "#2#" ), job.tableInfo ()->table_name ); // Table name
-	strQuery.replace ( QStringLiteral( "#4#" ), mSearchTerm ); //The searched string
-	QString strQuery2 ( strQuery );
-
-	for ( uint i ( SC_REPORT_1 ); i <= SC_EXTRA; ++i )
-	{
-		if ( isBitSet ( mSearchFields, i ) )
-		{
-			recordcategory = job.searchCategoryTranslate ( static_cast<SEARCH_CATEGORIES> ( i ) );
-			if ( recordcategory <= 0 )
-				continue;
-
-			strColName = VDB ()->getTableColumnName ( job.tableInfo (), static_cast<uint>(recordcategory) );
-			strQuery.replace ( QStringLiteral( "#3#" ), strColName ); //Field (column) in which to search for the search term
-			if ( VDB ()->runSelectLikeQuery ( strQuery, query ) )
-			{
-				do
-				{
-					itemInfo.insertField ( COL_ID, query.value ( 0 ).toString () + CHR_COMMA + query.value ( 1 ).toString () );
-					itemInfo.insertField ( COL_INFO, query.value ( 2 ).toString () + CHR_HYPHEN + Client::clientName ( query.value ( 1 ).toString () ) );
-					itemInfo.insertField ( COL_TABLE, job.tableInfo ()->table_name );
-					itemInfo.insertField ( COL_DATE, query.value ( 3 ).toString () );
-					itemInfo.insertField ( COL_FIELD, strColName );
-					mFoundItems.fastAppendRecord ( itemInfo );
-					itemInfo.clear ();
-				} while ( query.next () );
-			}
-			strQuery = strQuery2;
-		}
-	}
+	const QString searchColumns ( QStringLiteral (",CLIENTID,TYPE,STARTDATE") );
+	searchTable ( &job, searchColumns, formatJobInfo );
 }
+
+auto formatPayInfo = [] ( const QSqlQuery& query_res, stringRecord& item_info ) ->void {
+			item_info.insertField ( COL_ID, query_res.value ( 0 ).toString () + CHR_COMMA + query_res.value ( 1 ).toString () );
+			item_info.insertField ( COL_INFO, Client::clientName ( query_res.value ( 1 ).toString () ) + CHR_HYPHEN + query_res.value ( 2 ).toString () );
+			item_info.insertField ( COL_DATE, emptyString );
+};
 
 void searchUI::searchPayments ()
 {
 	Payment pay;
-	int recordcategory ( -1 );
-	QSqlQuery query;
-	stringRecord itemInfo;
-	QString strColName;
-
-	QString strQuery ( searchQueryTemplate );
-	strQuery.replace ( QStringLiteral( "#1#" ), ",CLIENTID,PRICE" ); // Fields (columns) to display in table
-	strQuery.replace ( QStringLiteral( "#2#" ), pay.tableInfo ()->table_name ); // Table name
-	strQuery.replace ( QStringLiteral( "#4#" ), mSearchTerm ); //The searched string
-	QString strQuery2 ( strQuery );
-
-	for ( uint i ( SC_REPORT_1 ); i <= SC_EXTRA; ++i )
-	{
-		if ( isBitSet ( mSearchFields, i ) )
-		{
-			recordcategory = pay.searchCategoryTranslate ( static_cast<SEARCH_CATEGORIES> ( i ) );
-			if ( recordcategory <= 0 )
-				continue;
-
-			strColName = VDB ()->getTableColumnName ( pay.tableInfo (), static_cast<uint>(recordcategory) );
-			strQuery.replace ( QStringLiteral( "#3#" ), strColName ); //Field (column) in which to search for the search term
-			if ( VDB ()->runSelectLikeQuery ( strQuery, query ) )
-			{
-				do
-				{
-					itemInfo.insertField ( COL_ID, query.value ( 0 ).toString () + CHR_COMMA + query.value ( 1 ).toString () );
-					itemInfo.insertField ( COL_INFO, Client::clientName ( query.value ( 1 ).toString () ) + CHR_HYPHEN + query.value ( 2 ).toString () );
-					itemInfo.insertField ( COL_TABLE, pay.tableInfo ()->table_name );
-					itemInfo.insertField ( COL_DATE, emptyString );
-					itemInfo.insertField ( COL_FIELD, strColName );
-					mFoundItems.fastAppendRecord ( itemInfo );
-					itemInfo.clear ();
-				} while ( query.next () );
-			}
-			strQuery = strQuery2;
-		}
-	}
+	const QString searchColumns ( QStringLiteral (",CLIENTID,PRICE") );
+	searchTable ( &pay, searchColumns, formatPayInfo );
 }
+
+auto formatBuyInfo = [] ( const QSqlQuery& query_res, stringRecord& item_info ) ->void {
+			item_info.insertField ( COL_ID, query_res.value ( 0 ).toString () + CHR_COMMA + query_res.value ( 1 ).toString () );
+			item_info.insertField ( COL_INFO, Client::clientName ( query_res.value ( 1 ).toString () ) + CHR_HYPHEN + query_res.value ( 2 ).toString () );
+			item_info.insertField ( COL_DATE, query_res.value ( 3 ).toString () );
+};
 
 void searchUI::searchPurchases ()
 {
 	Buy buy;
-	int recordcategory ( -1 );
-	QSqlQuery query;
-	stringRecord itemInfo;
-	QString strColName;
-
-	QString strQuery ( searchQueryTemplate );
-	strQuery.replace ( QStringLiteral( "#1#" ), ",CLIENTID,PRICE,DATE" ); // Fields (columns) to display in table
-	strQuery.replace ( QStringLiteral( "#2#" ), buy.tableInfo ()->table_name ); // Table name
-	strQuery.replace ( QStringLiteral( "#4#" ), mSearchTerm ); //The searched string
-	QString strQuery2 ( strQuery );
-
-	for ( uint i ( SC_REPORT_1 ); i <= SC_EXTRA; ++i )
-	{
-		if ( isBitSet ( mSearchFields, i ) )
-		{
-			recordcategory = buy.searchCategoryTranslate ( static_cast<SEARCH_CATEGORIES> ( i ) );
-			if ( recordcategory <= 0 )
-				continue;
-
-			strColName = VDB ()->getTableColumnName ( buy.tableInfo (), static_cast<uint>(recordcategory) );
-			strQuery.replace ( QStringLiteral( "#3#" ), strColName ); //Field (column) in which to search for the search term
-			if ( VDB ()->runSelectLikeQuery ( strQuery, query ) )
-			{
-				do
-				{
-					itemInfo.insertField ( COL_ID, query.value ( 0 ).toString () + CHR_COMMA + query.value ( 1 ).toString () );
-					itemInfo.insertField ( COL_INFO, Client::clientName ( query.value ( 1 ).toString () ) + CHR_HYPHEN + query.value ( 2 ).toString () );
-					itemInfo.insertField ( COL_TABLE, buy.tableInfo ()->table_name );
-					itemInfo.insertField ( COL_DATE, query.value ( 3 ).toString () );
-					itemInfo.insertField ( COL_FIELD, strColName );
-					mFoundItems.fastAppendRecord ( itemInfo );
-					itemInfo.clear ();
-				} while ( query.next () );
-			}
-			strQuery = strQuery2;
-		}
-	}
+	const QString searchColumns ( QStringLiteral (",CLIENTID,PRICE,DATE") );
+	searchTable ( &buy, searchColumns, formatBuyInfo );
 }
+
+auto formatCPInfo = [] ( const QSqlQuery& query_res, stringRecord& item_info ) ->void {
+			item_info.insertField ( COL_ID, query_res.value ( 0 ).toString () );
+			item_info.insertField ( COL_INFO, query_res.value ( 1 ).toString () + CHR_HYPHEN + query_res.value ( 2 ).toString () + query_res.value ( 3 ).toString () );
+			item_info.insertField ( COL_DATE, query_res.value ( 4 ).toString () );
+};
 
 void searchUI::searchInventory ()
 {
 	companyPurchases cp_rec;
-	int recordcategory ( -1 );
-	QSqlQuery query;
-	stringRecord itemInfo;
-	QString strColName;
-
-	QString strQuery ( searchQueryTemplate );
-	strQuery.replace ( QStringLiteral( "#1#" ), ",SUPPLIER,DELIVERY_METHOD,TOTAL_PRICE,DATE" ); // Fields (columns) to display in table
-	strQuery.replace ( QStringLiteral( "#2#" ), cp_rec.tableInfo ()->table_name ); // Table name
-	strQuery.replace ( QStringLiteral( "#4#" ), mSearchTerm ); //The searched string
-	QString strQuery2 ( strQuery );
-
-	for ( uint i ( SC_REPORT_1 ); i <= SC_EXTRA; ++i )
-	{
-		if ( isBitSet ( mSearchFields, i ) )
-		{
-			recordcategory = cp_rec.searchCategoryTranslate ( static_cast<SEARCH_CATEGORIES> ( i ) );
-			if ( recordcategory <= 0 )
-				continue;
-
-			strColName = VDB ()->getTableColumnName ( cp_rec.tableInfo (), static_cast<uint>(recordcategory) );
-			strQuery.replace ( QStringLiteral( "#3#" ), strColName ); //Field (column) in which to search for the search term
-			if ( VDB ()->runSelectLikeQuery ( strQuery, query ) )
-			{
-				do
-				{
-					itemInfo.insertField ( COL_ID, query.value ( 0 ).toString () );
-					itemInfo.insertField ( COL_INFO, query.value ( 1 ).toString () + CHR_HYPHEN + query.value ( 2 ).toString () + query.value ( 3 ).toString () );
-					itemInfo.insertField ( COL_TABLE, cp_rec.tableInfo ()->table_name );
-					itemInfo.insertField ( COL_DATE, query.value ( 4 ).toString () );
-					itemInfo.insertField ( COL_FIELD, strColName );
-					mFoundItems.fastAppendRecord ( itemInfo );
-					itemInfo.clear ();
-				} while ( query.next () );
-			}
-			strQuery = strQuery2;
-		}
-	}
+	const QString searchColumns ( QStringLiteral (",NAME") );
+	searchTable ( &cp_rec, searchColumns, formatCPInfo );
 }
 
-void searchUI::searchSupplies ()
-{
-
-}
+auto formatSupInfo = [] ( const QSqlQuery& query_res, stringRecord& item_info ) ->void {
+			item_info.insertField ( COL_ID, query_res.value ( 0 ).toString () );
+			item_info.insertField ( COL_INFO, query_res.value ( 0 ).toString () );
+			item_info.insertField ( COL_DATE, emptyString );
+};
 
 void searchUI::searchSuppliers ()
 {
 	supplierRecord sup_rec;
-	int recordcategory ( -1 );
-	QSqlQuery query;
-	stringRecord itemInfo;
-	QString strColName;
-
-	QString strQuery ( searchQueryTemplate );
-	strQuery.replace ( QStringLiteral( "#1#" ), ",NAME" ); // Fields (columns) to display in table
-	strQuery.replace ( QStringLiteral( "#2#" ), sup_rec.tableInfo ()->table_name ); // Table name
-	strQuery.replace ( QStringLiteral( "#4#" ), mSearchTerm ); //The searched string
-	QString strQuery2 ( strQuery );
-
-	for ( uint i ( SC_REPORT_1 ); i <= SC_EXTRA; ++i )
-	{
-		if ( isBitSet ( mSearchFields, i ) )
-		{
-			recordcategory = sup_rec.searchCategoryTranslate ( static_cast<SEARCH_CATEGORIES> ( i ) );
-			if ( recordcategory <= 0 )
-				continue;
-
-			strColName = VDB ()->getTableColumnName ( sup_rec.tableInfo (), static_cast<uint>(recordcategory) );
-			strQuery.replace ( QStringLiteral( "#3#" ), strColName ); //Field (column) in which to search for the search term
-			if ( VDB ()->runSelectLikeQuery ( strQuery, query ) )
-			{
-				do
-				{
-					itemInfo.insertField ( COL_ID, query.value ( 0 ).toString () );
-					itemInfo.insertField ( COL_INFO, query.value ( 1 ).toString () );
-					itemInfo.insertField ( COL_TABLE, sup_rec.tableInfo ()->table_name );
-					itemInfo.insertField ( COL_DATE, emptyString );
-					itemInfo.insertField ( COL_FIELD, strColName );
-					mFoundItems.fastAppendRecord ( itemInfo );
-					itemInfo.clear ();
-				} while ( query.next () );
-			}
-			strQuery = strQuery2;
-		}
-	}
+	const QString searchColumns ( QStringLiteral (",SUPPLIER,DELIVERY_METHOD,TOTAL_PRICE,DATE") );
+	searchTable ( &sup_rec, searchColumns, formatSupInfo );
 }
 
 void searchUI::search ( const uint search_start, const uint search_end )
@@ -480,9 +340,6 @@ void searchUI::search ( const uint search_start, const uint search_end )
 			break;
 			case SS_INVENTORY:
 				searchInventory ();
-			break;
-			case SS_SUPPLIES:
-				searchSupplies ();
 			break;
 			case SS_SUPPLIERS:
 				searchSuppliers ();
@@ -716,9 +573,6 @@ void searchUI::listRowSelected ( const int row )
 		case SUPPLIER_TABLE:
 			SUPPLIERS ()->displaySupplier ( mFoundList->sheetItem ( row, COL_INFO )->text (), true );
 		break;
-		//case SUPPLIES_TABLE:
-		//	SUPPLIES ()->showSearchResult ( strDBRec_id.toUInt (), bshow );
-		//break;
 		default:
 		break;
 	}
