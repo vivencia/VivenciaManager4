@@ -112,7 +112,7 @@ inline estimateDlg *ESTIMATES ()
 inline searchUI *SEARCH_UI ()
 {
 	if ( Sys_Init::search_instance == nullptr )
-		Sys_Init::search_instance = new searchUI;
+		Sys_Init::search_instance = new searchUI ( Sys_Init::mainwindow_instance );
 	return Sys_Init::search_instance;
 }
 

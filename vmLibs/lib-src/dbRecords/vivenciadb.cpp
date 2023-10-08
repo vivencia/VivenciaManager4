@@ -198,9 +198,9 @@ VivenciaDB::VivenciaDB ( const bool b_set_dbrec_mngr )
 	: m_db ( nullptr ), m_ok ( false ), mNewDB ( false ), mBackupSynced ( true ),
       m_progressMaxSteps_func ( nullptr ), m_errorHandling_func ( nullptr )
 {
-	if ( openDataBase () )
+	if ( b_set_dbrec_mngr )
 	{
-		if ( b_set_dbrec_mngr )
+		if ( openDataBase () )
 		{
 			if ( DBRecord::databaseManager () == nullptr )
 				DBRecord::setDatabaseManager ( this );
@@ -277,7 +277,7 @@ DB_ERROR_CODES VivenciaDB::checkDatabase ( VivenciaDB* vdb )
 //-----------------------------------------MYSQL-------------------------------------------
 
 //-----------------------------------------READ-OPEN-LOAD-------------------------------------------
-bool VivenciaDB::openDataBase ()
+bool VivenciaDB::openDataBase ( const QString& connecion_name )
 {
 	if ( database () )
 	{
@@ -286,9 +286,7 @@ bool VivenciaDB::openDataBase ()
 	}
 	else
 	{
-		//TEST: do not provide a connection name so that this database becomes the default for the application (see docs)
-		// This is so that any QSqlQuery object will automatically use VivenciaDatabase;
-		m_db = new QSqlDatabase ( QSqlDatabase::addDatabase ( DB_DRIVER_NAME ) );
+		m_db = new QSqlDatabase ( QSqlDatabase::addDatabase ( DB_DRIVER_NAME, connecion_name.isEmpty () ? QSqlDatabase::defaultConnection : connecion_name ) );
 		database ()->setHostName ( HOST );
 		database ()->setPort ( PORT );
 		database ()->setUserName ( USER_NAME );

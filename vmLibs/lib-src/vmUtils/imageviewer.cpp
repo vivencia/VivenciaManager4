@@ -305,12 +305,9 @@ bool imageViewer::eventFilter ( QObject* o, QEvent* e )
 	{
 		if ( e->type () == QEvent::Resize )
 		{
-			//if ( images_array.current () )
-			//{
-				loadImage ( images_array.current ()->files.current ()->fullpath );
-				e->accept ();
-				return true;
-			//}
+			loadImage ( images_array.current ()->files.current () != nullptr ? images_array.current ()->files.current ()->fullpath : emptyString );
+			e->accept ();
+			return true;
 		}
 		return false;
 	}

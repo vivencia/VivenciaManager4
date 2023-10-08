@@ -116,6 +116,7 @@ public:
 	void addContextMenuAction ( vmAction* );
 	void removeContextMenuAction ( vmAction* );
 
+	void rowFromStringRecord ( const stringRecord& rec, const uint row, spreadRow* s_row = nullptr );
 	void loadFromStringTable ( const stringTable& data, const bool b_append = false );
 	void makeStringTable ( stringTable& data );
 	void setCellWidget ( vmTableItem* const sheet_item );

@@ -7,8 +7,11 @@
 #include <vmStringRecord/stringrecord.h>
 
 #include <QtWidgets/QDialog>
+#include <QtCore/QThread>
 
 #include <functional>
+
+class searchThreadWorker;
 
 class vmWidget;
 class vmTableWidget;
@@ -26,27 +29,18 @@ enum SEARCH_STEPS
 
 class searchUI : public QDialog
 {
+Q_OBJECT
 
 public:
-	explicit searchUI ();
+	explicit searchUI ( QWidget* parent );
 	virtual ~searchUI () override;
 	void setupUI ();
 
-	inline bool canSearch () const { return static_cast<SEARCH_STATUS>( searchStatus.state () ) == SS_NOT_FOUND; }
-	inline bool isSearching () const { return static_cast<SEARCH_STATUS>( searchStatus.state () ) == SS_SEARCH_FOUND; }
 	inline const QString& searchTerm () const { return mSearchTerm; }
-
 	void searchCancel ();
-	void prepareSearch ( const QString& searchTerm );
-	void parseSearchTerm ( const QString& searchTerm );
-	void search ( uint search_start = SS_CLIENT, const uint search_end = SS_SUPPLIERS );
-	bool searchFirst ();
-	bool searchPrev ();
-	bool searchNext ();
-	bool searchLast ();
 
-	bool isLast () const;
-	bool isFirst () const;
+public slots:
+	void insertFoundInfo ( const stringRecord& row_info );
 
 private:
 	void createTable ();
@@ -56,6 +50,29 @@ private:
 	void btnPrevClicked ();
 	void btnNextClicked ();
 	void listRowSelected ( const int row );
+
+	searchThreadWorker* mSearchWorker;
+	QString mSearchTerm;
+	int mCurRow;
+	vmTableWidget* mFoundList;
+	vmLineEdit* mtxtSearch;
+	QToolButton* mBtnSearch;
+	QToolButton* mBtnNext;
+	QToolButton* mBtnPrev;
+	QPushButton* mBtnClose;
+	DBRecord* mCurrentDisplayedRec;
+};
+
+class searchThreadWorker : public QObject
+{
+Q_OBJECT
+
+public:
+	explicit searchThreadWorker ( QObject* parent );
+	~searchThreadWorker ();
+
+	void search ();
+	void parseSearchTerm ( QString& searchTerm );
 	void searchTable ( DBRecord* db_rec, const QString& columns, const std::function<void( const QSqlQuery& query_res, stringRecord& item_info )>& formatResult );
 	void searchClients ();
 	void searchJobs ();
@@ -64,17 +81,15 @@ private:
 	void searchInventory ();
 	void searchSuppliers ();
 
-	QString mSearchTerm;
+signals:
+	void infoFound ( const stringRecord& row_info );
+	void searchDone ();
+
+private:
+	VivenciaDB* mVDB;
 	uint mSearchFields;
-	int mCurRow;
-	triStateType searchStatus;
-	vmTableWidget* mFoundList;
-	vmLineEdit* mtxtSearch;
-	QToolButton* mBtnSearch;
-	QToolButton* mBtnNext;
-	QToolButton* mBtnPrev;
-	QPushButton* mBtnClose;
-	stringTable mFoundItems;
-	DBRecord* mCurrentDisplayedRec;
+	bool mbFound;
+	QString mSearchTerm;
 };
+
 #endif // SEARCHUI_H

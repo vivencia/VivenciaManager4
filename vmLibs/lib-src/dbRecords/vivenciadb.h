@@ -70,7 +70,7 @@ public:
 	static DB_ERROR_CODES checkDatabase ( VivenciaDB* vdb );
 	//-----------------------------------------MYSQL-------------------------------------------
 
-	bool openDataBase ();
+	bool openDataBase ( const QString& connecion_name = QString () );
 	bool restart ();
 	void doPreliminaryWork ();
 	bool createDatabase ( const bool bCreateTables );

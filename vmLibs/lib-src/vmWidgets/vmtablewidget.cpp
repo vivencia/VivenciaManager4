@@ -688,12 +688,34 @@ void vmTableWidget::removeContextMenuAction ( vmAction* action )
 	mContextMenu->removeAction ( action );
 }
 
+void vmTableWidget::rowFromStringRecord ( const stringRecord& rec, const uint row, spreadRow* s_row )
+{
+	spreadRow* srow ( s_row );
+	uint i_col ( 0 );
+	if ( srow == nullptr )
+	{
+		srow = new spreadRow;
+		for ( ; i_col < colCount (); ++i_col )
+			srow->column[i_col] = i_col;
+	}
+	srow->row = row;
+	if ( rec.first () )
+	{
+		i_col = 0;
+		do
+		{
+			srow->field_value[i_col++] = rec.curValue ();
+		} while ( rec.next () );
+		setRowData ( srow );
+	}
+}
+
 void vmTableWidget::loadFromStringTable ( const stringTable& data, const bool b_append )
 {
-	int start_row ( 0 );
+	//int start_row ( 0 );
 	if ( !b_append )
 		clear ( true );
-	else
+	/*else
 	{
 		start_row = lastUsedRow () == -1 ? 0 : lastUsedRow () + 1;
 		int n_new_rows ( static_cast<int>( data.countRecords () ) );
@@ -703,13 +725,14 @@ void vmTableWidget::loadFromStringTable ( const stringTable& data, const bool b_
 			n_new_rows++;
 			insertRow ( static_cast<uint>(start_row), static_cast<uint>(n_new_rows) );
 		}
-	}
+	}*/
 
 	if ( data.isOK () )
 	{
 		setUpdatesEnabled ( false );
 		auto s_row ( new spreadRow );
 		uint i_col ( 0 );
+		int start_row ( lastUsedRow () == -1 ? 0 : lastUsedRow () + 1 );
 
 		for ( ; i_col < colCount (); ++i_col )
 			s_row->column[i_col] = i_col;
@@ -717,21 +740,11 @@ void vmTableWidget::loadFromStringTable ( const stringTable& data, const bool b_
 		const stringRecord* rec ( &data.first () );
 		if ( rec->isOK () )
 		{
-			s_row->row = start_row;
 			do
 			{
-				if ( rec->first () )
-				{
-					for ( i_col = 0; i_col < colCount (); ++i_col )
-					{
-						s_row->field_value[i_col] = rec->curValue ();
-						if ( !rec->next () )
-							break;
-					}
-					setRowData ( s_row );
-					++( s_row->row );
-					rec = &data.next ();
-				}
+				rowFromStringRecord ( *rec, start_row, s_row );
+				++start_row;
+				rec = &data.next ();
 			} while ( rec->isOK () );
 		}
 		delete s_row;

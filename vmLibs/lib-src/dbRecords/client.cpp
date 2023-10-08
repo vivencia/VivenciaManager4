@@ -314,18 +314,18 @@ void Client::copySubRecord ( const uint subrec_field, const stringRecord& subrec
 	}
 }
 
-QString Client::clientName ( const QString& id )
+QString Client::clientName ( const QString& id, const VivenciaDB* vdb )
 {
-	QSqlQuery query;
-	if ( VivenciaDB::runSelectLikeQuery ( QLatin1String ( "SELECT NAME FROM CLIENTS WHERE ID='" ) + id + CHR_CHRMARK, query ) )
+	QSqlQuery query ( *( vdb->database() ) );
+	if ( vdb->runSelectLikeQuery ( QLatin1String ( "SELECT NAME FROM CLIENTS WHERE ID='" ) + id + CHR_CHRMARK, query ) )
 		return query.value ( 0 ).toString ();
 	return QString ();
 }
 
-uint Client::clientID ( const QString& name )
+uint Client::clientID ( const QString& name, const VivenciaDB* vdb )
 {
-	QSqlQuery query;
-	if ( VivenciaDB::runSelectLikeQuery ( QLatin1String (	"SELECT ID FROM CLIENTS WHERE NAME='" ) + name + CHR_CHRMARK, query ) )
+	QSqlQuery query ( *( vdb->database() ) );
+	if ( vdb->runSelectLikeQuery ( QLatin1String (	"SELECT ID FROM CLIENTS WHERE NAME='" ) + name + CHR_CHRMARK, query ) )
 		return query.value ( 0 ).toUInt ();
 	return 0;
 }
@@ -336,22 +336,22 @@ QString Client::concatenateClientInfo ( const Client& client )
 	info = recStrValue ( &client, FLD_CLIENT_NAME );
 	if ( !info.isEmpty () )
 	{
-		info += QLatin1String ( client.opt ( FLD_CLIENT_STATUS ) ? "(*)\n" : "\n" );
+		info += client.opt ( FLD_CLIENT_STATUS ) ? QStringLiteral ("(*)\n") : QStringLiteral ("\n");
 		if ( !recStrValue ( &client, FLD_CLIENT_STREET ).isEmpty () )
-			info += recStrValue ( &client, FLD_CLIENT_STREET ) + QLatin1String ( ", " );
+			info += recStrValue ( &client, FLD_CLIENT_STREET ) + QStringLiteral ( ", " );
 
 		if ( !recStrValue ( &client, FLD_CLIENT_NUMBER ).isEmpty () )
 			info += recStrValue ( &client, FLD_CLIENT_NUMBER );
 		else
-			info += QLatin1String ( "S/N" );
+			info += QStringLiteral ( "S/N" );
 
-		info += QLatin1String ( " - " );
+		info += QStringLiteral ( " - " );
 
 		if ( !recStrValue ( &client, FLD_CLIENT_DISTRICT ).isEmpty () )
-			info += recStrValue ( &client, FLD_CLIENT_DISTRICT ) + QLatin1String ( " - " );
+			info += recStrValue ( &client, FLD_CLIENT_DISTRICT ) + QStringLiteral ( " - " );
 
 		if ( !recStrValue ( &client, FLD_CLIENT_CITY ).isEmpty () )
-			info += recStrValue ( &client, FLD_CLIENT_CITY ) + QLatin1String ( "/SP" );
+			info += recStrValue ( &client, FLD_CLIENT_CITY ) + QStringLiteral ( "/SP" );
 
 		if ( !recStrValue ( &client, FLD_CLIENT_PHONES ).isEmpty () )
 		{
@@ -359,9 +359,9 @@ QString Client::concatenateClientInfo ( const Client& client )
 			const stringRecord phones_rec ( recStrValue ( &client, FLD_CLIENT_PHONES ) );
 			if ( phones_rec.first () )
 			{
-				info += QLatin1String ( "Telefone(s): " ) + phones_rec.curValue ();
+				info += QStringLiteral ( "Telefone(s): " ) + phones_rec.curValue ();
 				while ( phones_rec.next () )
-					info += QLatin1String ( " / " ) + phones_rec.curValue ();
+					info += QStringLiteral ( " / " ) + phones_rec.curValue ();
 			}
 		}
 		if ( !recStrValue ( &client, FLD_CLIENT_EMAIL ).isEmpty () )
@@ -370,9 +370,9 @@ QString Client::concatenateClientInfo ( const Client& client )
 			const stringRecord emails_rec ( recStrValue ( &client, FLD_CLIENT_EMAIL ) );
 			if ( emails_rec.first () )
 			{
-				info += QLatin1String ( "email(s)/site(s): " ) + emails_rec.curValue ();
+				info += QStringLiteral ( "email(s)/site(s): " ) + emails_rec.curValue ();
 				while ( emails_rec.next () )
-					info += QLatin1String ( " / " ) + emails_rec.curValue ();
+					info += QStringLiteral ( " / " ) + emails_rec.curValue ();
 			}
 		}
 	}

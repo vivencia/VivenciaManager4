@@ -31,8 +31,9 @@ public:
 	static inline const QString clientName ( const uint id ) {
 		return ( id >= 1 ) ? clientName ( QString::number ( id ) ) : QString ();
 	}
-	static QString clientName ( const QString& id );
-	static uint clientID ( const QString& name );
+
+	static QString clientName ( const QString& id, const VivenciaDB* vdb = DBRecord::databaseManager () );
+	static uint clientID ( const QString& name, const VivenciaDB* vdb = DBRecord::databaseManager () );
 	static QString concatenateClientInfo ( const Client& client );
 
 	void setListItem ( clientListItem* client_item );
