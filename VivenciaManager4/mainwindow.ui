@@ -142,32 +142,6 @@
          </widget>
         </item>
         <item>
-         <widget class="QToolButton" name="btnServicesPrices">
-          <property name="minimumSize">
-           <size>
-            <width>24</width>
-            <height>24</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>16777215</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>Services Prices and Descriptions (F7)</string>
-          </property>
-          <property name="text">
-           <string>...</string>
-          </property>
-          <property name="icon">
-           <iconset resource="resources.qrc">
-            <normaloff>:/resources/table-prices.png</normaloff>:/resources/table-prices.png</iconset>
-          </property>
-         </widget>
-        </item>
-        <item>
          <widget class="QToolButton" name="btnEstimates">
           <property name="minimumSize">
            <size>
@@ -3736,7 +3710,6 @@
   <tabstop>btnConfiguration</tabstop>
   <tabstop>btnEstimates</tabstop>
   <tabstop>btnCompanyPurchases</tabstop>
-  <tabstop>btnServicesPrices</tabstop>
   <tabstop>btnExitProgram</tabstop>
  </tabstops>
  <resources>

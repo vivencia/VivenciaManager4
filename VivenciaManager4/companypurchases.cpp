@@ -1,6 +1,5 @@
 #include "global.h"
 #include "companypurchases.h"
-#include "ui_companypurchases.h"
 #include "suppliersdlg.h"
 #include "searchui.h"
 #include "system_init.h"
@@ -11,34 +10,34 @@
 #include <dbRecords/inventory.h>
 #include <dbRecords/companypurchases.h>
 #include <dbRecords/dblistitem.h>
+#include <dbRecords/dbtablewidget.h>
 #include <dbRecords/completers.h>
 
+#include <vmTaskPanel/vmtaskpanel.h>
+#include <vmTaskPanel/vmactiongroup.h>
 #include <vmUtils/fast_library_functions.h>
 #include <vmWidgets/vmwidgets.h>
 #include <vmNumbers/vmnumberformats.h>
 #include <vmNotify/vmnotify.h>
 
 #include <QtGui/QKeyEvent>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QGridLayout>
+#include <QtWidgets/QVBoxLayout>
+#include <QtWidgets/QHBoxLayout>
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QToolButton>
 
 enum btnNames { BTN_FIRST = 0, BTN_PREV = 1, BTN_NEXT = 2, BTN_LAST = 3, BTN_ADD = 4, BTN_EDIT = 5, BTN_DEL = 6, BTN_SEARCH = 7 };
 static bool bEnableStatus[4] = { false };
 
 companyPurchasesUI::companyPurchasesUI ( QWidget* parent )
-	: QDialog ( parent ), ui ( new Ui::companyPurchasesUI () ),
-	  mbSearchIsOn ( false ), cp_rec ( new companyPurchases ( true ) ), widgetList ( INVENTORY_FIELD_COUNT + 1 ),
+	: QDialog ( parent ), mbSearchIsOn ( false ), cp_rec ( new companyPurchases ( true ) ), widgetList ( INVENTORY_FIELD_COUNT + 1 ),
 	  mFoundFields ( 0, 5 )
 {
-	ui->setupUi ( this );
 	setupUI ();
 	const bool have_items ( VDB ()->getHighestID ( TABLE_CP_ORDER ) > 0 );
-	ui->btnCPEdit->setEnabled ( true );
-	ui->btnCPRemove->setEnabled ( have_items );
-	ui->btnCPNext->setEnabled ( have_items );
-	ui->btnCPFirst->setEnabled ( false );
-	ui->btnCPPrev->setEnabled ( have_items );
-	ui->btnCPLast->setEnabled ( have_items );
-	ui->txtCPSearch->setEditable ( have_items );
-	ui->btnCPSearch->setEnabled ( have_items );
+	std::fill ( bEnableStatus, bEnableStatus+4, have_items );
 
 	cp_rec->readLastRecord ();
 	fillForms ();
@@ -47,25 +46,16 @@ companyPurchasesUI::companyPurchasesUI ( QWidget* parent )
 companyPurchasesUI::~companyPurchasesUI ()
 {
 	heap_del ( cp_rec );
-	heap_del ( ui );
 }
 
-void companyPurchasesUI::showSearchResult ( const uint id, const bool bshow )
+void companyPurchasesUI::showSearchResult ( const uint id )
 {
-	if ( bshow )
+	if ( cp_rec->readRecord ( id ) )
 	{
-		if ( cp_rec->readRecord ( id ) )
-		{
-			if ( !isVisible () )
-				showNormal ();
-			fillForms ();
-		}
+		if ( !isVisible () )
+			showNormal ();
+		fillForms ();
 	}
-	/*for ( uint i ( 0 ); i < COMPANY_PURCHASES_FIELD_COUNT; ++i )
-	{
-		if ( item->searchFieldStatus ( i ) == SS_SEARCH_FOUND )
-			widgetList.at ( i )->highlight ( bshow ? vmBlue : vmDefault_Color, SEARCH_UI ()->searchTerm () );
-	}*/
 }
 
 void companyPurchasesUI::showSearchResult_internal ( const bool bshow )
@@ -83,7 +73,7 @@ void companyPurchasesUI::setTotalPriceAsItChanges ( const vmTableItem* const ite
 
 void companyPurchasesUI::setPayValueAsItChanges ( const vmTableItem* const item )
 {
-	ui->txtCPPayValue->setText ( item->text () );
+	txtCPPayValue->setText ( item->text () );
 	setRecValue ( cp_rec, FLD_CP_PAY_VALUE, item->text () );
 }
 
@@ -126,149 +116,300 @@ void companyPurchasesUI::saveWidget ( vmWidget* widget, const int id )
 
 void companyPurchasesUI::setupUI ()
 {
-	static_cast<void>( ui->btnCPAdd->connect ( ui->btnCPAdd, static_cast<void (QPushButton::*)( const bool )>( &QPushButton::clicked ),
-			this, [&] ( const bool checked ) { return btnCPAdd_clicked ( checked ); } ) );
-	static_cast<void>( ui->btnCPEdit->connect ( ui->btnCPEdit, static_cast<void (QPushButton::*)( const bool )>( &QPushButton::clicked ),
-			this, [&] ( const bool checked ) { return btnCPEdit_clicked ( checked ); } ) );
-	static_cast<void>( ui->btnCPSearch->connect ( ui->btnCPSearch, static_cast<void (QPushButton::*)( const bool )>( &QPushButton::clicked ),
-			this, [&] ( const bool checked ) { return btnCPSearch_clicked ( checked ); } ) );
-	static_cast<void>( ui->btnCPShowSupplier->connect ( ui->btnCPShowSupplier, static_cast<void (QToolButton::*)( const bool )>( &QToolButton::clicked ),
-			this, [&] ( const bool checked ) { return btnCPShowSupplier_clicked ( checked ); } ) );
-	static_cast<void>( ui->btnCPFirst->connect ( ui->btnCPFirst, &QPushButton::clicked, this, [&] () { return btnCPFirst_clicked (); } ) );
-	static_cast<void>( ui->btnCPPrev->connect ( ui->btnCPPrev, &QPushButton::clicked, this, [&] () { return btnCPPrev_clicked (); } ) );
-	static_cast<void>( ui->btnCPNext->connect ( ui->btnCPNext, &QPushButton::clicked, this, [&] () { return btnCPNext_clicked (); } ) );
-	static_cast<void>( ui->btnCPLast->connect ( ui->btnCPLast, &QPushButton::clicked, this, [&] () { return btnCPLast_clicked (); } ) );
-	static_cast<void>( ui->btnCPRemove->connect ( ui->btnCPRemove, &QPushButton::clicked, this, [&] () { return btnCPRemove_clicked (); } ) );
-	static_cast<void>( ui->btnClose->connect ( ui->btnClose, &QPushButton::clicked, this, [&] () { return hide (); } ) );
+	//companyPurchasesresize(731, 544);
+	auto gLayout ( new QGridLayout () );
+	gLayout->setSpacing ( 5 );
+	gLayout->setContentsMargins ( 5, 5, 5, 5 );
 
-	dbTableWidget::createPurchasesTable ( ui->tableItems );
-	saveWidget ( ui->tableItems, FLD_CP_ITEMS_REPORT );
-	ui->tableItems->setKeepModificationRecords ( false );
-	ui->tableItems->setParentLayout ( ui->layoutCPTable );
-	ui->tableItems->setCallbackForMonitoredCellChanged ( [&] ( const vmTableItem* const item ) {
+	dteCPDate = new vmDateEdit ( this );
+	dteCPDeliveryDate = new vmDateEdit ( this );
+	auto lblCPNotes ( new QLabel ( this ) );
+	lblCPNotes->setText ( APP_TR_FUNC ( "Notes:" ) );
+	auto lblDeliveryDate ( new QLabel ( this ) );
+	lblDeliveryDate->setText ( APP_TR_FUNC ( "Delivery date:" ) );
+	auto lblCPDate ( new QLabel ( this ) );
+	lblCPDate->setText ( APP_TR_FUNC ( "Purchase date:" ) );
+	auto lblCPPayValue ( new QLabel ( this ) );
+	lblCPPayValue->setText ( APP_TR_FUNC ( "Price paid:" ) );
+	auto lblCPDeliveryMethod ( new QLabel ( this ) );
+	lblCPDeliveryMethod->setText ( APP_TR_FUNC ( "Delivery method:" ) );
+
+	gLayout->addWidget ( dteCPDate, 6, 2, 1, 1 );
+	gLayout->addWidget ( dteCPDeliveryDate, 6, 3, 1, 1 );
+	gLayout->addWidget ( lblCPNotes, 8, 3, 1, 1 );
+	gLayout->addWidget ( lblDeliveryDate, 5, 3, 1, 1 );
+	gLayout->addWidget ( lblCPDate, 5, 2, 1, 1 );
+	gLayout->addWidget ( lblCPPayValue, 8, 1, 1, 1 );
+	gLayout->addWidget ( lblCPDeliveryMethod, 8, 2, 1, 1 );
+
+
+	btnCPFirst = new QPushButton ( this );
+	btnCPFirst->setIcon ( ICON ( ":/resources/browse-controls/first_rec.png" ) );
+	btnCPPrev = new QPushButton ( this );
+	btnCPPrev->setIcon ( ICON ( ":/resources/browse-controls/prev_rec.png" ) );
+	btnCPNext = new QPushButton ( this );
+	btnCPNext->setIcon ( ICON ( ":/resources/browse-controls/next_rec.png" ) );
+	btnCPLast = new QPushButton ( this );
+	btnCPLast->setIcon ( ICON ( ":/resources/browse-controls/last_rec.png" ) );
+
+	auto line_1 ( new QFrame ( this ) );
+	line_1->setFrameShape(QFrame::VLine);
+	line_1->setFrameShadow(QFrame::Sunken);
+
+	btnCPAdd = new QPushButton ( this );
+	btnCPAdd->setIcon ( ICON ( ":/resources/browse-controls/add_rec.png" ) );
+	btnCPEdit = new QPushButton ( this );
+	btnCPEdit->setIcon ( ICON ( ":/resources/browse-controls/edit_rec.png" ) );
+	btnCPRemove = new QPushButton ( this );
+	btnCPRemove->setIcon ( ICON ( ":/resources/browse-controls/remove.png" ) );
+
+	auto line_2 ( new QFrame ( this ) );
+	line_2->setFrameShape(QFrame::VLine);
+	line_2->setFrameShadow(QFrame::Sunken);
+
+	auto lblCPID ( new QLabel ( this ) );
+	lblCPID->setText ( APP_TR_FUNC ( "ID:" ) );
+
+	txtCPID = new vmLineEdit ( this );
+	QSizePolicy sizePolicy ( QSizePolicy::Fixed, QSizePolicy::Fixed );
+	sizePolicy.setHorizontalStretch ( 0 );
+	sizePolicy.setVerticalStretch ( 0 );
+	sizePolicy.setHeightForWidth ( txtCPID->sizePolicy().hasHeightForWidth () );
+	txtCPID->setSizePolicy(sizePolicy);
+	txtCPID->setMaximumSize ( QSize ( 80, 30 ) );
+
+	auto line_3 ( new QFrame ( this ) );
+	line_3->setFrameShape(QFrame::VLine);
+	line_3->setFrameShadow(QFrame::Sunken);
+
+	txtCPSearch = new vmLineEdit ( this );
+
+	btnCPSearch = new QPushButton ( this );
+	btnCPSearch->setIcon ( ICON ( ":/resources/replace-all.png" ) );
+	btnCPSearch->setCheckable(true);
+
+	txtCPSupplier = new vmLineEdit ( this );
+	btnCPShowSupplier = new QToolButton ( this );
+	btnCPShowSupplier->setIcon ( ICON ( ":/resources/arrow-down.png" ) );
+	btnCPShowSupplier->setCheckable ( true );
+
+	txtCPNotes = new vmLineEdit ( this );
+
+	auto lblItems ( new QLabel ( this ) );
+	lblItems->setText ( APP_TR_FUNC ( "Items:" ) );
+	tableItems = new dbTableWidget ( this );
+	auto lblPayHistory ( new QLabel ( this ) );
+	lblPayHistory->setText ( APP_TR_FUNC ( "Payment history:" ) );
+	tablePayments = new dbTableWidget ( this );
+	btnClose = new QPushButton ( this );
+	btnClose->setText ( APP_TR_FUNC ( "Close" ) );
+
+	txtCPDeliveryMethod = new vmLineEdit ( this );
+	auto lblCPSupplier ( new QLabel ( this ) );
+	lblCPSupplier->setText ( APP_TR_FUNC ( "Supplier:" ) );
+	txtCPPayValue = new vmLineEditWithButton ( this );
+
+	auto layoutSupplierName ( new QHBoxLayout () );
+	layoutSupplierName->setSpacing ( 2 );
+	layoutSupplierName->addWidget ( txtCPSupplier );
+	layoutSupplierName->addWidget( btnCPShowSupplier );
+
+	auto layoutCPTable ( new QVBoxLayout () );
+	layoutCPTable->setSpacing ( 5 );
+	layoutCPTable->setContentsMargins ( 5, 5, 5, 5 );
+	layoutCPTable->addWidget ( lblItems );
+	layoutCPTable->addWidget ( tableItems );
+	layoutCPTable->addWidget ( lblPayHistory );
+	layoutCPTable->addWidget ( tablePayments );
+	layoutCPTable->addWidget ( btnClose );
+
+	auto layoutBrowseControls ( new QHBoxLayout () );
+	layoutBrowseControls->setSpacing ( 2 );
+	layoutBrowseControls->addWidget ( btnCPFirst );
+	layoutBrowseControls->addWidget ( btnCPPrev );
+	layoutBrowseControls->addWidget ( btnCPNext );
+	layoutBrowseControls->addWidget ( btnCPLast );
+	layoutBrowseControls->addWidget ( line_1 );
+	layoutBrowseControls->addWidget ( btnCPAdd );
+	layoutBrowseControls->addWidget( btnCPEdit );
+	layoutBrowseControls->addWidget ( btnCPRemove );
+	layoutBrowseControls->addWidget ( line_2 );
+	layoutBrowseControls->addWidget ( lblCPID );
+	layoutBrowseControls->addWidget ( txtCPID );
+	layoutBrowseControls->addWidget ( line_3 );
+	layoutBrowseControls->addItem ( new QSpacerItem ( 40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum ));
+	layoutBrowseControls->addWidget ( txtCPSearch );
+	layoutBrowseControls->addWidget ( btnCPSearch );
+
+	gLayout->addLayout ( layoutBrowseControls, 0, 1, 1, 3 );
+	gLayout->addLayout ( layoutSupplierName, 6, 1, 1, 1 );
+	gLayout->addWidget ( txtCPNotes, 9, 3, 1, 1 );
+	gLayout->addLayout ( layoutCPTable, 10, 1, 1, 3 );
+	gLayout->addWidget ( txtCPDeliveryMethod, 9, 2, 1, 1 );
+	gLayout->addWidget ( lblCPSupplier, 5, 1, 1, 1 );
+	gLayout->addWidget ( txtCPPayValue, 9, 1, 1, 1 );
+
+	QWidget::setTabOrder(btnCPFirst, btnCPPrev);
+	QWidget::setTabOrder(btnCPPrev, btnCPNext);
+	QWidget::setTabOrder(btnCPNext, btnCPLast);
+	QWidget::setTabOrder(btnCPLast, txtCPSupplier);
+	QWidget::setTabOrder(txtCPSupplier, btnCPShowSupplier);
+
+	vmTaskPanel* panel ( new vmTaskPanel ( emptyString, this ) );
+	auto mainLayout ( new QVBoxLayout );
+	mainLayout->setContentsMargins ( 0, 0, 0, 0 );
+	mainLayout->setSpacing ( 0 );
+	mainLayout->addWidget ( panel, 1 );
+	setLayout ( mainLayout );
+	vmActionGroup* group = panel->createGroup ( emptyString, false, true, false );
+	group->addLayout ( gLayout );
+	panel->setScheme ( MAINWINDOW ()->appMainStyle () );
+
+	static_cast<void>( btnCPAdd->connect ( btnCPAdd, static_cast<void (QPushButton::*)( const bool )>( &QPushButton::clicked ),
+			this, [&] ( const bool checked ) { return btnCPAdd_clicked ( checked ); } ) );
+	static_cast<void>( btnCPEdit->connect ( btnCPEdit, static_cast<void (QPushButton::*)( const bool )>( &QPushButton::clicked ),
+			this, [&] ( const bool checked ) { return btnCPEdit_clicked ( checked ); } ) );
+	static_cast<void>( btnCPSearch->connect ( btnCPSearch, static_cast<void (QPushButton::*)( const bool )>( &QPushButton::clicked ),
+			this, [&] ( const bool checked ) { return btnCPSearch_clicked ( checked ); } ) );
+	static_cast<void>( btnCPShowSupplier->connect ( btnCPShowSupplier, static_cast<void (QToolButton::*)( const bool )>( &QToolButton::clicked ),
+			this, [&] ( const bool checked ) { return btnCPShowSupplier_clicked ( checked ); } ) );
+	static_cast<void>( btnCPFirst->connect ( btnCPFirst, &QPushButton::clicked, this, [&] () { return btnCPFirst_clicked (); } ) );
+	static_cast<void>( btnCPPrev->connect ( btnCPPrev, &QPushButton::clicked, this, [&] () { return btnCPPrev_clicked (); } ) );
+	static_cast<void>( btnCPNext->connect ( btnCPNext, &QPushButton::clicked, this, [&] () { return btnCPNext_clicked (); } ) );
+	static_cast<void>( btnCPLast->connect ( btnCPLast, &QPushButton::clicked, this, [&] () { return btnCPLast_clicked (); } ) );
+	static_cast<void>( btnCPRemove->connect ( btnCPRemove, &QPushButton::clicked, this, [&] () { return btnCPRemove_clicked (); } ) );
+	static_cast<void>( btnClose->connect ( btnClose, &QPushButton::clicked, this, [&] () { return hide (); } ) );
+
+	dbTableWidget::createPurchasesTable ( tableItems );
+	saveWidget ( tableItems, FLD_CP_ITEMS_REPORT );
+	tableItems->setKeepModificationRecords ( false );
+	tableItems->setParentLayout ( layoutCPTable );
+	tableItems->setCallbackForMonitoredCellChanged ( [&] ( const vmTableItem* const item ) {
 			return setTotalPriceAsItChanges ( item ); } );
-	ui->tableItems->setCallbackForRelevantKeyPressed ( [&] ( const QKeyEvent* const ke, const vmWidget* const ) {
+	tableItems->setCallbackForRelevantKeyPressed ( [&] ( const QKeyEvent* const ke, const vmWidget* const ) {
 			return relevantKeyPressed ( ke ); } );
-	ui->tableItems->setCallbackForCellChanged ( [&] ( const vmTableItem* const item ) {
+	tableItems->setCallbackForCellChanged ( [&] ( const vmTableItem* const item ) {
 			return tableItemsCellChanged ( item ); } );
-	ui->tableItems->setCallbackForRowRemoved ( [&] ( const uint row ) {
+	tableItems->setCallbackForRowRemoved ( [&] ( const uint row ) {
 			return tableRowRemoved ( row ); } );
 
-	dbTableWidget::createPayHistoryTable ( ui->tablePayments, PHR_METHOD );
-	saveWidget ( ui->tablePayments, FLD_CP_PAY_REPORT );
-	ui->tablePayments->setParentLayout ( ui->layoutCPTable );
-	ui->tablePayments->setCallbackForMonitoredCellChanged ( [&] ( const vmTableItem* const item ) {
+	dbTableWidget::createPayHistoryTable ( tablePayments, PHR_METHOD );
+	saveWidget ( tablePayments, FLD_CP_PAY_REPORT );
+	tablePayments->setParentLayout ( layoutCPTable );
+	tablePayments->setCallbackForMonitoredCellChanged ( [&] ( const vmTableItem* const item ) {
 			return setPayValueAsItChanges ( item ); } );
-	ui->tablePayments->setCallbackForRelevantKeyPressed ( [&] ( const QKeyEvent* const ke, const vmWidget* const ) {
+	tablePayments->setCallbackForRelevantKeyPressed ( [&] ( const QKeyEvent* const ke, const vmWidget* const ) {
 			return relevantKeyPressed ( ke ); } );
-	ui->tablePayments->setCallbackForCellChanged ( [&] ( const vmTableItem* const item ) {
+	tablePayments->setCallbackForCellChanged ( [&] ( const vmTableItem* const item ) {
 			return tablePaymentsCellChanged ( item ); } );
 
-	COMPLETERS ()->setCompleterForWidget ( ui->txtCPSupplier, CC_SUPPLIER );
-	saveWidget ( ui->txtCPSupplier, FLD_CP_SUPPLIER );
-	ui->txtCPSupplier->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) {
+	COMPLETERS ()->setCompleterForWidget ( txtCPSupplier, CC_SUPPLIER );
+	saveWidget ( txtCPSupplier, FLD_CP_SUPPLIER );
+	txtCPSupplier->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) {
 			return txtCP_textAltered ( sender ); } );
-	ui->txtCPSupplier->setCallbackForRelevantKeyPressed ( [&] ( const QKeyEvent* const ke, const vmWidget* const ) {
+	txtCPSupplier->setCallbackForRelevantKeyPressed ( [&] ( const QKeyEvent* const ke, const vmWidget* const ) {
 			return relevantKeyPressed ( ke ); } );
 
-	COMPLETERS ()->setCompleterForWidget ( ui->txtCPDeliveryMethod, CC_DELIVERY_METHOD );
-	saveWidget ( ui->txtCPDeliveryMethod, FLD_CP_DELIVERY_METHOD );
-	ui->txtCPDeliveryMethod->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) {
+	COMPLETERS ()->setCompleterForWidget ( txtCPDeliveryMethod, CC_DELIVERY_METHOD );
+	saveWidget ( txtCPDeliveryMethod, FLD_CP_DELIVERY_METHOD );
+	txtCPDeliveryMethod->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) {
 			return txtCP_textAltered ( sender ); } );
-	ui->txtCPDeliveryMethod->setCallbackForRelevantKeyPressed ( [&] ( const QKeyEvent* const ke, const vmWidget* const ) {
+	txtCPDeliveryMethod->setCallbackForRelevantKeyPressed ( [&] ( const QKeyEvent* const ke, const vmWidget* const ) {
 			return relevantKeyPressed ( ke ); } );
 
-	saveWidget ( ui->txtCPPayValue, FLD_CP_PAY_VALUE );
-	ui->txtCPPayValue->lineControl ()->setTextType ( vmLineEdit::TT_PRICE );
-	ui->txtCPPayValue->setButtonType ( 0, vmLineEditWithButton::LEBT_CALC_BUTTON );
-	ui->txtCPPayValue->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) {
+	saveWidget ( txtCPPayValue, FLD_CP_PAY_VALUE );
+	txtCPPayValue->lineControl ()->setTextType ( vmLineEdit::TT_PRICE );
+	txtCPPayValue->setButtonType ( 0, vmLineEditWithButton::LEBT_CALC_BUTTON );
+	txtCPPayValue->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) {
 			return txtCP_textAltered ( sender ); } );
-	ui->txtCPPayValue->setCallbackForRelevantKeyPressed ( [&] ( const QKeyEvent* const ke, const vmWidget* const ) {
+	txtCPPayValue->setCallbackForRelevantKeyPressed ( [&] ( const QKeyEvent* const ke, const vmWidget* const ) {
 			return relevantKeyPressed ( ke ); } );
 	
-	saveWidget ( ui->txtCPNotes, FLD_CP_NOTES );
-	ui->txtCPNotes->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) {
+	saveWidget ( txtCPNotes, FLD_CP_NOTES );
+	txtCPNotes->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) {
 			return txtCP_textAltered ( sender ); } );
-	ui->txtCPNotes->setCallbackForRelevantKeyPressed ( [&] ( const QKeyEvent* const ke, const vmWidget* const ) {
+	txtCPNotes->setCallbackForRelevantKeyPressed ( [&] ( const QKeyEvent* const ke, const vmWidget* const ) {
 			return relevantKeyPressed ( ke ); } );
 
-	saveWidget ( ui->dteCPDate, FLD_CP_DATE );
-	ui->dteCPDate->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) {
+	saveWidget ( dteCPDate, FLD_CP_DATE );
+	dteCPDate->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) {
 			return dteCP_dateAltered ( sender ); } );
-	ui->dteCPDate->setCallbackForRelevantKeyPressed ( [&] ( const QKeyEvent* const ke, const vmWidget* const ) {
+	dteCPDate->setCallbackForRelevantKeyPressed ( [&] ( const QKeyEvent* const ke, const vmWidget* const ) {
 			return relevantKeyPressed ( ke ); } );
 
-	saveWidget ( ui->dteCPDeliveryDate, FLD_CP_DELIVERY_DATE );
-	ui->dteCPDeliveryDate->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) {
+	saveWidget ( dteCPDeliveryDate, FLD_CP_DELIVERY_DATE );
+	dteCPDeliveryDate->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) {
 			return dteCP_dateAltered ( sender ); } );
-	ui->dteCPDeliveryDate->setCallbackForRelevantKeyPressed ( [&] ( const QKeyEvent* const ke, const vmWidget* const ) {
+	dteCPDeliveryDate->setCallbackForRelevantKeyPressed ( [&] ( const QKeyEvent* const ke, const vmWidget* const ) {
 			return relevantKeyPressed ( ke ); } );
 
-	ui->txtCPSearch->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) {
+	txtCPSearch->setCallbackForContentsAltered ( [&] ( const vmWidget* const sender ) {
 			return txtCPSearch_textAltered ( sender->text () ); } );
-	ui->txtCPSearch->setCallbackForRelevantKeyPressed ( [&] ( const QKeyEvent* const, const vmWidget* const ) {
+	txtCPSearch->setCallbackForRelevantKeyPressed ( [&] ( const QKeyEvent* const, const vmWidget* const ) {
 			return btnCPSearch_clicked ( true ); } );
 }
 
 void companyPurchasesUI::fillForms ()
 {
-	ui->txtCPID->setText ( recStrValue ( cp_rec, FLD_CP_ID ) );
-	ui->dteCPDate->setDate ( cp_rec->date ( FLD_CP_DATE ) );
-	ui->dteCPDeliveryDate->setDate ( cp_rec->date ( FLD_CP_DELIVERY_DATE ) );
-	ui->txtCPPayValue->setText ( recStrValue ( cp_rec, FLD_CP_PAY_VALUE ) );
-	ui->txtCPDeliveryMethod->setText ( recStrValue ( cp_rec, FLD_CP_DELIVERY_METHOD ) );
-	ui->txtCPSupplier->setText ( recStrValue ( cp_rec, FLD_CP_SUPPLIER ) );
-	ui->txtCPNotes->setText ( recStrValue ( cp_rec, FLD_CP_NOTES ) );
+	txtCPID->setText ( recStrValue ( cp_rec, FLD_CP_ID ) );
+	dteCPDate->setDate ( cp_rec->date ( FLD_CP_DATE ) );
+	dteCPDeliveryDate->setDate ( cp_rec->date ( FLD_CP_DELIVERY_DATE ) );
+	txtCPPayValue->setText ( recStrValue ( cp_rec, FLD_CP_PAY_VALUE ) );
+	txtCPDeliveryMethod->setText ( recStrValue ( cp_rec, FLD_CP_DELIVERY_METHOD ) );
+	txtCPSupplier->setText ( recStrValue ( cp_rec, FLD_CP_SUPPLIER ) );
+	txtCPNotes->setText ( recStrValue ( cp_rec, FLD_CP_NOTES ) );
 
-	ui->tableItems->loadFromStringTable ( recStrValue ( cp_rec, FLD_CP_ITEMS_REPORT ) );
-	ui->tableItems->scrollToTop ();
-	ui->tablePayments->loadFromStringTable ( recStrValue ( cp_rec, FLD_CP_PAY_REPORT ) );
-	ui->tablePayments->scrollToTop ();
+	tableItems->loadFromStringTable ( recStrValue ( cp_rec, FLD_CP_ITEMS_REPORT ) );
+	tableItems->scrollToTop ();
+	tablePayments->loadFromStringTable ( recStrValue ( cp_rec, FLD_CP_PAY_REPORT ) );
+	tablePayments->scrollToTop ();
+
+	controlForms ();
 }
 
 void companyPurchasesUI::controlForms ()
 {
 	const bool editable ( cp_rec->action () >= ACTION_ADD );
-	ui->dteCPDate->setEditable ( editable );
-	ui->dteCPDeliveryDate->setEditable ( editable );
-	ui->txtCPPayValue->setEditable ( editable );
-	ui->txtCPDeliveryMethod->setEditable ( editable );
-	ui->txtCPSupplier->setEditable ( editable );
-	ui->txtCPNotes->setEditable ( editable );
-	ui->tableItems->setEditable ( editable );
-	ui->tablePayments->setEditable ( editable );
-	ui->txtCPSearch->setEditable ( !editable );
+	dteCPDate->setEditable ( editable );
+	dteCPDeliveryDate->setEditable ( editable );
+	txtCPPayValue->setEditable ( editable );
+	txtCPDeliveryMethod->setEditable ( editable );
+	txtCPSupplier->setEditable ( editable );
+	txtCPNotes->setEditable ( editable );
+	tableItems->setEditable ( editable );
+	tablePayments->setEditable ( editable );
+	txtCPSearch->setEditable ( !editable );
 
 	if ( editable )
 	{
-		bEnableStatus[BTN_FIRST] = ui->btnCPFirst->isEnabled ();
-		bEnableStatus[BTN_PREV] = ui->btnCPPrev->isEnabled ();
-		bEnableStatus[BTN_NEXT] = ui->btnCPNext->isEnabled ();
-		bEnableStatus[BTN_LAST] = ui->btnCPLast->isEnabled ();
-		ui->btnCPFirst->setEnabled ( false );
-		ui->btnCPPrev->setEnabled ( false );
-		ui->btnCPNext->setEnabled ( false );
-		ui->btnCPLast->setEnabled ( false );
-		ui->btnCPAdd->setEnabled ( cp_rec->action () == ACTION_ADD );
-		ui->btnCPEdit->setEnabled ( cp_rec->action () == ACTION_EDIT );
-		ui->btnCPSearch->setEnabled ( false );
+		bEnableStatus[BTN_FIRST] = btnCPFirst->isEnabled ();
+		bEnableStatus[BTN_PREV] = btnCPPrev->isEnabled ();
+		bEnableStatus[BTN_NEXT] = btnCPNext->isEnabled ();
+		bEnableStatus[BTN_LAST] = btnCPLast->isEnabled ();
+		btnCPFirst->setEnabled ( false );
+		btnCPPrev->setEnabled ( false );
+		btnCPNext->setEnabled ( false );
+		btnCPLast->setEnabled ( false );
+		btnCPAdd->setEnabled ( cp_rec->action () == ACTION_ADD );
+		btnCPEdit->setEnabled ( cp_rec->action () == ACTION_EDIT );
+		btnCPSearch->setEnabled ( false );
 	}
 	else
 	{
-		ui->btnCPFirst->setEnabled ( bEnableStatus[BTN_FIRST] );
-		ui->btnCPPrev->setEnabled ( bEnableStatus[BTN_PREV] );
-		ui->btnCPNext->setEnabled ( bEnableStatus[BTN_NEXT] );
-		ui->btnCPLast->setEnabled ( bEnableStatus[BTN_LAST] );
-		ui->btnCPAdd->setEnabled ( true );
-		ui->btnCPEdit->setEnabled ( true );
-		ui->btnCPSearch->setEnabled ( true );
+		btnCPFirst->setEnabled ( bEnableStatus[BTN_FIRST] );
+		btnCPPrev->setEnabled ( bEnableStatus[BTN_PREV] );
+		btnCPNext->setEnabled ( bEnableStatus[BTN_NEXT] );
+		btnCPLast->setEnabled ( bEnableStatus[BTN_LAST] );
+		btnCPAdd->setEnabled ( true );
+		btnCPEdit->setEnabled ( true );
+		btnCPSearch->setEnabled ( true );
 		
-		ui->btnCPEdit->setText ( emptyString );
-		ui->btnCPEdit->setIcon ( ICON ( "browse-controls/edit" ) );
-		ui->btnCPAdd->setText ( emptyString );
-		ui->btnCPAdd->setIcon ( ICON ( "browse-controls/add" ) );
-		ui->btnCPRemove->setText ( emptyString );
-		ui->btnCPRemove->setIcon ( ICON ( "browse-controls/remove" ) );
+		btnCPEdit->setText ( emptyString );
+		btnCPEdit->setIcon ( ICON ( "browse-controls/edit" ) );
+		btnCPAdd->setText ( emptyString );
+		btnCPAdd->setIcon ( ICON ( "browse-controls/add" ) );
+		btnCPRemove->setText ( emptyString );
+		btnCPRemove->setIcon ( ICON ( "browse-controls/remove" ) );
 	}
 }
 
@@ -293,7 +434,6 @@ bool companyPurchasesUI::searchFirst ()
 	if ( cp_rec->readFirstRecord ( -1, mSearchTerm ) )
 	{
 		showSearchResult_internal ( false ); // unhighlight current widgets
-		cp_rec->contains ( mSearchTerm, mFoundFields );
 		return true;
 	}
 	return false;
@@ -304,7 +444,6 @@ bool companyPurchasesUI::searchPrev ()
 	if ( cp_rec->readPrevRecord ( true ) )
 	{
 		showSearchResult_internal ( false ); // unhighlight current widgets
-		cp_rec->contains ( mSearchTerm, mFoundFields );
 		return true;
 	}
 	return false;
@@ -315,7 +454,6 @@ bool companyPurchasesUI::searchNext ()
 	if ( cp_rec->readNextRecord ( true ) )
 	{
 		showSearchResult_internal ( false ); // unhighlight current widgets
-		cp_rec->contains ( mSearchTerm, mFoundFields );
 		return true;
 	}
 	return false;
@@ -326,7 +464,6 @@ bool companyPurchasesUI::searchLast ()
 	if ( cp_rec->readLastRecord ( -1, mSearchTerm ) )
 	{
 		showSearchResult_internal ( false ); // unhighlight current widgets
-		cp_rec->contains ( mSearchTerm, mFoundFields );
 		return true;
 	}
 	return false;
@@ -336,117 +473,87 @@ void companyPurchasesUI::btnCPFirst_clicked ()
 {
 	bool ok ( false );
 	if ( mbSearchIsOn )
-	{
-		if ( ( ok = searchFirst () ) )
-			showSearchResult_internal ( true );
-	}
+		ok = searchFirst ();
 	else
-	{
-		if ( ( ok = cp_rec->readFirstRecord () ) )
-			fillForms ();
-	}
+		ok = cp_rec->readFirstRecord ();
 
-	ui->btnCPFirst->setEnabled ( !ok );
-	ui->btnCPPrev->setEnabled ( !ok );
-	ui->btnCPNext->setEnabled ( ui->btnCPNext->isEnabled () || ok );
-	ui->btnCPLast->setEnabled ( ui->btnCPLast->isEnabled () || ok );
+	bEnableStatus[BTN_FIRST] = !ok;
+	bEnableStatus[BTN_PREV] = !ok;
+	bEnableStatus[BTN_NEXT] = ok;
+	bEnableStatus[BTN_LAST] = ok;
+	fillForms ();
 }
 
 void companyPurchasesUI::btnCPLast_clicked ()
 {
 	bool ok ( false );
 	if ( mbSearchIsOn )
-	{
-		if ( ( ok = searchLast () ) )
-			showSearchResult_internal ( true );
-	}
+		ok = searchLast ();
 	else
-	{
 		ok = cp_rec->readLastRecord ();
-		fillForms ();
-	}
 
-	ui->btnCPFirst->setEnabled ( ui->btnCPFirst->isEnabled () || ok );
-	ui->btnCPPrev->setEnabled ( ui->btnCPPrev->isEnabled () || ok );
-	ui->btnCPNext->setEnabled ( !ok );
-	ui->btnCPLast->setEnabled ( !ok );
+	bEnableStatus[BTN_FIRST] = ok;
+	bEnableStatus[BTN_PREV] = ok;
+	bEnableStatus[BTN_NEXT] = !ok;
+	bEnableStatus[BTN_LAST] = !ok;
+	fillForms ();
 }
 
 void companyPurchasesUI::btnCPPrev_clicked ()
 {
-	bool b_isfirst ( false );
 	bool ok ( false );
-
 	if ( mbSearchIsOn )
-	{
-		if ( ( ok = searchPrev () ) )
-		{
-			b_isfirst = ( static_cast<uint>( recIntValue ( cp_rec, FLD_CP_ID ) ) == VDB ()->getLowestID ( cp_rec->t_info.table_order ) );
-			showSearchResult_internal ( true );
-		}
-	}
+		ok = searchPrev ();
 	else
-	{
 		ok = cp_rec->readPrevRecord ();
-		b_isfirst = ( static_cast<uint>( recIntValue ( cp_rec, FLD_CP_ID ) ) == VDB ()->getLowestID ( TABLE_CP_ORDER ) );
-		fillForms ();
-	}
 
-	ui->btnCPFirst->setEnabled ( !b_isfirst );
-	ui->btnCPPrev->setEnabled ( !b_isfirst );
-	ui->btnCPNext->setEnabled ( ui->btnCPNext->isEnabled () || ok );
-	ui->btnCPLast->setEnabled ( ui->btnCPLast->isEnabled () || ok );
+	const bool b_isfirst ( static_cast<uint>( recIntValue ( cp_rec, FLD_CP_ID ) ) == VDB ()->getLowestID ( TABLE_CP_ORDER ) );
+	bEnableStatus[BTN_FIRST] = !b_isfirst;
+	bEnableStatus[BTN_PREV] = !b_isfirst;
+	bEnableStatus[BTN_NEXT] = ok;
+	bEnableStatus[BTN_LAST] = ok;
+	fillForms ();
 }
 
 void companyPurchasesUI::btnCPNext_clicked ()
 {
-	bool b_islast ( false );
 	bool ok ( false );
 	if ( mbSearchIsOn )
-	{
-		if ( ( ok = searchPrev () ) )
-		{
-			b_islast = ( static_cast<uint>( recIntValue ( cp_rec, FLD_CP_ID ) ) == VDB ()->getHighestID ( cp_rec->t_info.table_order ) );
-			showSearchResult_internal ( true );
-		}
-	}
+		ok = searchPrev ();
 	else
-	{
 		ok = cp_rec->readNextRecord ();
-		b_islast = ( static_cast<uint>( recIntValue ( cp_rec, FLD_CP_ID ) ) == VDB ()->getHighestID ( TABLE_CP_ORDER ) );
-		fillForms ();
-	}
 
-	ui->btnCPFirst->setEnabled ( ui->btnCPFirst->isEnabled () || ok );
-	ui->btnCPPrev->setEnabled ( ui->btnCPPrev->isEnabled () || ok );
-	ui->btnCPNext->setEnabled ( !b_islast );
-	ui->btnCPLast->setEnabled ( !b_islast );
+	const bool b_islast ( static_cast<uint>( recIntValue ( cp_rec, FLD_CP_ID ) ) == VDB ()->getHighestID ( TABLE_CP_ORDER ) );
+	bEnableStatus[BTN_FIRST] = ok;
+	bEnableStatus[BTN_PREV] = ok;
+	bEnableStatus[BTN_NEXT] = !b_islast;
+	bEnableStatus[BTN_LAST] = !b_islast;
+	fillForms ();
 }
 
 void companyPurchasesUI::btnCPSearch_clicked ( const bool checked )
 {
 	if ( checked )
 	{
-		if ( ui->txtCPSearch->text ().count () >= 2 && ui->txtCPSearch->text () != mSearchTerm )
+		if ( txtCPSearch->text ().count () >= 2 && txtCPSearch->text () != mSearchTerm )
 		{
 			searchCancel ();
-			const QString searchTerm ( ui->txtCPSearch->text () );
+			const QString searchTerm ( txtCPSearch->text () );
 			if ( cp_rec->readFirstRecord ( -1, searchTerm ) )
 			{
-				cp_rec->contains ( searchTerm, mFoundFields );
 				mbSearchIsOn = !mFoundFields.isEmpty ();
 			}
-			ui->btnCPNext->setEnabled ( mbSearchIsOn );
+			btnCPNext->setEnabled ( mbSearchIsOn );
 			if ( mbSearchIsOn ) {
 				mSearchTerm = searchTerm;
-				ui->btnCPSearch->setText ( tr ( "Cancel search" ) );
+				btnCPSearch->setText ( tr ( "Cancel search" ) );
 				showSearchResult_internal ( true );
 			}
 		}
 	}
 	else
 		searchCancel ();
-	ui->btnCPSearch->setChecked ( checked );
+	btnCPSearch->setChecked ( checked );
 }
 
 void companyPurchasesUI::btnCPAdd_clicked ( const bool checked )
@@ -457,11 +564,11 @@ void companyPurchasesUI::btnCPAdd_clicked ( const bool checked )
 		cp_rec->setAction ( ACTION_ADD );
 		fillForms ();
 		controlForms ();
-		ui->btnCPAdd->setText ( tr ( "Save" ) );
-		ui->btnCPAdd->setIcon ( ICON ( "document-save" ) );
-		ui->btnCPRemove->setText ( tr ( "Cancel" ) );
-		ui->btnCPRemove->setIcon ( ICON ( "cancel" ) );
-		ui->txtCPSupplier->setFocus ();
+		btnCPAdd->setText ( tr ( "Save" ) );
+		btnCPAdd->setIcon ( ICON ( "document-save" ) );
+		btnCPRemove->setText ( tr ( "Cancel" ) );
+		btnCPRemove->setIcon ( ICON ( "cancel" ) );
+		txtCPSupplier->setFocus ();
 	}
 	else
 		saveInfo ();
@@ -473,11 +580,11 @@ void companyPurchasesUI::btnCPEdit_clicked ( const bool checked )
 	{
 		cp_rec->setAction ( ACTION_EDIT );
 		controlForms ();
-		ui->btnCPEdit->setText ( tr ( "Save" ) );
-		ui->btnCPEdit->setIcon ( ICON ( "document-save" ) );
-		ui->btnCPRemove->setText ( tr ( "Cancel" ) );
-		ui->btnCPRemove->setIcon ( ICON ( "cancel" ) );
-		ui->txtCPSupplier->setFocus ();
+		btnCPEdit->setText ( tr ( "Save" ) );
+		btnCPEdit->setIcon ( ICON ( "document-save" ) );
+		btnCPRemove->setText ( tr ( "Cancel" ) );
+		btnCPRemove->setIcon ( ICON ( "cancel" ) );
+		txtCPSupplier->setFocus ();
 	}
 	else
 		saveInfo ();
@@ -485,10 +592,10 @@ void companyPurchasesUI::btnCPEdit_clicked ( const bool checked )
 
 void companyPurchasesUI::btnCPRemove_clicked ()
 {
-	if ( ui->btnCPAdd->isChecked () || ui->btnCPEdit->isChecked () ) // cancel
+	if ( btnCPAdd->isChecked () || btnCPEdit->isChecked () ) // cancel
 	{
-		ui->btnCPAdd->setChecked ( false );
-		ui->btnCPEdit->setChecked ( false );
+		btnCPAdd->setChecked ( false );
+		btnCPEdit->setChecked ( false );
 		cp_rec->setAction( ACTION_REVERT );
 		controlForms ();
 		fillForms ();
@@ -505,12 +612,12 @@ void companyPurchasesUI::btnCPRemove_clicked ()
 						cp_rec->readRecord ( 1 );
 				}
 				fillForms ();
-				ui->btnCPFirst->setEnabled ( cp_rec->actualRecordInt ( FLD_CP_ID ) != static_cast<int>( VDB ()->getLowestID ( TABLE_CP_ORDER ) ) );
-				ui->btnCPPrev->setEnabled ( cp_rec->actualRecordInt ( FLD_CP_ID ) != static_cast<int>( VDB ()->getLowestID ( TABLE_CP_ORDER ) ) );
-				ui->btnCPNext->setEnabled ( cp_rec->actualRecordInt ( FLD_CP_ID ) != static_cast<int>( VDB ()->getHighestID ( TABLE_CP_ORDER ) ) );
-				ui->btnCPLast->setEnabled ( cp_rec->actualRecordInt ( FLD_CP_ID ) != static_cast<int>( VDB ()->getHighestID ( TABLE_CP_ORDER ) ) );
-				ui->btnCPSearch->setEnabled ( VDB ()->getHighestID ( TABLE_CP_ORDER  ) > 0 );
-				ui->txtCPSearch->setEditable ( VDB ()->getHighestID ( TABLE_CP_ORDER ) > 0 );
+				/*btnCPFirst->setEnabled ( cp_rec->actualRecordInt ( FLD_CP_ID ) != static_cast<int>( VDB ()->getLowestID ( TABLE_CP_ORDER ) ) );
+				btnCPPrev->setEnabled ( cp_rec->actualRecordInt ( FLD_CP_ID ) != static_cast<int>( VDB ()->getLowestID ( TABLE_CP_ORDER ) ) );
+				btnCPNext->setEnabled ( cp_rec->actualRecordInt ( FLD_CP_ID ) != static_cast<int>( VDB ()->getHighestID ( TABLE_CP_ORDER ) ) );
+				btnCPLast->setEnabled ( cp_rec->actualRecordInt ( FLD_CP_ID ) != static_cast<int>( VDB ()->getHighestID ( TABLE_CP_ORDER ) ) );
+				btnCPSearch->setEnabled ( VDB ()->getHighestID ( TABLE_CP_ORDER  ) > 0 );
+				txtCPSearch->setEditable ( VDB ()->getHighestID ( TABLE_CP_ORDER ) > 0 );*/
 			}
 		}
 	}
@@ -522,27 +629,27 @@ void companyPurchasesUI::relevantKeyPressed ( const QKeyEvent* ke )
 	{
 		case Qt::Key_Enter:
 		case Qt::Key_Return:
-			if ( ui->btnCPAdd->isChecked () )
+			if ( btnCPAdd->isChecked () )
 			{
-				ui->btnCPAdd->setChecked ( false );
+				btnCPAdd->setChecked ( false );
 				btnCPAdd_clicked ( false );
 			}
-			else if ( ui->btnCPEdit->isChecked () )
+			else if ( btnCPEdit->isChecked () )
 			{
-				ui->btnCPEdit->setChecked ( false );
+				btnCPEdit->setChecked ( false );
 				btnCPEdit_clicked ( false );
 			}
 		break;
 		case Qt::Key_Escape:
-			if ( ui->btnCPAdd->isChecked () || ui->btnCPEdit->isChecked () ) // cancel
+			if ( btnCPAdd->isChecked () || btnCPEdit->isChecked () ) // cancel
 				btnCPRemove_clicked ();
 		break;
 		case Qt::Key_F2:
-			if ( !ui->btnCPAdd->isChecked () && !ui->btnCPEdit->isChecked () )
+			if ( !btnCPAdd->isChecked () && !btnCPEdit->isChecked () )
 				btnCPPrev_clicked ();
 		break;
 		case Qt::Key_F3:
-			if ( !ui->btnCPAdd->isChecked () && !ui->btnCPEdit->isChecked () )
+			if ( !btnCPAdd->isChecked () && !btnCPEdit->isChecked () )
 				btnCPNext_clicked ();
 		break;
 		default:
@@ -572,8 +679,8 @@ void companyPurchasesUI::txtCPSearch_textAltered ( const QString &text )
 {
 	if ( text.length () == 0 )
 	{
-		ui->txtCPSearch->setText ( mSearchTerm );
-		ui->btnCPSearch->setEnabled ( !mSearchTerm.isEmpty () );
+		txtCPSearch->setText ( mSearchTerm );
+		btnCPSearch->setEnabled ( !mSearchTerm.isEmpty () );
 	}
-	ui->btnCPSearch->setEnabled ( text.length () >= 3 );
+	btnCPSearch->setEnabled ( text.length () >= 3 );
 }

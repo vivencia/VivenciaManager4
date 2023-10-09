@@ -453,16 +453,6 @@ void DBRecord::fromStringRecord ( const stringRecord& str_rec, const uint fromFi
 	}
 }
 
-void DBRecord::contains ( const QString& value, podList<uint>& fields ) const
-{
-	fields.clearButKeepMemory ();
-	for ( uint i ( 0 ); i < t_info->field_count; ++i )
-	{
-		if ( recStrValue ( this, i ).contains ( value, Qt::CaseInsensitive ) )
-			fields.append ( i );
-	}
-}
-
 void DBRecord::setSearchStatus ( const uint field, const bool b_found )
 {
 	QString query_cmd ( QStringLiteral ( "SELECT SEARCH_STATUS FROM " ) + tableInfo ()->table_name + QStringLiteral ( " WHERE ID=" ) + actualRecordStr ( 0 ) );

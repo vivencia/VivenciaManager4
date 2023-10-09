@@ -9,6 +9,8 @@
 #include <dbRecords/completers.h>
 #include <dbRecords/dblistitem.h>
 #include <dbRecords/vivenciadb.h>
+#include <vmTaskPanel/vmtaskpanel.h>
+#include <vmTaskPanel/vmactiongroup.h>
 #include <vmDocumentEditor/documenteditor.h>
 #include <vmDocumentEditor/texteditor.h>
 
@@ -166,14 +168,20 @@ void suppliersDlg::setupUI ()
 	hLayout5->addWidget ( btnCopyToEditor, 1 );
 	hLayout5->addWidget ( btnCopyAllToEditor, 1 );
 
+	vmTaskPanel* panel ( new vmTaskPanel ( emptyString, this ) );
 	auto mainLayout ( new QVBoxLayout );
-	mainLayout->addLayout ( hLayout1, 1 );
-	mainLayout->addLayout ( hLayout2, 1 );
-	mainLayout->addLayout ( hLayout3, 1 );
-	mainLayout->addLayout ( hLayout4, 1 );
-	mainLayout->addLayout ( hLayout5, 1 );
-
+	mainLayout->setContentsMargins ( 0, 0, 0, 0 );
+	mainLayout->setSpacing ( 0 );
+	mainLayout->addWidget ( panel, 1 );
 	setLayout ( mainLayout );
+	vmActionGroup* group = panel->createGroup ( emptyString, false, true, false );
+	group->addLayout ( hLayout1 );
+	group->addLayout ( hLayout2 );
+	group->addLayout ( hLayout3 );
+	group->addLayout ( hLayout4 );
+	group->addLayout ( hLayout5 );
+	panel->setScheme ( MAINWINDOW ()->appMainStyle () );
+
 	adjustSize ();
 }
 

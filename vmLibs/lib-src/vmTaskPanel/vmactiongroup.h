@@ -57,6 +57,9 @@ public:
 	inline bool expandable () const {
 		return mb_expandable;
 	}
+	inline bool closable () const {
+		return mb_closable;
+	}
 	void setExpandable ( const bool expandable );
 	void setClosable ( const bool closable );
 	void setScheme ( ActionPanelScheme* scheme );

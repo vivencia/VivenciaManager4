@@ -17,7 +17,6 @@ TaskGroup::TaskGroup ( QWidget *parent, const bool stretchContents )
 {
 	setProperty ( "class", QStringLiteral ( "content" ) );
 	setProperty ( "header", QStringLiteral ( "true" ) );
-	//setScheme ( ActionPanelScheme::defaultScheme () );
 	auto vbl ( new QVBoxLayout () );
 	vbl->setContentsMargins ( 2, 2, 2, 2 );
 	vbl->setSpacing ( 4 );
@@ -89,38 +88,38 @@ QPixmap TaskGroup::transparentRender ()
 //--------------------------------------TASK-HEADER-----------------------------------------------
 TaskHeader::TaskHeader ( const QIcon& icon, const QString& title,
 						 const bool expandable, const bool closable, QWidget *parent )
-	: QFrame ( parent ), mExpandableButton ( nullptr ), mClosableButton ( nullptr ),
-	  mb_expandable ( expandable ), mb_closable ( closable ), mb_over ( false ),
+	: QFrame ( parent ), mTitle ( nullptr ), mExpandableButton ( nullptr ), mClosableButton ( nullptr ),
+	  timerSlide ( nullptr ), mb_expandable ( expandable ), mb_closable ( closable ), mb_over ( false ),
 	  mb_buttonOver ( false ), mb_fold ( true ), md_opacity ( 0.1 ),
 	  funcFoldButtonClicked ( nullptr ), funcCloseButtonClicked ( nullptr )
 {
 	setProperty ( "class", QStringLiteral ( "header" ) );
-	mTitle = new vmActionLabel ( this );
-	mTitle->setProperty ( "class", QStringLiteral ( "header" ) );
-	mTitle->setFontAttributes ( true, true );
-	mTitle->setText ( title );
-	mTitle->setIcon ( icon );
-	mTitle->setSizePolicy ( QSizePolicy::Minimum, QSizePolicy::Preferred );
-
-	timerSlide = new QTimer ( this );
-	connect ( timerSlide, &QTimer::timeout, this, [&] () { return animate (); } );
-
 	auto hbl ( new QHBoxLayout () );
 	hbl->setContentsMargins ( 2, 2, 2, 2 );
 	setLayout ( hbl );
-	hbl->addWidget ( mTitle );
+
+	if ( !title.isEmpty () )
+	{
+		mTitle = new vmActionLabel ( this );
+		mTitle->setProperty ( "class", QStringLiteral ( "header" ) );
+		mTitle->setFontAttributes ( true, true );
+		mTitle->setText ( title );
+		mTitle->setIcon ( icon );
+		mTitle->setSizePolicy ( QSizePolicy::Minimum, QSizePolicy::Preferred );
+		hbl->addWidget ( mTitle );
+	}
 
 	setSizePolicy ( QSizePolicy::Preferred, QSizePolicy::Maximum );
 	setScheme ( ActionPanelScheme::defaultScheme () );
 	setExpandable ( mb_expandable );
 	setClosable ( mb_closable );
-
 	installEventFilter ( this );
 }
 
 TaskHeader::~TaskHeader ()
 {
-	delete timerSlide;
+	if ( timerSlide )
+		delete timerSlide;
 }
 
 void TaskHeader::setExpandable ( const bool expandable )
@@ -133,9 +132,13 @@ void TaskHeader::setExpandable ( const bool expandable )
 		mExpandableButton = new vmActionLabel ( this );
 		mExpandableButton->setFixedSize ( mScheme->headerButtonSize );
 		layout ()->addWidget ( mExpandableButton );
-		connect ( mTitle, static_cast<void (QToolButton::*)( const bool )>( &QToolButton::clicked ), this, [&] () { return fold (); } );
+		if ( mTitle )
+			connect ( mTitle, static_cast<void (QToolButton::*)( const bool )>( &QToolButton::clicked ), this, [&] () { return fold (); } );
 		connect ( mExpandableButton, static_cast<void (QToolButton::*)( const bool )>( &QToolButton::clicked ), this, [&] () { return fold (); } );
 		changeIcons ();
+
+		timerSlide = new QTimer ( this );
+		connect ( timerSlide, &QTimer::timeout, this, [&] () { return animate (); } );
 	}
 	else
 	{
@@ -145,7 +148,8 @@ void TaskHeader::setExpandable ( const bool expandable )
 		mExpandableButton->setParent ( nullptr );
 		delete mExpandableButton;
 		mExpandableButton = nullptr;
-		disconnect ( mTitle, nullptr, nullptr, nullptr );
+		if ( mTitle )
+			disconnect ( mTitle, nullptr, nullptr, nullptr );
 		changeIcons ();
 	}
 }
@@ -288,13 +292,10 @@ void TaskHeader::animate ()
 
 void TaskHeader::fold ()
 {
-	if ( mb_expandable )
-	{
-		if ( funcFoldButtonClicked )
-			funcFoldButtonClicked ();
-		mb_fold = !mb_fold;
-		changeIcons ();
-	}
+	if ( funcFoldButtonClicked )
+		funcFoldButtonClicked ();
+	mb_fold = !mb_fold;
+	changeIcons ();
 }
 
 void TaskHeader::close ()
@@ -369,9 +370,9 @@ void TaskHeader::keyReleaseEvent ( QKeyEvent* event )
 vmActionGroup::vmActionGroup ( const QString& title, const bool expandable,
 							   const bool stretchContents, const bool closable, QWidget* parent )
 	: QWidget ( parent ), vmWidget ( WT_QWIDGET, WT_ACTION ),
-	  mbStretchContents ( stretchContents )
+	  mbStretchContents ( stretchContents ), timerShow ( nullptr ), timerHide ( nullptr )
 {
-	mHeader = new TaskHeader ( QIcon () , title, expandable, closable, this );
+	mHeader = new TaskHeader ( QIcon (), title, expandable, closable, this );
 	init ();
 }
 
@@ -397,14 +398,19 @@ vmActionGroup::~vmActionGroup ()
 void vmActionGroup::init ()
 {
 	setWidgetPtr ( this );
-	m_foldStep = 0;
 
-	timerShow = new QTimer ( this );
-	timerShow->setSingleShot ( true );
-	connect ( timerShow, &QTimer::timeout, this, [&] () { return processShow (); } );
-	timerHide = new QTimer ( this );
-	timerHide->setSingleShot ( true );
-	connect ( timerHide, &QTimer::timeout, this, [&] () { return processHide (); } );
+	if ( mHeader->expandable () )
+	{
+		m_foldStep = 0;
+		timerShow = new QTimer ( this );
+		timerShow->setSingleShot ( true );
+		connect ( timerShow, &QTimer::timeout, this, [&] () { return processShow (); } );
+		timerHide = new QTimer ( this );
+		timerHide->setSingleShot ( true );
+		connect ( timerHide, &QTimer::timeout, this, [&] () { return processHide (); } );
+	}
+	if ( mHeader->closable () )
+		mHeader->setCallbackForFoldButtonClicked ( [&] () { return showHide (); } );
 
 	auto vbl ( new QVBoxLayout () );
 	vbl->setContentsMargins ( 0, 0 ,0 ,0 );
@@ -419,8 +425,6 @@ void vmActionGroup::init ()
 	vbl->addWidget ( mHeader, 1 );
 	vbl->addWidget ( mGroup, 1 );
 	vbl->addWidget ( mDummy, 1 );
-
-	mHeader->setCallbackForFoldButtonClicked ( [&] () { return showHide (); } );
 }
 
 void vmActionGroup::setScheme ( ActionPanelScheme* pointer )

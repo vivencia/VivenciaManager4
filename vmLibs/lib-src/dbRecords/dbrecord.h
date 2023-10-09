@@ -131,7 +131,6 @@ public:
 	bool readPrevRecord ( const bool follow_search = false, const bool load_data = true );
 	bool deleteRecord ();
 	bool saveRecord ( const bool b_changeAction = true, const bool b_dbaction = true );
-	void contains ( const QString& value, podList<uint>& fields ) const;
 	void setSearchStatus ( const uint field, const bool b_found );
 	bool searchStatus ( const uint field ) const;
 	void clearSearchStatus ();

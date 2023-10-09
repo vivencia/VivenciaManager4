@@ -4494,7 +4494,6 @@ void MainWindow::createFloatToolBar ()
 	utilitiesToolBar->addWidget ( ui->btnBackupRestore );
 	utilitiesToolBar->addWidget ( ui->btnSearch );
 	utilitiesToolBar->addWidget ( ui->btnCalculator );
-	utilitiesToolBar->addWidget ( ui->btnServicesPrices );
 	utilitiesToolBar->addWidget ( ui->btnEstimates );
 	utilitiesToolBar->addWidget ( ui->btnCompanyPurchases );
 	utilitiesToolBar->addWidget ( ui->btnConfiguration );

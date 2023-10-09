@@ -8,17 +8,16 @@
 #include <QtWidgets/QDialog>
 
 class companyPurchases;
-class vmTableWidget;
+class dbTableWidget;
 class vmTableItem;
 class vmWidget;
 class vmLineEdit;
+class vmLineEditWithButton;
 class vmDateEdit;
 class dbListItem;
 
-namespace Ui
-{
-class companyPurchasesUI;
-}
+class QFrame;
+class QToolButton;
 
 class companyPurchasesUI : public QDialog
 {
@@ -26,7 +25,7 @@ class companyPurchasesUI : public QDialog
 public:
 	explicit companyPurchasesUI ( QWidget* parent = nullptr );
 	virtual ~companyPurchasesUI () override;
-	void showSearchResult ( const uint id, const bool bshow );
+	void showSearchResult ( const uint id );
 	void showSearchResult_internal ( const bool bshow );
 
 private:
@@ -63,13 +62,33 @@ private:
 	void btnCPShowSupplier_clicked ( const bool checked );
 	void txtCPSearch_textAltered ( const QString& text );
 
-	Ui::companyPurchasesUI* ui;
 	QString mSearchTerm;
 	bool mbSearchIsOn;
 	companyPurchases* cp_rec;
 	pointersList<vmWidget*> widgetList;
 	podList<uint> mFoundFields;
 	stringTable mTableContents;
+
+	vmDateEdit *dteCPDate;
+	vmDateEdit *dteCPDeliveryDate;
+	QPushButton *btnCPFirst;
+	QPushButton *btnCPPrev;
+	QPushButton *btnCPNext;
+	QPushButton *btnCPLast;
+	QPushButton *btnCPAdd;
+	QPushButton *btnCPEdit;
+	QPushButton *btnCPRemove;
+	vmLineEdit *txtCPID;
+	vmLineEdit *txtCPSearch;
+	QPushButton *btnCPSearch;
+	vmLineEdit *txtCPSupplier;
+	QToolButton *btnCPShowSupplier;
+	vmLineEdit *txtCPNotes;
+	dbTableWidget *tableItems;
+	dbTableWidget *tablePayments;
+	QPushButton *btnClose;
+	vmLineEdit *txtCPDeliveryMethod;
+	vmLineEditWithButton *txtCPPayValue;
 };
 
 #endif // COMPANYPURCHASESUI_H

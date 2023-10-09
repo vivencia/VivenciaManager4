@@ -90,7 +90,7 @@ void searchUI::setupUI ()
 	mainLayout->setSpacing ( 0 );
 	mainLayout->addWidget ( panel, 1 );
 	setLayout ( mainLayout );
-	vmActionGroup* group = panel->createGroup ( ICON ( "search"), APP_TR_FUNC ( "Database search" ), false, true );
+	vmActionGroup* group = panel->createGroup ( ICON ( "search" ), APP_TR_FUNC ( "Database search" ), false, true );
 	group->addEntry ( mFoundList, nullptr, true );
 
 	auto hLayout ( new QHBoxLayout );
@@ -307,7 +307,7 @@ void searchUI::listRowSelected ( const int row )
 			MAINWINDOW ()->insertNavItem ( item );
 		break;
 		case COMPANY_PURCHASES_TABLE:
-			COMPANY_PURCHASES ()->showSearchResult ( dbrec_id, true );
+			COMPANY_PURCHASES ()->showSearchResult ( dbrec_id );
 		break;
 		case SUPPLIER_TABLE:
 			SUPPLIERS ()->displaySupplier ( mFoundList->sheetItem ( row, COL_INFO )->text (), true );

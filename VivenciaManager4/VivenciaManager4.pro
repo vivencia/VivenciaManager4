@@ -63,7 +63,6 @@ FORMS += \
         calendarviewui.ui \
         mainwindow.ui \
         backupdialog.ui \
-        companypurchases.ui \
         configdialog.ui
 
 RESOURCES += \
