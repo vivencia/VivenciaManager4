@@ -31,9 +31,18 @@
 enum btnNames { BTN_FIRST = 0, BTN_PREV = 1, BTN_NEXT = 2, BTN_LAST = 3, BTN_ADD = 4, BTN_EDIT = 5, BTN_DEL = 6, BTN_SEARCH = 7 };
 static bool bEnableStatus[4] = { false };
 
+auto searchCPRecord = [] ( companyPurchases* cp_rec, const QString& searchTerm ) ->int
+{
+	for ( uint i ( 1 ); i < COMPANY_PURCHASES_FIELD_COUNT; ++i )
+	{
+		if ( static_cast<QString>(recStrValue ( cp_rec, i )).contains ( searchTerm, Qt::CaseInsensitive ) )
+			return i;
+	}
+	return -1;
+};
+
 companyPurchasesUI::companyPurchasesUI ( QWidget* parent )
-	: QDialog ( parent ), mbSearchIsOn ( false ), cp_rec ( new companyPurchases ( true ) ), widgetList ( INVENTORY_FIELD_COUNT + 1 ),
-	  mFoundFields ( 0, 5 )
+	: QDialog ( parent ), mbSearchIsOn ( false ), mFoundField ( -1 ),  mOldFoundField ( -1 ), cp_rec ( new companyPurchases ( true ) ), widgetList ( INVENTORY_FIELD_COUNT + 1 )
 {
 	setupUI ();
 	const bool have_items ( VDB ()->getHighestID ( TABLE_CP_ORDER ) > 0 );
@@ -56,14 +65,6 @@ void companyPurchasesUI::showSearchResult ( const uint id )
 			showNormal ();
 		fillForms ();
 	}
-}
-
-void companyPurchasesUI::showSearchResult_internal ( const bool bshow )
-{
-	for ( uint i ( 0 ); i < mFoundFields.count (); ++i )
-		widgetList.at ( i )->highlight ( bshow ? vmBlue : vmDefault_Color, SEARCH_UI ()->searchTerm () );
-	if ( bshow )
-		fillForms ();
 }
 
 void companyPurchasesUI::setTotalPriceAsItChanges ( const vmTableItem* const item )
@@ -157,15 +158,17 @@ void companyPurchasesUI::setupUI ()
 	line_1->setFrameShadow(QFrame::Sunken);
 
 	btnCPAdd = new QPushButton ( this );
+	btnCPAdd->setCheckable ( true );
 	btnCPAdd->setIcon ( ICON ( ":/resources/browse-controls/add_rec.png" ) );
 	btnCPEdit = new QPushButton ( this );
 	btnCPEdit->setIcon ( ICON ( ":/resources/browse-controls/edit_rec.png" ) );
+	btnCPEdit->setCheckable ( true );
 	btnCPRemove = new QPushButton ( this );
 	btnCPRemove->setIcon ( ICON ( ":/resources/browse-controls/remove.png" ) );
 
 	auto line_2 ( new QFrame ( this ) );
-	line_2->setFrameShape(QFrame::VLine);
-	line_2->setFrameShadow(QFrame::Sunken);
+	line_2->setFrameShape ( QFrame::VLine );
+	line_2->setFrameShadow ( QFrame::Sunken );
 
 	auto lblCPID ( new QLabel ( this ) );
 	lblCPID->setText ( APP_TR_FUNC ( "ID:" ) );
@@ -178,15 +181,11 @@ void companyPurchasesUI::setupUI ()
 	txtCPID->setSizePolicy(sizePolicy);
 	txtCPID->setMaximumSize ( QSize ( 80, 30 ) );
 
-	auto line_3 ( new QFrame ( this ) );
-	line_3->setFrameShape(QFrame::VLine);
-	line_3->setFrameShadow(QFrame::Sunken);
-
 	txtCPSearch = new vmLineEdit ( this );
 
 	btnCPSearch = new QPushButton ( this );
 	btnCPSearch->setIcon ( ICON ( ":/resources/replace-all.png" ) );
-	btnCPSearch->setCheckable(true);
+	btnCPSearch->setCheckable ( true );
 
 	txtCPSupplier = new vmLineEdit ( this );
 	btnCPShowSupplier = new QToolButton ( this );
@@ -209,6 +208,23 @@ void companyPurchasesUI::setupUI ()
 	lblCPSupplier->setText ( APP_TR_FUNC ( "Supplier:" ) );
 	txtCPPayValue = new vmLineEditWithButton ( this );
 
+	auto layoutBrowseControls ( new QHBoxLayout () );
+	layoutBrowseControls->setSpacing ( 2 );
+	layoutBrowseControls->addWidget ( btnCPFirst );
+	layoutBrowseControls->addWidget ( btnCPPrev );
+	layoutBrowseControls->addWidget ( btnCPNext );
+	layoutBrowseControls->addWidget ( btnCPLast );
+	layoutBrowseControls->addWidget ( line_1 );
+	layoutBrowseControls->addWidget ( btnCPAdd );
+	layoutBrowseControls->addWidget ( btnCPEdit );
+	layoutBrowseControls->addWidget ( btnCPRemove );
+	layoutBrowseControls->addWidget ( line_2 );
+	layoutBrowseControls->addWidget ( lblCPID );
+	layoutBrowseControls->addWidget ( txtCPID );
+	layoutBrowseControls->addItem ( new QSpacerItem ( 40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum ));
+	layoutBrowseControls->addWidget ( txtCPSearch );
+	layoutBrowseControls->addWidget ( btnCPSearch );
+
 	auto layoutSupplierName ( new QHBoxLayout () );
 	layoutSupplierName->setSpacing ( 2 );
 	layoutSupplierName->addWidget ( txtCPSupplier );
@@ -221,25 +237,6 @@ void companyPurchasesUI::setupUI ()
 	layoutCPTable->addWidget ( tableItems );
 	layoutCPTable->addWidget ( lblPayHistory );
 	layoutCPTable->addWidget ( tablePayments );
-	layoutCPTable->addWidget ( btnClose );
-
-	auto layoutBrowseControls ( new QHBoxLayout () );
-	layoutBrowseControls->setSpacing ( 2 );
-	layoutBrowseControls->addWidget ( btnCPFirst );
-	layoutBrowseControls->addWidget ( btnCPPrev );
-	layoutBrowseControls->addWidget ( btnCPNext );
-	layoutBrowseControls->addWidget ( btnCPLast );
-	layoutBrowseControls->addWidget ( line_1 );
-	layoutBrowseControls->addWidget ( btnCPAdd );
-	layoutBrowseControls->addWidget( btnCPEdit );
-	layoutBrowseControls->addWidget ( btnCPRemove );
-	layoutBrowseControls->addWidget ( line_2 );
-	layoutBrowseControls->addWidget ( lblCPID );
-	layoutBrowseControls->addWidget ( txtCPID );
-	layoutBrowseControls->addWidget ( line_3 );
-	layoutBrowseControls->addItem ( new QSpacerItem ( 40, 20, QSizePolicy::Expanding, QSizePolicy::Minimum ));
-	layoutBrowseControls->addWidget ( txtCPSearch );
-	layoutBrowseControls->addWidget ( btnCPSearch );
 
 	gLayout->addLayout ( layoutBrowseControls, 0, 1, 1, 3 );
 	gLayout->addLayout ( layoutSupplierName, 6, 1, 1, 1 );
@@ -248,6 +245,7 @@ void companyPurchasesUI::setupUI ()
 	gLayout->addWidget ( txtCPDeliveryMethod, 9, 2, 1, 1 );
 	gLayout->addWidget ( lblCPSupplier, 5, 1, 1, 1 );
 	gLayout->addWidget ( txtCPPayValue, 9, 1, 1, 1 );
+	gLayout->addWidget ( btnClose, 11, 3, 1, 1 );
 
 	QWidget::setTabOrder(btnCPFirst, btnCPPrev);
 	QWidget::setTabOrder(btnCPPrev, btnCPNext);
@@ -263,7 +261,8 @@ void companyPurchasesUI::setupUI ()
 	setLayout ( mainLayout );
 	vmActionGroup* group = panel->createGroup ( emptyString, false, true, false );
 	group->addLayout ( gLayout );
-	panel->setScheme ( MAINWINDOW ()->appMainStyle () );
+	MAINWINDOW ()->appMainStyle ( panel );
+	setMinimumWidth ( tableItems->preferredSize ().width () );
 
 	static_cast<void>( btnCPAdd->connect ( btnCPAdd, static_cast<void (QPushButton::*)( const bool )>( &QPushButton::clicked ),
 			this, [&] ( const bool checked ) { return btnCPAdd_clicked ( checked ); } ) );
@@ -393,6 +392,8 @@ void companyPurchasesUI::controlForms ()
 		btnCPAdd->setEnabled ( cp_rec->action () == ACTION_ADD );
 		btnCPEdit->setEnabled ( cp_rec->action () == ACTION_EDIT );
 		btnCPSearch->setEnabled ( false );
+		btnCPRemove->setText ( tr ( "Cancel" ) );
+		btnCPRemove->setIcon ( ICON ( "cancel" ) );
 	}
 	else
 	{
@@ -411,6 +412,17 @@ void companyPurchasesUI::controlForms ()
 		btnCPRemove->setText ( emptyString );
 		btnCPRemove->setIcon ( ICON ( "browse-controls/remove" ) );
 	}
+
+	if ( mbSearchIsOn )
+	{
+		if ( mOldFoundField != mFoundField )
+		{
+			if ( widgetList.at ( mOldFoundField ) )
+				widgetList.at ( mOldFoundField )->highlight ( vmDefault_Color );
+			mOldFoundField = mFoundField;
+			widgetList.at ( mFoundField )->highlight ( vmBlue, mSearchTerm );
+		}
+	}
 }
 
 void companyPurchasesUI::saveInfo ()
@@ -422,58 +434,48 @@ void companyPurchasesUI::saveInfo ()
 
 void companyPurchasesUI::searchCancel ()
 {
-	for ( uint i ( 0 ); i < mFoundFields.count (); ++i )
-		widgetList.at ( mFoundFields.at ( i ) )->highlight ( vmDefault_Color );
-	mFoundFields.clearButKeepMemory ();
+	if ( widgetList.at ( mFoundField ) )
+		widgetList.at ( mFoundField )->highlight ( vmDefault_Color );
+	mOldFoundField = -1;
+	mFoundField = -1;
 	mSearchTerm.clear ();
+	btnCPSearch->setText ( emptyString );
 	mbSearchIsOn = false;
+	cp_rec->resetQuery ();
 }
 
-bool companyPurchasesUI::searchFirst ()
+void companyPurchasesUI::prepareSearch ( const QString& searchterm )
 {
-	if ( cp_rec->readFirstRecord ( -1, mSearchTerm ) )
+	static const QString searchQueryTemplate ( QStringLiteral ( "SELECT * FROM #2# WHERE MATCH (#3#) AGAINST (\"#4#\" IN BOOLEAN MODE)" ) );
+	static QString strSearchColumns;
+	if ( strSearchColumns.isEmpty () )
 	{
-		showSearchResult_internal ( false ); // unhighlight current widgets
-		return true;
+		int sc ( -1 );
+		for ( uint i ( SC_REPORT_1 ); i <= SC_EXTRA; ++i )
+		{
+			sc = cp_rec->searchCategoryTranslate ( static_cast<SEARCH_CATEGORIES> ( i ) );
+			if ( sc != -1 )
+			{
+				strSearchColumns.append ( VDB ()->getTableColumnName ( cp_rec->tableInfo (), sc ) );
+				strSearchColumns.append ( CHR_COMMA );
+			}
+		}
+		strSearchColumns.chop ( 1 );
 	}
-	return false;
-}
 
-bool companyPurchasesUI::searchPrev ()
-{
-	if ( cp_rec->readPrevRecord ( true ) )
-	{
-		showSearchResult_internal ( false ); // unhighlight current widgets
-		return true;
-	}
-	return false;
-}
-
-bool companyPurchasesUI::searchNext ()
-{
-	if ( cp_rec->readNextRecord ( true ) )
-	{
-		showSearchResult_internal ( false ); // unhighlight current widgets
-		return true;
-	}
-	return false;
-}
-
-bool companyPurchasesUI::searchLast ()
-{
-	if ( cp_rec->readLastRecord ( -1, mSearchTerm ) )
-	{
-		showSearchResult_internal ( false ); // unhighlight current widgets
-		return true;
-	}
-	return false;
+	mSearchTerm = searchterm;
+	QString strQuery ( searchQueryTemplate );
+	strQuery.replace ( QStringLiteral( "#2#" ), cp_rec->tableInfo ()->table_name ); // Table name
+	strQuery.replace ( QStringLiteral( "#4#" ), mSearchTerm ); //The searched string
+	strQuery.replace ( QStringLiteral( "#3#" ), strSearchColumns ); //Field (column) in which to search for the search term
+	cp_rec->setQuery ( strQuery );
 }
 
 void companyPurchasesUI::btnCPFirst_clicked ()
 {
 	bool ok ( false );
 	if ( mbSearchIsOn )
-		ok = searchFirst ();
+		ok = cp_rec->readFirstRecord ( -1, emptyString );
 	else
 		ok = cp_rec->readFirstRecord ();
 
@@ -488,7 +490,7 @@ void companyPurchasesUI::btnCPLast_clicked ()
 {
 	bool ok ( false );
 	if ( mbSearchIsOn )
-		ok = searchLast ();
+		ok = cp_rec->readLastRecord ( -1, mSearchTerm );
 	else
 		ok = cp_rec->readLastRecord ();
 
@@ -503,15 +505,15 @@ void companyPurchasesUI::btnCPPrev_clicked ()
 {
 	bool ok ( false );
 	if ( mbSearchIsOn )
-		ok = searchPrev ();
+		ok = cp_rec->readPrevRecord ( true );
 	else
 		ok = cp_rec->readPrevRecord ();
 
 	const bool b_isfirst ( static_cast<uint>( recIntValue ( cp_rec, FLD_CP_ID ) ) == VDB ()->getLowestID ( TABLE_CP_ORDER ) );
-	bEnableStatus[BTN_FIRST] = !b_isfirst;
-	bEnableStatus[BTN_PREV] = !b_isfirst;
-	bEnableStatus[BTN_NEXT] = ok;
-	bEnableStatus[BTN_LAST] = ok;
+	bEnableStatus[BTN_FIRST] = ok && !b_isfirst;
+	bEnableStatus[BTN_PREV] = ok && !b_isfirst;
+	bEnableStatus[BTN_NEXT] |= ok;
+	bEnableStatus[BTN_LAST] |= ok;
 	fillForms ();
 }
 
@@ -519,15 +521,15 @@ void companyPurchasesUI::btnCPNext_clicked ()
 {
 	bool ok ( false );
 	if ( mbSearchIsOn )
-		ok = searchPrev ();
+		ok = cp_rec->readNextRecord ( true );
 	else
 		ok = cp_rec->readNextRecord ();
 
 	const bool b_islast ( static_cast<uint>( recIntValue ( cp_rec, FLD_CP_ID ) ) == VDB ()->getHighestID ( TABLE_CP_ORDER ) );
-	bEnableStatus[BTN_FIRST] = ok;
-	bEnableStatus[BTN_PREV] = ok;
-	bEnableStatus[BTN_NEXT] = !b_islast;
-	bEnableStatus[BTN_LAST] = !b_islast;
+	bEnableStatus[BTN_FIRST] |= ok;
+	bEnableStatus[BTN_PREV] |= ok;
+	bEnableStatus[BTN_NEXT] = ok && !b_islast;
+	bEnableStatus[BTN_LAST] = ok && !b_islast;
 	fillForms ();
 }
 
@@ -538,22 +540,25 @@ void companyPurchasesUI::btnCPSearch_clicked ( const bool checked )
 		if ( txtCPSearch->text ().count () >= 2 && txtCPSearch->text () != mSearchTerm )
 		{
 			searchCancel ();
-			const QString searchTerm ( txtCPSearch->text () );
-			if ( cp_rec->readFirstRecord ( -1, searchTerm ) )
+			prepareSearch ( txtCPSearch->text () );
+			if ( cp_rec->readFirstRecord ( -1 ) )
 			{
-				mbSearchIsOn = !mFoundFields.isEmpty ();
-			}
-			btnCPNext->setEnabled ( mbSearchIsOn );
-			if ( mbSearchIsOn ) {
-				mSearchTerm = searchTerm;
+				mFoundField = searchCPRecord ( cp_rec, mSearchTerm );
+				mbSearchIsOn = true;
 				btnCPSearch->setText ( tr ( "Cancel search" ) );
-				showSearchResult_internal ( true );
+				bEnableStatus[BTN_FIRST] = false;
+				bEnableStatus[BTN_PREV] = false;
+				btnCPSearch->setChecked ( true );
+				fillForms ();
 			}
 		}
 	}
 	else
+	{
 		searchCancel ();
-	btnCPSearch->setChecked ( checked );
+		txtCPSearch->clear ();
+		btnCPSearch->setChecked ( false );
+	}
 }
 
 void companyPurchasesUI::btnCPAdd_clicked ( const bool checked )
@@ -566,8 +571,6 @@ void companyPurchasesUI::btnCPAdd_clicked ( const bool checked )
 		controlForms ();
 		btnCPAdd->setText ( tr ( "Save" ) );
 		btnCPAdd->setIcon ( ICON ( "document-save" ) );
-		btnCPRemove->setText ( tr ( "Cancel" ) );
-		btnCPRemove->setIcon ( ICON ( "cancel" ) );
 		txtCPSupplier->setFocus ();
 	}
 	else
@@ -579,15 +582,13 @@ void companyPurchasesUI::btnCPEdit_clicked ( const bool checked )
 	if ( checked )
 	{
 		cp_rec->setAction ( ACTION_EDIT );
-		controlForms ();
 		btnCPEdit->setText ( tr ( "Save" ) );
 		btnCPEdit->setIcon ( ICON ( "document-save" ) );
-		btnCPRemove->setText ( tr ( "Cancel" ) );
-		btnCPRemove->setIcon ( ICON ( "cancel" ) );
 		txtCPSupplier->setFocus ();
 	}
 	else
 		saveInfo ();
+	controlForms ();
 }
 
 void companyPurchasesUI::btnCPRemove_clicked ()
@@ -612,12 +613,6 @@ void companyPurchasesUI::btnCPRemove_clicked ()
 						cp_rec->readRecord ( 1 );
 				}
 				fillForms ();
-				/*btnCPFirst->setEnabled ( cp_rec->actualRecordInt ( FLD_CP_ID ) != static_cast<int>( VDB ()->getLowestID ( TABLE_CP_ORDER ) ) );
-				btnCPPrev->setEnabled ( cp_rec->actualRecordInt ( FLD_CP_ID ) != static_cast<int>( VDB ()->getLowestID ( TABLE_CP_ORDER ) ) );
-				btnCPNext->setEnabled ( cp_rec->actualRecordInt ( FLD_CP_ID ) != static_cast<int>( VDB ()->getHighestID ( TABLE_CP_ORDER ) ) );
-				btnCPLast->setEnabled ( cp_rec->actualRecordInt ( FLD_CP_ID ) != static_cast<int>( VDB ()->getHighestID ( TABLE_CP_ORDER ) ) );
-				btnCPSearch->setEnabled ( VDB ()->getHighestID ( TABLE_CP_ORDER  ) > 0 );
-				txtCPSearch->setEditable ( VDB ()->getHighestID ( TABLE_CP_ORDER ) > 0 );*/
 			}
 		}
 	}

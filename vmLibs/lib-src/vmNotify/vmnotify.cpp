@@ -117,7 +117,7 @@ void vmNotify::addMessage ( Message* message )
 	setupWidgets ( message );
 	messageStack.append ( message );
 	if ( MAINWINDOW () != nullptr )
-		mPanel->setScheme ( MAINWINDOW ()->appMainStyle () );
+		MAINWINDOW ()->appMainStyle ( mPanel );
 	adjustSizeAndPosition ();
 	setWindowOpacity ( 0.9 );
 

@@ -29,8 +29,7 @@ DBRecord::st_Query& DBRecord::st_Query::operator= ( const st_Query& other )
 		search = other.search;
 		str_query = other.str_query;
 		field = other.field;
-		reset = other.reset;
-		forward = other.forward;
+		customquery = other.customquery;
 		std::copy ( other.query, other.query, this->query );
 	}
 	return *this;
@@ -156,7 +155,6 @@ bool DBRecord::readRecord ( const uint field, const QString& search, const bool 
 
 	if ( field != static_cast<uint>( stquery.field ) || search != stquery.search || mb_refresh )
 	{
-		stquery.reset = true;
 		stquery.field = static_cast<int>( field );
 		stquery.search = search;
 	}
@@ -169,10 +167,15 @@ bool DBRecord::readRecord ( const uint field, const QString& search, const bool 
 
 void DBRecord::resetQuery ()
 {
-	stquery.reset = true;
 	stquery.field = -1;
 	if ( stquery.query )
+	{
 		stquery.query->finish ();
+		delete stquery.query;
+		stquery.query = nullptr;
+	}
+	stquery.str_query.clear ();
+	stquery.customquery = false;
 }
 
 bool DBRecord::readFirstRecord ( const bool load_data )
@@ -182,11 +185,26 @@ bool DBRecord::readFirstRecord ( const bool load_data )
 
 bool DBRecord::readFirstRecord ( const int field, const QString& search, const bool load_data )
 {
-	stquery.forward = true;
-	stquery.reset = true;
-	stquery.field = field;
-	stquery.search = search;
-	return VDB->getDBRecord ( this, stquery, load_data );
+	if ( !stquery.customquery )
+	{
+		stquery.field = field;
+		stquery.search = search;
+		return VDB->getDBRecord ( this, stquery, load_data );
+	}
+	else
+	{
+		if ( stquery.query != nullptr )
+		{
+			if ( stquery.query->first () )
+			{
+				VDB->loadDBRecord ( this, stquery.query );
+				return true;
+			}
+		}
+		else
+			return VDB->getDBRecord ( this, stquery, load_data );
+	}
+	return false;
 }
 
 bool DBRecord::readLastRecord ( const bool load_data )
@@ -196,11 +214,26 @@ bool DBRecord::readLastRecord ( const bool load_data )
 
 bool DBRecord::readLastRecord ( const int field, const QString& search, const bool load_data )
 {
-	stquery.forward = false;
-	stquery.reset = true;
-	stquery.field = field;
-	stquery.search = search;
-	return VDB->getDBRecord ( this, stquery, load_data );
+	if ( !stquery.customquery )
+	{
+		stquery.field = field;
+		stquery.search = search;
+		return VDB->getDBRecord ( this, stquery, load_data );
+	}
+	else
+	{
+		if ( stquery.query != nullptr )
+		{
+			if ( stquery.query->last () )
+			{
+				VDB->loadDBRecord ( this, stquery.query );
+				return true;
+			}
+		}
+		else
+			return VDB->getDBRecord ( this, stquery, load_data );
+	}
+	return false;
 }
 
 // We browse by position, but the indexes might not be the same as the positions due to records removal
@@ -220,8 +253,14 @@ bool DBRecord::readNextRecord ( const bool follow_search, const bool load_data )
 	}
 	else
 	{
-		stquery.forward = true;
-		return VDB->getDBRecord ( this, stquery, load_data );
+		if ( stquery.query != nullptr )
+		{
+			if ( stquery.query->next () )
+			{
+				VDB->loadDBRecord ( this, stquery.query );
+				return true;
+			}
+		}
 	}
 	return false;
 }
@@ -242,8 +281,14 @@ bool DBRecord::readPrevRecord ( const bool follow_search, const bool load_data )
 	}
 	else
 	{
-		stquery.forward = false;
-		return VDB->getDBRecord ( this, stquery, load_data );
+		if ( stquery.query != nullptr )
+		{
+			if ( stquery.query->previous () )
+			{
+				VDB->loadDBRecord ( this, stquery.query );
+				return true;
+			}
+		}
 	}
 	return false;
 }

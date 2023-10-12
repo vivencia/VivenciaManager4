@@ -474,7 +474,8 @@ void vmTableWidget::clear ( const bool force )
 				{
 					item = sheetItem ( i_row, i_col );
 					item->setTextToDefault ( isEditable () );
-					item->highlight ( (i_row % 2 == 0) ? vmDefault_Color : vmDefault_Color_Alternate );
+					// TEST 2023-10-12: is the next line ever necessary??
+					//item->highlight ( (i_row % 2 == 0) ? vmDefault_Color : vmDefault_Color_Alternate );
 				}
 			}
 		}
@@ -1136,7 +1137,7 @@ void vmTableWidget::highlight ( const VMColors color, const QString& text )
 		{
 			for ( i_col = 0; i_col < colCount (); ++i_col )
 			{
-				if ( sheetItem ( i_row, i_col )->text ().contains ( text ) )
+				if ( sheetItem ( i_row, i_col )->text ().contains ( text, Qt::CaseInsensitive ) )
 				{
 					item = sheetItem ( i_row, i_col );
 					item->highlight ( color );
@@ -1343,12 +1344,12 @@ void vmTableWidget::initList ()
 
 void vmTableWidget::initTable2 ()
 {
-	/*QFont titleFont ( font () );
+	QFont titleFont ( font () );
 	titleFont.setBold ( true );
 	auto headerItem ( new vmCheckedTableItem ( Qt::Horizontal, this ) );
 	headerItem->setCallbackForCheckStateChange ( [&] ( const uint col, const bool checked ) {
 		return headerItemToggled ( col, checked ); } );
-	setHorizontalHeader ( headerItem );*/
+	setHorizontalHeader ( headerItem );
 
 	uint i_col ( 0 );
 
@@ -1363,8 +1364,7 @@ void vmTableWidget::initTable2 ()
 		if ( !column->editable )
 			setBit ( readOnlyColumnsMask, static_cast<uchar>( i_col ) ); // bit is set? read only cell : cell can be cleared or other actions
 
-		//setHorizontalHeaderItem ( static_cast<int>( i_col ), new vmTableItem ( WT_TABLE_ITEM, vmLineEdit::TT_TEXT, column->label, this ) );
-		setHorizontalHeaderItem ( static_cast<int>( i_col ), new vmTableItem ( column->label, this ) ); //TEST
+		setHorizontalHeaderItem ( static_cast<int>( i_col ), new vmTableItem ( column->label, this ) );
 
 		uint colWidth ( column->width );
 		if ( colWidth == 0 )
@@ -1372,6 +1372,7 @@ void vmTableWidget::initTable2 ()
 			switch ( column->wtype )
 			{
 				case WT_DATEEDIT:
+				case WT_TIMEEDIT:
 					colWidth = 180;
 				break;
 				case WT_LINEEDIT:

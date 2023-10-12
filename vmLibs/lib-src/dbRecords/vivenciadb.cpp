@@ -825,7 +825,11 @@ bool VivenciaDB::removeRecord ( const DBRecord* db_rec ) const
 void VivenciaDB::loadDBRecord ( DBRecord* db_rec, const QSqlQuery* const query )
 {
 	for ( uint i ( 0 ); i < db_rec->t_info->field_count; ++i )
+	{
 		setRecValue ( db_rec, i, query->value ( static_cast<int>( i ) ).toString () );
+		if ( db_rec->fieldType ( i ) == DBTYPE_ID )
+			db_rec->setIntValue ( i, query->value ( static_cast<int>( i ) ).toInt () );
+	}
 }
 
 bool VivenciaDB::insertDBRecord ( DBRecord* db_rec )
@@ -863,20 +867,23 @@ bool VivenciaDB::getDBRecord ( DBRecord* db_rec, const uint field, const bool lo
 		{
 			if ( load_data )
 				loadDBRecord ( db_rec, &query );
-			/* For the SELECT statement have some use, at least save the read id for later use.
-			 * Save all the initial id fields. Fast table lookup and fast item lookup, that's
-			 * the goal of this part of the code
-			*/
-			
-			uint i ( 0 ); // save first id fields. Useful for subsequent queries or finding related vmListItems
-			do
+			else
 			{
-				if ( db_rec->fieldType ( i ) == DBTYPE_ID )
-					db_rec->setIntValue ( i, query.value ( static_cast<int>( i ) ).toInt () );
-				else
-					break;
-			} while ( ++i < db_rec->fieldCount () );
-			setRecValue ( db_rec, 0, query.value ( 0 ).toString () );
+				/* For the SELECT statement have some use, at least save the read id for later use.
+				 * Save all the initial id fields. Fast table lookup and fast item lookup, that's
+				 * the goal of this part of the code
+				*/
+
+				uint i ( 0 ); // save first id fields. Useful for subsequent queries or finding related vmListItems
+				do
+				{
+					if ( db_rec->fieldType ( i ) == DBTYPE_ID )
+						db_rec->setIntValue ( i, query.value ( static_cast<int>( i ) ).toInt () );
+					else
+						break;
+				} while ( ++i < db_rec->fieldCount () );
+				setRecValue ( db_rec, 0, query.value ( 0 ).toString () );
+			}
 			return true;
 		}
 	}
@@ -904,51 +911,40 @@ bool VivenciaDB::getDBRecord ( DBRecord* db_rec, DBRecord::st_Query& stquery, co
 	 */
 	try
 	{
-		
 		bool ret ( false );
-
-		if ( stquery.reset )
+		stquery.query = new QSqlQuery ( *database () );
+		if ( !stquery.customquery )
 		{
-			stquery.reset = false;
-			if ( !stquery.query )
-				stquery.query = new QSqlQuery ( *database () );
-			else
-				stquery.query->finish ();
-
-			stquery.query->setForwardOnly ( stquery.forward );
-
-			if ( stquery.str_query.isEmpty () )
-			{
-				const QString cmd ( QStringLiteral ( "SELECT * FROM " ) + db_rec->t_info->table_name +
-								( stquery.field >= 0 ? QStringLiteral ( " WHERE " ) +
-								  getTableColumnName ( db_rec->t_info, static_cast<uint>(stquery.field) ) + CHR_EQUAL +
-								  CHR_QUOTES + stquery.search + CHR_QUOTES : QString () )
-							  );
-				ret = stquery.query->exec ( cmd );
-			}
-			else
-				ret = stquery.query->exec ( stquery.str_query );
-
-			if ( ret )
-				ret = stquery.forward ? stquery.query->first () : stquery.query->last ();
+			const QString cmd ( QStringLiteral ( "SELECT * FROM " ) + db_rec->t_info->table_name +
+							( QStringLiteral ( " WHERE " ) +
+							  getTableColumnName ( db_rec->t_info, static_cast<uint>(stquery.field) ) + CHR_EQUAL +
+							  CHR_QUOTES + stquery.search + CHR_QUOTES )
+						  );
+			ret = stquery.query->exec ( cmd );
 		}
 		else
-			ret = stquery.forward ? stquery.query->next () : stquery.query->previous ();
+		{
+			ret = stquery.query->exec ( stquery.str_query );
+		}
+		if ( ret )
+			ret = stquery.query->first ();
 
 		if ( ret )
 		{
 			if ( load_data )
 				loadDBRecord ( db_rec, stquery.query );
-	
-			uint i ( 0 ); // save first id fields. Useful for subsequent queries or finding related vmListItems
-			do
+			else
 			{
-				if ( db_rec->fieldType ( i ) == DBTYPE_ID )
-					db_rec->setIntValue ( i, stquery.query->value ( static_cast<int>( i ) ).toInt () );
-				else
-					break;
-			} while ( ++i < db_rec->fieldCount () );
-			setRecValue ( db_rec, 0, stquery.query->value ( 0 ).toString () );
+				uint i ( 0 ); // save first id fields. Useful for subsequent queries or finding related vmListItems
+				do
+				{
+					if ( db_rec->fieldType ( i ) == DBTYPE_ID )
+						db_rec->setIntValue ( i, stquery.query->value ( static_cast<int>( i ) ).toInt () );
+					else
+						break;
+				} while ( ++i < db_rec->fieldCount () );
+				setRecValue ( db_rec, 0, stquery.query->value ( 0 ).toString () );
+			}
 			return true;
 		}
 	}

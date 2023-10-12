@@ -26,7 +26,6 @@ public:
 	explicit companyPurchasesUI ( QWidget* parent = nullptr );
 	virtual ~companyPurchasesUI () override;
 	void showSearchResult ( const uint id );
-	void showSearchResult_internal ( const bool bshow );
 
 private:
 	void saveWidget ( vmWidget* widget, const int id );
@@ -34,12 +33,8 @@ private:
 	void fillForms ();
 	void controlForms ();
 	void saveInfo ();
-
 	void searchCancel ();
-	bool searchFirst ();
-	bool searchPrev ();
-	bool searchNext ();
-	bool searchLast ();
+	void prepareSearch ( const QString& searchterm );
 
 	void btnCPFirst_clicked ();
 	void btnCPLast_clicked ();
@@ -64,9 +59,9 @@ private:
 
 	QString mSearchTerm;
 	bool mbSearchIsOn;
+	int mFoundField, mOldFoundField;
 	companyPurchases* cp_rec;
 	pointersList<vmWidget*> widgetList;
-	podList<uint> mFoundFields;
 	stringTable mTableContents;
 
 	vmDateEdit *dteCPDate;

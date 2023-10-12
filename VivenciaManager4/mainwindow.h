@@ -242,7 +242,7 @@ public:
 	void updateActionButtonsState ();
 	bool execRecordAction ( const int key );
 
-	inline const QString& appMainStyle () const { return mainTaskPanel->currentScheme ()->styleName; }
+	void appMainStyle ( vmTaskPanel* panel );
 	void changeSchemeStyle ( const QString& style, const bool b_save = false );
 	
 //----------------------------------SETUP-CUSTOM-CONTROLS-NAVIGATION--------------------------------------
@@ -340,6 +340,7 @@ private:
 	pointersList<vmWidget*> buyWidgetList;
 	pointersList<dbListItem*> navItems;
 	pointersList<dbListItem*> editItems;
+	pointersList<vmTaskPanel*> panelsThatFollowTheme;
 
 	clientListItem* mClientCurItem;
 	jobListItem* mJobCurItem;

@@ -8,6 +8,8 @@
 #include <dbRecords/vivenciadb.h>
 #include <vmNotify/vmnotify.h>
 #include <vmWidgets/vmwidgets.h>
+#include <vmTaskPanel/vmtaskpanel.h>
+#include <vmTaskPanel/vmactiongroup.h>
 
 #include <vmUtils/vmtextfile.h>
 #include <vmUtils/vmcompress.h>
@@ -34,9 +36,19 @@ BackupDialog::BackupDialog ()
 	  dlgNoDB ( nullptr ), m_after_close_action ( ACA_CONTINUE ), mErrorCode ( 0 )
 {
 	ui->setupUi ( this );
+
+	if ( MAINWINDOW () )
+	{
+		vmTaskPanel* panel ( new vmTaskPanel ( emptyString, this ) );
+		ui->verticalLayout->addWidget ( panel, 1 );
+		vmActionGroup* group = panel->createGroup ( emptyString, false, true, false );
+		group->addQEntry ( ui->toolBox, nullptr, true );
+		group->addQEntry ( ui->frmBottomBar, nullptr, true );
+		MAINWINDOW ()->appMainStyle ( panel );
+	}
+
 	setWindowTitle ( TR_FUNC ( "Backup/Restore - " ) + PROGRAM_NAME );
 	setWindowIcon ( ICON ( APP_ICON ) );
-
 	setupConnections ();
 	scanBackupFiles ();
 }

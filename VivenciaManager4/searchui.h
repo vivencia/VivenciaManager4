@@ -35,14 +35,13 @@ public:
 	explicit searchUI ( QWidget* parent );
 	virtual ~searchUI () override;
 	void setupUI ();
-
 	inline const QString& searchTerm () const { return mSearchTerm; }
-	void searchCancel ();
 
 public slots:
 	void insertFoundInfo ( const stringRecord& row_info );
 
 private:
+	void searchCancel ();
 	void createTable ();
 	void on_txtSearch_textEdited ( const QString& text );
 	void searchCallbackSelector ( const QKeyEvent* const ke );

@@ -134,6 +134,7 @@ MainWindow::~MainWindow ()
 void MainWindow::continueStartUp ()
 {
 	mainTaskPanel = new vmTaskPanel;
+	panelsThatFollowTheme.insert ( 0, mainTaskPanel );
 	CONFIG ()->addManagedSectionName ( Ui::mw_configSectionName );
 	CONFIG ()->addManagedSectionName ( configOps::foldersSectionName () );
 	CONFIG ()->addManagedSectionName ( configOps::appDefaultsSectionName () );
@@ -3151,8 +3152,11 @@ void MainWindow::controlBuyForms ( const buyListItem* const buy_item )
 
 	if ( buy_item != nullptr )
 	{
-		for ( uint i ( FLD_BUY_DATE ); i <= FLD_BUY_PAYINFO && i != FLD_BUY_TOTALPAYS; ++i )
-			buyWidgetList.at ( i )->highlight ( buy->searchStatus ( i ) ? vmBlue : vmDefault_Color, SEARCH_UI ()->searchTerm () );
+		for ( uint i ( FLD_BUY_DATE ); i <= FLD_BUY_PAYINFO; ++i )
+		{
+			if ( i != FLD_BUY_TOTALPAYS )
+				buyWidgetList.at ( i )->highlight ( buy->searchStatus ( i ) ? vmBlue : vmDefault_Color, SEARCH_UI ()->searchTerm () );
+		}
 	}
 }
 
@@ -3844,9 +3848,16 @@ void MainWindow::reOrderTabSequence ()
 	setTabOrder ( ui->dteBuyDeliveryDate, ui->txtBuyDeliveryMethod );
 }
 
+void MainWindow::appMainStyle ( vmTaskPanel* panel )
+{
+	panelsThatFollowTheme.append ( panel );
+	panel->setScheme ( mainTaskPanel->currentScheme ()->styleName );
+}
+
 void MainWindow::changeSchemeStyle ( const QString& style, const bool b_save )
 {
-	mainTaskPanel->setScheme ( style );
+	for ( uint i ( 0 ); i < panelsThatFollowTheme.count (); ++i )
+		panelsThatFollowTheme.at ( i )->setScheme ( style );
 	vmWidget::changeThemeColors ( mainTaskPanel->currentScheme ()->colorStyle1, mainTaskPanel->currentScheme ()->colorStyle2 );
 	if ( b_save )
 		return CONFIG ()->setValue ( Ui::mw_configSectionName, Ui::mw_configCategoryAppScheme, style );

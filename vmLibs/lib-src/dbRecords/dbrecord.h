@@ -39,11 +39,10 @@ public:
 		QString str_query;
 		int field;
 		QSqlQuery* query;
-		bool reset;
-		bool forward;
+		bool customquery;
 
 		st_Query ()
-			: field ( -1 ), query ( nullptr ), reset ( true ), forward ( true ) {}
+			: field ( -1 ), query ( nullptr ), customquery ( false ) {}
 
 		~st_Query () {
 			delete query;
@@ -121,8 +120,8 @@ public:
 	bool readRecord ( const uint id, const bool load_data = true );
 	bool readRecord ( const uint field, const QString& search, const bool load_data = true );
 
-	inline bool searchQueryIsOn () const { return !stquery.reset; }
 	void resetQuery ();
+	inline void setQuery ( const QString& strQuery ) { stquery.str_query = strQuery; stquery.customquery = true; }
 	bool readFirstRecord ( const bool load_data = true );
 	bool readFirstRecord ( const int field, const QString& search = QString (), const bool load_data = true );
 	bool readLastRecord ( const bool load_data = true );

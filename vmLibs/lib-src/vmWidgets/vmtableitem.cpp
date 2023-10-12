@@ -220,8 +220,7 @@ void vmTableItem::highlight ( const VMColors color, const QString& )
 {
 	if ( m_widget )
 	{
-		if ( m_widget->id () >= 0 )
-			m_widget->highlight ( color );
+		m_widget->highlight ( color );
 	}
 	else
 	{

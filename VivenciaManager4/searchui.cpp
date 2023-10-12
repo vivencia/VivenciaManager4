@@ -104,7 +104,7 @@ void searchUI::setupUI ()
 	hLayout->addWidget ( mBtnClose, 1, Qt::AlignRight );
 	group->addLayout ( hLayout );
 
-	panel->setScheme ( MAINWINDOW ()->appMainStyle () );
+	MAINWINDOW ()->appMainStyle ( panel );
 	resize ( mFoundList->preferredSize () );
 	mtxtSearch->setFocus ();
 }
@@ -488,14 +488,14 @@ void searchThreadWorker::searchTable ( DBRecord* db_rec, const QString& columns,
 	}
 }
 
-auto formatClientInfo = [] ( const QSqlQuery& query_res, stringRecord& item_info ) ->void {
-			item_info.insertField ( COL_ID, query_res.value ( 0 ).toString () );
-			item_info.insertField ( COL_INFO, query_res.value ( 1 ).toString () );
-			item_info.insertField ( COL_DATE, query_res.value ( 2 ).toString () );
-};
-
 void searchThreadWorker::searchClients ()
 {
+	auto formatClientInfo = [] ( const QSqlQuery& query_res, stringRecord& item_info ) ->void {
+				item_info.insertField ( COL_ID, query_res.value ( 0 ).toString () );
+				item_info.insertField ( COL_INFO, query_res.value ( 1 ).toString () );
+				item_info.insertField ( COL_DATE, query_res.value ( 2 ).toString () );
+	};
+
 	Client client;
 	const QString searchColumns ( QStringLiteral (",NAME,BEGINDATE") );
 	searchTable ( &client, searchColumns, formatClientInfo );

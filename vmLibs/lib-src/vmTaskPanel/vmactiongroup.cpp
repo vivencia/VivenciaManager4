@@ -113,6 +113,7 @@ TaskHeader::TaskHeader ( const QIcon& icon, const QString& title,
 	setScheme ( ActionPanelScheme::defaultScheme () );
 	setExpandable ( mb_expandable );
 	setClosable ( mb_closable );
+	setFrameStyle ( QFrame::StyledPanel | QFrame::Raised );
 	installEventFilter ( this );
 }
 
@@ -380,7 +381,7 @@ vmActionGroup::vmActionGroup ( const QIcon& icon, const QString& title,
 							   const bool expandable, const bool stretchContents,
 							   const bool closable, QWidget* parent )
 	: QWidget ( parent ), vmWidget ( WT_QWIDGET, WT_ACTION ),
-	  mbStretchContents ( stretchContents )
+	  mbStretchContents ( stretchContents ), timerShow ( nullptr ), timerHide ( nullptr )
 {
 	mHeader = new TaskHeader ( icon, title, expandable, closable, this );
 	init ();

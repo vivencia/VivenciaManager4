@@ -90,19 +90,8 @@ void machinesDlg::setupUI ()
 	btnSelectJob = new QToolButton;
 	btnSelectJob->setIcon ( ICON ( "job_info" ) );
 	btnSelectJob->setToolTip ( tr ( "Choose job associated with this machine event" ) );
-	QHBoxLayout* layoutJobMachineEvents ( new QHBoxLayout );
-	grpJobMachineEvents = new vmActionGroup;
-	grpJobMachineEvents->addQEntry ( new QLabel ( tr ( "Associated job: " ) ), layoutJobMachineEvents );
-	grpJobMachineEvents->addEntry ( txtJob, layoutJobMachineEvents );
-	grpJobMachineEvents->addQEntry ( btnSelectJob, layoutJobMachineEvents );
-	grpJobMachineEvents->addEntry ( tableJobEvents, nullptr, true );
 
 	tableMachineHistory = new vmTableWidget;
-	grpHistory = new vmActionGroup ( tr ( "Machine event history" ) );
-	//txtMachineTotalTime = new vmLineEdit;
-	grpHistory->addEntry ( tableMachineHistory, new QHBoxLayout (), true );
-	//grpJobMachineEvents->addQEntry ( new QLabel ( tr ( "Total use time: " ) ), layoutJobMachineEvents );
-
 	btnEdit = new QPushButton ( ICON ( "browse-controls/edit" ), tr ( "Edit" ) );
 	btnEdit->setToolTip ( tr ( "Manage machines information" ) );
 	btnCancel = new QPushButton ( ICON ( "cancel" ), tr ( "Cancel" ) );
@@ -134,28 +123,36 @@ void machinesDlg::setupUI ()
 	layoutRow_3->addWidget ( new QLabel ( tr ( "Event time: " ) ) );
 	layoutRow_3->addWidget ( timeEventTime, 1 );
 
+	auto layoutJobMachineEvents ( new QHBoxLayout );
+	layoutJobMachineEvents->addWidget ( new QLabel ( tr ( "Associated job: " ) ) );
+	layoutJobMachineEvents->addWidget ( txtJob );
+	layoutJobMachineEvents->addWidget ( btnSelectJob );
+
+	vmTaskPanel* panel ( new vmTaskPanel ( emptyString, this ) );
+
+	grpJobMachineEvents = panel->createGroup ( QStringLiteral ( "  " ), false, true, false ); // so that the taskHeader object of the group gets created
+	grpJobMachineEvents->addLayout ( layoutRow_0 );
+	grpJobMachineEvents->addLayout ( layoutRow_1 );
+	grpJobMachineEvents->addLayout ( layoutRow_2 );
+	grpJobMachineEvents->addLayout ( layoutRow_3 );
+	grpJobMachineEvents->addLayout ( layoutJobMachineEvents );
+	grpJobMachineEvents->addEntry ( tableJobEvents, nullptr, true );
+
 	QHBoxLayout* layoutRow_4 ( new QHBoxLayout );
-	layoutRow_4->addWidget ( grpJobMachineEvents );
+	layoutRow_4->addWidget ( btnEdit );
+	layoutRow_4->addWidget ( btnSave );
+	layoutRow_4->addWidget ( btnCancel );
+	layoutRow_4->addStretch ( 2 );
+	layoutRow_4->addWidget ( btnClose );
 
-	QHBoxLayout* layoutRow_5 ( new QHBoxLayout );
-	layoutRow_5->addWidget ( grpHistory );
-
-	QHBoxLayout* layoutRow_6 ( new QHBoxLayout );
-	layoutRow_6->addWidget ( btnEdit );
-	layoutRow_6->addWidget ( btnSave );
-	layoutRow_6->addWidget ( btnCancel );
-	layoutRow_6->addStretch ( 2 );
-	layoutRow_6->addWidget ( btnClose );
+	grpHistory = panel->createGroup ( tr ( "Machine event history" ), false, true, false );
+	grpHistory->addEntry ( tableMachineHistory, nullptr, true );
+	grpHistory->addLayout ( layoutRow_4 );
 
 	QVBoxLayout* mainLayout ( new QVBoxLayout );
-	mainLayout->addLayout ( layoutRow_0 );
-	mainLayout->addLayout ( layoutRow_1 );
-	mainLayout->addLayout ( layoutRow_2 );
-	mainLayout->addLayout ( layoutRow_3 );
-	mainLayout->addLayout ( layoutRow_4 );
-	mainLayout->addLayout ( layoutRow_5 );
-	mainLayout->addLayout ( layoutRow_6 );
+	mainLayout->addWidget ( panel );
 	setLayout ( mainLayout );
+	MAINWINDOW ()->appMainStyle ( panel );
 
 	setupConnections ();
 	initTableMachineEvents ();

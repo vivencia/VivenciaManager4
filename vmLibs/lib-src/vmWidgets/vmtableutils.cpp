@@ -80,12 +80,12 @@ void vmTableSearchPanel::hideEvent ( QHideEvent* he )
 void vmTableSearchPanel::searchFieldsChanged ( const vmCheckBox* const )
 {
 	if ( chkSearchAllTable && chkSearchAllTable->isChecked () )
-		dynamic_cast<vmCheckedTableItem*>( m_table->horizontalHeader () )->setCheckable ( false );
+		static_cast<vmCheckedTableItem*>( m_table->horizontalHeader () )->setCheckable ( false );
 	else
 	{
-		dynamic_cast<vmCheckedTableItem*>( m_table->horizontalHeader () )->setCheckable ( true );
+		static_cast<vmCheckedTableItem*>( m_table->horizontalHeader () )->setCheckable ( true );
 		for ( uint col ( 0 ); col < m_table->colCount (); ++col )
-			dynamic_cast<vmCheckedTableItem*>( m_table->horizontalHeader () )->setChecked ( col, false );
+			static_cast<vmCheckedTableItem*>( m_table->horizontalHeader () )->setChecked ( col, false );
 	}
 }
 

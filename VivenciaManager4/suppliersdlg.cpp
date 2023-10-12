@@ -180,7 +180,7 @@ void suppliersDlg::setupUI ()
 	group->addLayout ( hLayout3 );
 	group->addLayout ( hLayout4 );
 	group->addLayout ( hLayout5 );
-	panel->setScheme ( MAINWINDOW ()->appMainStyle () );
+	MAINWINDOW ()->appMainStyle ( panel );
 
 	adjustSize ();
 }
