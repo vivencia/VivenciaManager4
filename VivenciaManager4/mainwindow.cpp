@@ -3848,9 +3848,10 @@ void MainWindow::reOrderTabSequence ()
 	setTabOrder ( ui->dteBuyDeliveryDate, ui->txtBuyDeliveryMethod );
 }
 
-void MainWindow::appMainStyle ( vmTaskPanel* panel )
+void MainWindow::appMainStyle ( vmTaskPanel* panel, const bool b_register )
 {
-	panelsThatFollowTheme.append ( panel );
+	if ( b_register )
+		panelsThatFollowTheme.append ( panel );
 	panel->setScheme ( mainTaskPanel->currentScheme ()->styleName );
 }
 
@@ -3858,6 +3859,7 @@ void MainWindow::changeSchemeStyle ( const QString& style, const bool b_save )
 {
 	for ( uint i ( 0 ); i < panelsThatFollowTheme.count (); ++i )
 		panelsThatFollowTheme.at ( i )->setScheme ( style );
+
 	vmWidget::changeThemeColors ( mainTaskPanel->currentScheme ()->colorStyle1, mainTaskPanel->currentScheme ()->colorStyle2 );
 	if ( b_save )
 		return CONFIG ()->setValue ( Ui::mw_configSectionName, Ui::mw_configCategoryAppScheme, style );
@@ -4448,14 +4450,14 @@ inline void MainWindow::btnSearch_clicked () { SEARCH_UI ()->isVisible () ?
 inline void MainWindow::btnCalculator_clicked () { CALCULATOR ()->isVisible () ?
 		CALCULATOR ()->hide () : CALCULATOR ()->showCalc ( emptyString, mapToGlobal ( ui->btnCalculator->pos () ) ); }
 
-inline void MainWindow::btnEstimates_clicked () { ESTIMATES ()->isVisible () ?
-		ESTIMATES ()->hide () : ESTIMATES ()->showWindow ( recStrValue ( mClientCurItem->clientRecord (), FLD_CLIENT_NAME ) ); }
+inline void MainWindow::btnEstimates_clicked () { ESTIMATES ()->isMinimized () ?
+		ESTIMATES ()->showWindow ( recStrValue ( mClientCurItem->clientRecord (), FLD_CLIENT_NAME ) ) : ESTIMATES ()->showMinimized (); }
 
 inline void MainWindow::btnCompanyPurchases_clicked () { COMPANY_PURCHASES ()->isVisible () ?
 		COMPANY_PURCHASES ()->hide () : COMPANY_PURCHASES ()->show (); }
 
 inline void MainWindow::btnConfiguration_clicked () { CONFIG_DIALOG ()->isVisible () ?
-		CONFIG_DIALOG ()->hide () : CONFIG_DIALOG ()->show (); }
+		CONFIG_DIALOG ()->hide () : static_cast<configDialog*>(CONFIG_DIALOG ())->show (); }
 
 inline void MainWindow::btnExitProgram_clicked () { Sys_Init::deInit (); }
 //--------------------------------------------SLOTS------------------------------------------------------------

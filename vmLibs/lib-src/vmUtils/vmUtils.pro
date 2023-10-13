@@ -68,5 +68,4 @@ DEPENDPATH += $$PWD/../vmNumbers
 unix:!macx: LIBS += -L$$PWD/../build-vmNotify-Desktop-Debug/ -lvmNotify
 DEPENDPATH += $$PWD/../vmNotify
 
-RESOURCES += \
-    resources.qrc
+RESOURCES +=

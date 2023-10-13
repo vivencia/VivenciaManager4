@@ -9,6 +9,8 @@
 #include <vmNotify/vmnotify.h>
 #include <vmWidgets/vmwidgets.h>
 #include <dbRecords/vivenciadb.h>
+#include <vmTaskPanel/vmtaskpanel.h>
+#include <vmTaskPanel/vmactiongroup.h>
 #include <vmDocumentEditor/documenteditor.h>
 #include <vmDocumentEditor/reportgenerator.h>
 
@@ -42,7 +44,7 @@ static QMenu* menuProject ( nullptr );
 static QMenu* menuEstimate ( nullptr );
 static QMenu* menuReport ( nullptr );
 static QTreeWidget* treeView ( nullptr );
-static QIcon* iconsType[5] = { nullptr };
+static QIcon iconsType[5];
 
 static const uint TYPE_PROJECT_ITEM ( 0 );
 static const uint TYPE_ESTIMATE_ITEM ( 1 );
@@ -210,26 +212,26 @@ static QString getDateFromReportFile ( const QString& filename )
 estimateDlg::estimateDlg ( QWidget* parent )
 	: QDialog ( parent ), m_npdlg ( nullptr )
 {
-	iconsType[FILETYPE_DOC] = new QIcon ( QIcon::fromTheme ( QStringLiteral ( "x-office-document" ) ) );
-	iconsType[FILETYPE_XLS] = new QIcon ( QIcon::fromTheme ( QStringLiteral ( "x-office-spreadsheet" ) ) );
-	iconsType[FILETYPE_PDF] = new QIcon ( QIcon::fromTheme ( QStringLiteral ( "okular" ) ) );
-	iconsType[FILETYPE_VMR] = new QIcon ( QIcon::fromTheme ( QStringLiteral ( "x-office-address-book" ) ) );
-	iconsType[FILETYPE_UNKNOWN] = new QIcon ( QIcon::fromTheme ( QStringLiteral ( "unknown" ) ) );
+	iconsType[FILETYPE_DOC] = ICON ( "x-office-document" );
+	iconsType[FILETYPE_XLS] = ICON ( "x-office-spreadsheet" );
+	iconsType[FILETYPE_PDF] = ICON ( "okular" );
+	iconsType[FILETYPE_VMR] = ICON ( "x-office-address-book" );
+	iconsType[FILETYPE_UNKNOWN] = ICON ( "unknown" );
 
 	setWindowTitle ( TR_FUNC ( "Projects, Estimates and Reports" ) );
-	setWindowIcon ( *iconsType[FILETYPE_VMR] );
+	setWindowIcon ( iconsType[FILETYPE_VMR] );
 	
 	btnDoc = new QToolButton;
-	btnDoc->setIcon ( *iconsType[FILETYPE_DOC] );
+	btnDoc->setIcon ( iconsType[FILETYPE_DOC] );
 	connect ( btnDoc, &QToolButton::pressed, btnDoc, [&] () { return btnDoc->showMenu (); } );
 	btnVmr = new QToolButton;
-	btnVmr->setIcon ( *iconsType[FILETYPE_VMR] );
+	btnVmr->setIcon ( iconsType[FILETYPE_VMR] );
 	connect ( btnVmr, &QToolButton::pressed, btnVmr, [&] () { return btnVmr->showMenu (); } );
 	btnXls = new QToolButton;
-	btnXls->setIcon ( *iconsType[FILETYPE_XLS] );
+	btnXls->setIcon ( iconsType[FILETYPE_XLS] );
 	connect ( btnXls, &QToolButton::pressed, btnXls, [&] () { return btnXls->showMenu (); } );
 	btnPdf = new QToolButton;
-	btnPdf->setIcon ( *iconsType[FILETYPE_PDF] );
+	btnPdf->setIcon ( iconsType[FILETYPE_PDF] );
 	connect ( btnPdf, &QToolButton::pressed, btnPdf, [&] () { return btnPdf->showMenu (); } );
 	btnFileManager = new QToolButton;
 	btnFileManager->setIcon ( QIcon::fromTheme ( QStringLiteral ( "system-file-manager" ) ) );
@@ -277,7 +279,7 @@ estimateDlg::estimateDlg ( QWidget* parent )
 	connect ( btnReport, &QPushButton::clicked, btnReport, [&] () { return btnReport->showMenu (); } );
 
 	btnClose = new QPushButton ( TR_FUNC ( "Close" ) );
-	connect ( btnClose, &QPushButton::clicked, this, [&] () { b_inItemSelectionMode ? cancelItemSelection () : static_cast<void>( close () ); } );
+	connect ( btnClose, &QPushButton::clicked, this, [&] () { b_inItemSelectionMode ? cancelItemSelection () : static_cast<void>( showMinimized () ); } );
 
 	auto hLayout3 ( new QHBoxLayout );
 	hLayout3->setContentsMargins ( 2, 2, 2, 2 );
@@ -287,13 +289,16 @@ estimateDlg::estimateDlg ( QWidget* parent )
 	hLayout3->addWidget ( btnReport, 1, Qt::AlignCenter );
 	hLayout3->addWidget ( btnClose, 1, Qt::AlignCenter );
 
+	vmTaskPanel* panel ( new vmTaskPanel ( emptyString, this ) );
 	auto mainLayout ( new QVBoxLayout );
-	mainLayout->setContentsMargins ( 2, 2, 2, 2 );
+	mainLayout->setContentsMargins ( 0, 0, 0, 0 );
 	mainLayout->setSpacing ( 0 );
-	mainLayout->addLayout ( hLayout2, 2 );
-	mainLayout->addLayout ( hLayout3, 0 );
+	mainLayout->addWidget ( panel, 1 );
 	setLayout ( mainLayout );
-	resize ( 650, 450 );
+	vmActionGroup* group ( panel->createGroup ( emptyString, false, true, false ) );
+	group->addLayout ( hLayout2, 2 );
+	group->addLayout ( hLayout3, 0 );
+	MAINWINDOW ()->appMainStyle ( panel );
 
 	setupActions ();
 	scanDir ();
@@ -321,7 +326,7 @@ void estimateDlg::showWindow ( const QString& client_name )
 			break;
 		}
 	}
-	show ();
+	showNormal ();
 }
 
 void estimateDlg::setupActions ()
@@ -414,8 +419,6 @@ void estimateDlg::scanDir ()
 		clientName = Client::clientName ( c_id );
 		if ( !clientName.isEmpty () )
 		{
-			if ( clientName.startsWith( "Marta" ) )
-				qDebug () << "break";
 			dirName = CONFIG ()->getProjectBasePath ( clientName );
 			fileOps::lsDir ( filesFound, dirName, nameFilter, exclude_dirs, fileOps::LS_ALL, 2, false );
 			addToTree ( filesFound, clientName );
@@ -525,7 +528,7 @@ void estimateDlg::addToTree ( pointersList<fileOps::st_fileInfo*>& files, const 
 					break;
 				}
 				child_file->setText ( 1, itemTypeStr[itemType] );
-				child_file->setIcon ( 0, *iconsType[actionIndex ( filename )] );
+				child_file->setIcon ( 0, iconsType[actionIndex ( filename )] );
 				child_file->setData ( 0, ROLE_ITEM_TYPE, itemType );
 				child_file->setData ( 0, ROLE_ITEM_FILENAME, files.at ( i )->fullpath );
 				child_file->setData ( 0, ROLE_ITEM_CLIENTNAME, clientName != nonClientStr ? clientName : emptyString );
@@ -962,7 +965,7 @@ void estimateDlg::reportActions ( QAction* action )
 	else
 	{
 		QString reportName;
-		vmNotify::inputBox ( reportName, this, TR_FUNC ( "Please write the report's name" ),
+		vmNotify::inputBox ( reportName, nullptr, TR_FUNC ( "Please write the report's name" ),
 						 TR_FUNC ( "Name: " ) );
 		if ( reportName.isEmpty () )
 			return;
@@ -1007,7 +1010,7 @@ void estimateDlg::reportActions ( QAction* action )
 				f_info = new fileOps::st_fileInfo;
 				f_info->filename = reportName + CONFIG ()->projectSpreadSheetExtension ();
 				f_info->fullpath = basePath + f_info->filename;
-				if ( !fileOps::copyFile ( f_info->fullpath, CONFIG ()->projectSpreadSheetFile () ) )
+				if ( fileOps::copyFile ( f_info->fullpath, CONFIG ()->projectSpreadSheetFile () ) )
 					files.append ( f_info );
 			}
 		}

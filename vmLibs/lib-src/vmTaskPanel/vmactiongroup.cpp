@@ -66,14 +66,14 @@ void TaskGroup::addQEntry ( QWidget* widget, QLayout* l, const bool addStretch )
 	}
 }
 
-void TaskGroup::addLayout ( QLayout* layout )
+void TaskGroup::addLayout ( QLayout* layout, const int stretch )
 {
 	if ( !layout )
 		return;
 
 	if ( !mbStretchContents )
 		setMinimumHeight ( minimumHeight () + layout->minimumSize ().height () );
-	groupLayout ()->addLayout ( layout, 1 );
+	groupLayout ()->addLayout ( layout, stretch );
 }
 
 QPixmap TaskGroup::transparentRender ()
@@ -462,9 +462,9 @@ void vmActionGroup::addQEntry ( QWidget* widget, QLayout* l, const bool addStret
 	mGroup->addQEntry ( widget, l, addStretch );
 }
 
-void vmActionGroup::addLayout ( QLayout* layout )
+void vmActionGroup::addLayout ( QLayout* layout, const int stretch )
 {
-	mGroup->addLayout ( layout );
+	mGroup->addLayout ( layout, stretch );
 }
 
 void vmActionGroup::showHide ()

@@ -174,8 +174,7 @@ void imageViewer::addImagesList ( vmComboBox* combo ) const
 
 void imageViewer::loadImage ( const QString& picture_path )
 {
-	QPixmap pixture;
-	pixture.load ( fileOps::canRead ( picture_path ).isOn () ? picture_path : QStringLiteral ( ":/resources/no_image.jpg" ) );
+	QPixmap pixture( fileOps::canRead ( picture_path ).isOn () ? picture_path : QStringLiteral ( ":/resources/no_image.jpg" ) );
 	loadImage ( pixture );
 }
 
@@ -194,7 +193,7 @@ void imageViewer::loadImage ( QPixmap& picture )
 		if ( factor2 < factor )
 			factor = factor2;
 	}
-	QSizeF new_imgSize ( factor * imgSize );
+	const QSizeF new_imgSize ( factor * imgSize );
 	setPixmap ( picture.scaled ( new_imgSize.toSize (), Qt::IgnoreAspectRatio, Qt::SmoothTransformation ) );
 	adjustSize ();
 }

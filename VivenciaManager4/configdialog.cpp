@@ -7,13 +7,22 @@
 #include <vmUtils/fileops.h>
 #include <vmWidgets/vmwidgets.h>
 #include <vmTaskPanel/actionpanelscheme.h>
+#include <vmTaskPanel/vmtaskpanel.h>
+#include <vmTaskPanel/vmactiongroup.h>
 
 #include <QtWidgets/QMenu>
+#include <QtCore/QTimer>
 
 configDialog::configDialog ( QWidget* parent )
-	: QDialog ( parent ), ui ( new Ui::configDialog )
+	: QDialog ( parent ), ui ( new Ui::configDialog ), mPanel ( nullptr )
 {
 	ui->setupUi ( this );
+
+	mPanel = new vmTaskPanel ( emptyString, this );
+	vmActionGroup* group = mPanel->createGroup ( emptyString, false, true, false );
+	group->addQEntry ( ui->grpProgramOptions, nullptr, true );
+	ui->mainLayout->addWidget ( mPanel );
+
 	setWindowTitle ( PROGRAM_NAME + windowTitle () );
 	fillForms ();
 	connectUIForms ();
@@ -22,6 +31,19 @@ configDialog::configDialog ( QWidget* parent )
 configDialog::~configDialog ()
 {
 	delete ui;
+}
+
+void configDialog::show ()
+{
+	QDialog::show ();
+	/*
+	 * This is hack used in BackupDialog and configDialog because, when themed, theses classes show a black background
+	 * under some widgets. Don't know if it is because of the Qt theme I am using, or if it is not related to it. Don't konw
+	 * if it is because the styleSheets described in ActionPanelScheme have some error. But by supplying the panel widget with and
+	 * empty style sheet ( the default ), having it being drawn on the screen and then setting the correct stylesheet
+	 * as it is displayed fixes the problem.
+	 */
+	QTimer::singleShot ( 100, this, [&] () { MAINWINDOW ()->appMainStyle ( mPanel ); } );
 }
 
 void configDialog::connectUIForms ()

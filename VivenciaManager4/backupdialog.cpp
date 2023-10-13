@@ -17,6 +17,7 @@
 #include <vmUtils/configops.h>
 #include <vmUtils/crashrestore.h>
 
+#include <QtCore/QTimer>
 #include <QtGui/QGuiApplication>
 #include <QtGui/QScreen>
 #include <QtWidgets/QVBoxLayout>
@@ -33,18 +34,17 @@ auto backupFileList = [] () ->QString  { return CONFIG ()->appDataDir () + QStri
 BackupDialog::BackupDialog ()
 	: QDialog ( nullptr ), ui ( new Ui::BackupDialog ), tdb ( nullptr ),
 	  b_IgnoreItemListChange ( false ), mb_success ( false ), mb_nodb ( false ),
-	  dlgNoDB ( nullptr ), m_after_close_action ( ACA_CONTINUE ), mErrorCode ( 0 )
+	  dlgNoDB ( nullptr ), mPanel ( nullptr ), m_after_close_action ( ACA_CONTINUE ), mErrorCode ( 0 )
 {
 	ui->setupUi ( this );
 
 	if ( MAINWINDOW () )
 	{
-		vmTaskPanel* panel ( new vmTaskPanel ( emptyString, this ) );
-		ui->verticalLayout->addWidget ( panel, 1 );
-		vmActionGroup* group = panel->createGroup ( emptyString, false, true, false );
+		mPanel = new vmTaskPanel ( emptyString, this );
+		ui->verticalLayout->addWidget ( mPanel, 1 );
+		vmActionGroup* group = mPanel->createGroup ( emptyString, false, true, false );
 		group->addQEntry ( ui->toolBox, nullptr, true );
 		group->addQEntry ( ui->frmBottomBar, nullptr, true );
-		MAINWINDOW ()->appMainStyle ( panel );
 	}
 
 	setWindowTitle ( TR_FUNC ( "Backup/Restore - " ) + PROGRAM_NAME );
@@ -223,6 +223,15 @@ void BackupDialog::showWindow ()
 	ui->rdChooseAnotherFile->setChecked ( !hasRestoreList );
 
 	m_after_close_action = ACA_RETURN_TO_PREV_WINDOW;
+
+	/*
+	 * This is hack used in BackupDialog and configDialog because, when themed, theses classes show a black background
+	 * under some widgets. Don't know if it is because of the Qt theme I am using, or if it is not related to it. Don't konw
+	 * if it is because the styleSheets described in ActionPanelScheme have some error. But by supplying the panel widget with and
+	 * empty style sheet ( the default ), having it being drawn on the screen and then setting the correct stylesheet
+	 * as it is displayed fixes the problem.
+	 */
+	QTimer::singleShot ( 100, this, [&] () { MAINWINDOW ()->appMainStyle ( mPanel ); } );
 	this->exec ();
 }
 

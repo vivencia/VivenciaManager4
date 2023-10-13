@@ -34,7 +34,7 @@ public:
 	}
 
 	void addQEntry ( QWidget* widget, QLayout* l, const bool addStretch );
-	void addLayout ( QLayout* layout );
+	void addLayout ( QLayout* layout, const int stretch = 1 );
 
 	QPixmap transparentRender ();
 
@@ -141,7 +141,7 @@ public:
 	  */
 	bool addEntry ( vmWidget* entry, QLayout* l = nullptr, const bool addStretch = false );
 	void addQEntry ( QWidget* widget, QLayout* l = nullptr, const bool addStretch = false );
-	void addLayout ( QLayout* layout );
+	void addLayout ( QLayout* layout, const int stretch = 1 );
 
 	/** Returns group's layout  ( QVBoxLayout by default ) .
 	  */

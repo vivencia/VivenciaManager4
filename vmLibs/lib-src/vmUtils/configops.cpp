@@ -54,11 +54,11 @@ static const QString DEFAULT_OPTS[CFG_CATEGORIES] =
 	 * they make. Since those checks are proving only a nuisance and are yielding a wrong result, I will hardcode the paths myself, without
 	 * any checkes here. Any permission problems encountered elsewhere will be shown and the user can select another path in the configuration dialog anyway
 	 */
-	( _docsDir () + QStringLiteral ( u"/Vivência/" ) ), // DEFAULT_PROJECTS_DIR
-	( _docsDir () + QStringLiteral ( u"/Vivencia/%1/" ) + configOps::estimatesDirSuffix () + CHR_F_SLASH ), // DEFAULT_ESTIMATE_DIR
-	( _docsDir () + QStringLiteral ( u"/Vivencia/%1/" ) + configOps::reportsDirSuffix () + CHR_F_SLASH ), // DEFAULT_REPORTS_DIR
-	( _docsDir () + QStringLiteral ( u"/Vivência/VMDB/" ) ), // BACKUP_DIR
-	( _homeDir () ) + QStringLiteral ( u"Dropbox/" ), // DROPBOX_DIR
+	( _docsDir () + QStringLiteral ( "/Vivência/" ) ), // DEFAULT_PROJECTS_DIR
+	( _docsDir () + QStringLiteral ( "/Vivência/%1/" ) + configOps::estimatesDirSuffix () + CHR_F_SLASH ), // DEFAULT_ESTIMATE_DIR
+	( _docsDir () + QStringLiteral ( "/Vivência/%1/" ) + configOps::reportsDirSuffix () + CHR_F_SLASH ), // DEFAULT_REPORTS_DIR
+	( _docsDir () + QStringLiteral ( "/Vivência/VMDB/" ) ), // BACKUP_DIR
+	( _homeDir () ) + QStringLiteral ( "Dropbox/" ), // DROPBOX_DIR
 	( QStringLiteral ( "vivencia@gmail.com" ) ) // DEFAULT_EMAIL
 };
 
@@ -114,10 +114,11 @@ const QString& configOps::getValue ( const QString& section_name, const QString&
 	m_cfgFile->load ();
 	if ( m_cfgFile->setWorkingSection ( section_name ) )
 		mRetString = m_cfgFile->fieldValue ( category_name );
-	if ( mRetString.isEmpty () && b_save_if_not_in_file )
+	if ( mRetString.isEmpty () )
 	{
 		mRetString = getDefaultFieldValuesByCategoryName ( category_name );
-		setValue ( section_name, category_name, mRetString ); //insert the default values into the config file
+		if ( b_save_if_not_in_file )
+			setValue ( section_name, category_name, mRetString ); //insert the default values into the config file
 	}
 	return mRetString;
 }

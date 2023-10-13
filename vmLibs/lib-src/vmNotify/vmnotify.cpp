@@ -117,7 +117,7 @@ void vmNotify::addMessage ( Message* message )
 	setupWidgets ( message );
 	messageStack.append ( message );
 	if ( MAINWINDOW () != nullptr )
-		MAINWINDOW ()->appMainStyle ( mPanel );
+		MAINWINDOW ()->appMainStyle ( mPanel, false );
 	adjustSizeAndPosition ();
 	setWindowOpacity ( 0.9 );
 
@@ -458,7 +458,7 @@ int vmNotify::criticalBox ( const QString& title, const QString& msg, const int 
 int vmNotify::criticalBox ( QWidget* const referenceWidget, const QString& title, const QString& msg, const int m_sec,
 							const std::function<void ( const int btn_idx )>& messageFinished_func )
 {
-	auto newNotify ( new vmNotify ( referenceWidget != nullptr ? QStringLiteral ( "C" ) : QString (), referenceWidget ) );
+	auto newNotify ( new vmNotify ( referenceWidget == nullptr ? QStringLiteral ( "C" ) : QString (), referenceWidget ) );
 	newNotify->mbDeleteWhenStackIsEmpty = true;
 	return newNotify->criticalBox ( title, msg, m_sec, messageFinished_func );
 }
@@ -466,7 +466,7 @@ int vmNotify::criticalBox ( QWidget* const referenceWidget, const QString& title
 bool vmNotify::inputBox ( QString& result, QWidget* const referenceWidget, const QString& title, const QString& label_text,
 						  const QString& initial_text, const QString& icon, QCompleter* completer )
 {
-	auto newNotify ( new vmNotify ( referenceWidget != nullptr ? QStringLiteral ( "C" ) : emptyString, referenceWidget ) );
+	auto newNotify ( new vmNotify ( referenceWidget == nullptr ? QStringLiteral ( "C" ) : emptyString, referenceWidget ) );
 	newNotify->mbDeleteWhenStackIsEmpty = true;
 	newNotify->setWindowFlags ( Qt::FramelessWindowHint );
 	uint row ( 1 );
@@ -506,7 +506,7 @@ bool vmNotify::inputBox ( QString& result, QWidget* const referenceWidget, const
 bool vmNotify::passwordBox ( QString& result, QWidget* const referenceWidget, const QString& title,
 							 const QString& label_text, const QString& icon )
 {
-	auto newNotify ( new vmNotify ( referenceWidget != nullptr ? QStringLiteral ( "C" ) : emptyString, referenceWidget ) );
+	auto newNotify ( new vmNotify ( referenceWidget == nullptr ? QStringLiteral ( "C" ) : emptyString, referenceWidget ) );
 	newNotify->mbDeleteWhenStackIsEmpty = true;
 	newNotify->setWindowFlags ( Qt::FramelessWindowHint );
 	uint row ( 1 );

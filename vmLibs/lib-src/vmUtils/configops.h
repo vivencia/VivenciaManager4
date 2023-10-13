@@ -20,8 +20,8 @@ enum CFG_FIELDS
 
 static const QString STR_VIVENCIA_LOGO ( QStringLiteral ( "vivencia.jpg" ) );
 static const QString STR_VIVENCIA_REPORT_LOGO ( QStringLiteral ( "vivencia_report_logo_2.jpg" ) );
-static const QString STR_PROJECT_DOCUMENT_FILE ( QStringLiteral ( "project.docx" ) );
-static const QString STR_PROJECT_SPREAD_FILE ( QStringLiteral ( "spreadsheet.xlsx" ) );
+static const QString STR_PROJECT_DOCUMENT_FILE ( QStringLiteral ( "VivenciaManager-templates/VM-Modelo de Projeto.docx" ) );
+static const QString STR_PROJECT_SPREAD_FILE ( QStringLiteral ( "VivenciaManager-templates/VM-Modelo de Planilha.xlsx" ) );
 static const QString STR_PROJECT_PDF_FILE ( QStringLiteral ( "projeto.pdf" ) );
 static const QString XDG_OPEN ( QStringLiteral ( "xdg-open" ) );
 
@@ -175,10 +175,10 @@ public:
 		return appDataDir () + STR_VIVENCIA_REPORT_LOGO;
 	}
 	inline const QString projectDocumentFile () const {
-		return appDataDir () + STR_PROJECT_DOCUMENT_FILE;
+		return projectsBaseDir () + STR_PROJECT_DOCUMENT_FILE;
 	}
 	inline const QString projectSpreadSheetFile () const {
-		return appDataDir () + STR_PROJECT_SPREAD_FILE;
+		return projectsBaseDir () + STR_PROJECT_SPREAD_FILE;
 	}
 	inline const QString projectPDFFile () const {
 		return appDataDir () + STR_PROJECT_PDF_FILE;

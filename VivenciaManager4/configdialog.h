@@ -3,7 +3,7 @@
 
 #include <QtWidgets/QDialog>
 
-class emailConfigDialog;
+class vmTaskPanel;
 
 namespace Ui
 {
@@ -17,6 +17,7 @@ public:
 	explicit configDialog ( QWidget* parent = nullptr );
 	virtual ~configDialog ();
 
+	void show ();
 	void connectUIForms ();
 	void fillForms ();
 
@@ -47,6 +48,7 @@ private:
 
 private:
 	Ui::configDialog* ui;
+	vmTaskPanel* mPanel;
 };
 
 #endif // CONFIGDIALOG_H

@@ -7,6 +7,7 @@
 
 class vmNotify;
 class dataFile;
+class vmTaskPanel;
 
 class QPushButton;
 class QRadioButton;
@@ -58,6 +59,7 @@ private:
 	QRadioButton* rdNothing;
 	QPushButton* btnProceed;
 	QDialog* dlgNoDB;
+	vmTaskPanel* mPanel;
 	AFTER_CLOSE_ACTION m_after_close_action;
 	int mErrorCode;
 

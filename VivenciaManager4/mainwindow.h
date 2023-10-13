@@ -242,7 +242,7 @@ public:
 	void updateActionButtonsState ();
 	bool execRecordAction ( const int key );
 
-	void appMainStyle ( vmTaskPanel* panel );
+	void appMainStyle ( vmTaskPanel* panel, const bool b_register = true );
 	void changeSchemeStyle ( const QString& style, const bool b_save = false );
 	
 //----------------------------------SETUP-CUSTOM-CONTROLS-NAVIGATION--------------------------------------

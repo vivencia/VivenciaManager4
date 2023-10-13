@@ -112,8 +112,8 @@ DB_ERROR_CODES Sys_Init::checkLocalSetup ()
 		{
 			const QString dataDir ( CONFIG ()->appDataDir () ); // the first time, use the default data dir. Later, the user might change it
 			fileOps::createDir ( dataDir );
-			fileOps::copyFile ( dataDir, installedDir + CHR_F_SLASH + STR_PROJECT_DOCUMENT_FILE );
-			fileOps::copyFile ( dataDir, installedDir + CHR_F_SLASH + STR_PROJECT_SPREAD_FILE );
+			//fileOps::copyFile ( dataDir, installedDir + CHR_F_SLASH + STR_PROJECT_DOCUMENT_FILE );
+			//fileOps::copyFile ( dataDir, installedDir + CHR_F_SLASH + STR_PROJECT_SPREAD_FILE );
 			fileOps::copyFile ( dataDir, installedDir + CHR_F_SLASH + STR_VIVENCIA_LOGO );
 		}
 	}

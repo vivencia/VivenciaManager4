@@ -174,7 +174,7 @@ void suppliersDlg::setupUI ()
 	mainLayout->setSpacing ( 0 );
 	mainLayout->addWidget ( panel, 1 );
 	setLayout ( mainLayout );
-	vmActionGroup* group = panel->createGroup ( emptyString, false, true, false );
+	vmActionGroup* group ( panel->createGroup ( emptyString, false, true, false ) );
 	group->addLayout ( hLayout1 );
 	group->addLayout ( hLayout2 );
 	group->addLayout ( hLayout3 );
