@@ -431,8 +431,8 @@ void MainWindow::loadClients ( clientListItem* &item )
 	ui->clientsList->setIgnoreChanges ( true );
 
 	clientListItem* client_item ( nullptr );
-	uint id ( VDB ()->getLowestID ( TABLE_CLIENT_ORDER ) );
-	const uint lastRec ( VDB ()->getHighestID ( TABLE_CLIENT_ORDER ) );
+	uint id ( VDB ()->getLowestID ( TABLE_CLIENT_ORDER, VDB () ) );
+	const uint lastRec ( VDB ()->getHighestID ( TABLE_CLIENT_ORDER, VDB () ) );
 	const uint lastViewedClient_id ( getLastViewedRecord ( &Client::t_info ) );
 	Client client;
 
@@ -2862,7 +2862,7 @@ void MainWindow::payExternalChange ( const uint id, const RECORD_ACTION action )
 		{
 			jobListItem* new_job_item ( addJob ( client_parent ) );
 			Job* new_job ( new_job_item->jobRecord () );
-			new_job->readRecord ( VDB ()->getHighestID ( TABLE_JOB_ORDER ) + 1 );
+			new_job->readRecord ( VDB ()->getHighestID ( TABLE_JOB_ORDER, VDB () ) + 1 );
 			if ( saveJob ( new_job_item, false ) )
 			{
 				payListItem* new_pay_item ( new_job_item->payItem () );

@@ -180,7 +180,7 @@ void DBRecord::resetQuery ()
 
 bool DBRecord::readFirstRecord ( const bool load_data )
 {
-	return readRecord ( VDB->getLowestID ( t_info->table_order ), load_data );
+	return readRecord ( VDB->getLowestID ( t_info->table_order, VDB ), load_data );
 }
 
 bool DBRecord::readFirstRecord ( const int field, const QString& search, const bool load_data )
@@ -209,7 +209,7 @@ bool DBRecord::readFirstRecord ( const int field, const QString& search, const b
 
 bool DBRecord::readLastRecord ( const bool load_data )
 {
-	return readRecord ( VDB->getHighestID ( t_info->table_order ), load_data );
+	return readRecord ( VDB->getHighestID ( t_info->table_order, VDB ), load_data );
 }
 
 bool DBRecord::readLastRecord ( const int field, const QString& search, const bool load_data )
@@ -241,7 +241,7 @@ bool DBRecord::readNextRecord ( const bool follow_search, const bool load_data )
 {
 	if ( !follow_search )
 	{
-		const uint last_id ( VDB->getHighestID ( t_info->table_order ) );
+		const uint last_id ( VDB->getHighestID ( t_info->table_order, VDB ) );
 		if ( last_id >= 1 && static_cast<uint>( actualRecordInt ( 0 ) ) < last_id )
 		{
 			do
@@ -269,7 +269,7 @@ bool DBRecord::readPrevRecord ( const bool follow_search, const bool load_data )
 {
 	if ( !follow_search )
 	{
-		const uint first_id ( VDB->getLowestID ( t_info->table_order ) );
+		const uint first_id ( VDB->getLowestID ( t_info->table_order, VDB ) );
 		if ( first_id >= 1 && actualRecordInt ( 0 ) > 1 )
 		{
 			do
@@ -434,7 +434,7 @@ void DBRecord::setAction ( const RECORD_ACTION action )
 void DBRecord::createTemporaryRecord ( DBRecord* dbrec )
 {
 	const uint table ( dbrec->t_info->table_order );
-	const uint new_id ( VivenciaDB::getNextID ( table ) );
+	const uint new_id ( VivenciaDB::getNextID ( table, VDB ) );
 	dbrec->setIntValue ( 0, static_cast<int>( new_id ) ); // this is set so that VivenciaDB::insertDBRecord can use the already evaluated value
 	dbrec->setIntBackupValue ( 0, static_cast<int>( new_id ) ); // this is set so that calls using recIntValue in a ACTION_ADD record will retrieve the correct value
 	const QString str_id ( QString::number ( new_id ) );

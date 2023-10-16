@@ -3,12 +3,11 @@
 
 #include <vmUtils/fileops.h>
 #include <vmUtils/configops.h>
-
 #include <vmNotify/vmnotify.h>
-
 #include <vmWidgets/vmwidgets.h>
 #include <vmWidgets/texteditwithcompleter.h>
-
+#include <vmTaskPanel/vmtaskpanel.h>
+#include <vmTaskPanel/vmactiongroup.h>
 #include <dbRecords/completers.h>
 
 #include <QtCore/QFile>
@@ -82,6 +81,13 @@ void textEditor::setEditable ( const bool b_editable )
 		mDocument->document ()->disconnect ();
 
 	mDocument->setEditable ( b_editable );
+}
+
+void textEditor::showNow ()
+{
+	const QString strStyle ( parentEditor ()->configManager ()->getValue ( "MAIN_WINDOW", "APP_SCHEME", false ) );
+	TEXT_EDITOR_TOOLBAR ()->mPanel->setScheme ( strStyle );
+	show ();
 }
 
 void textEditor::cut ()
@@ -275,8 +281,7 @@ static QString stringFloatKey ( const uint increment )
 		case 6:	tens = '7';		break;
 		case 7:	tens = '8';		break;
 		case 8:	tens = '9';		break;
-		case 9:
-				tens = '0';
+		case 9:	tens = '0';
 				magicNumber.replace ( 3, 1, '2' );
 								break;
 	}
@@ -342,7 +347,7 @@ static QString stringFloatKey ( const uint increment )
 textEditorToolBar *textEditorToolBar::s_instance ( nullptr );
 
 textEditorToolBar::textEditorToolBar ()
-	: QDockWidget ( TR_FUNC ( "Document Editor" ) ), mEditorWindow ( nullptr )
+	: QDockWidget ( TR_FUNC ( "Document Editor" ) ), mEditorWindow ( nullptr ), mPanel ( nullptr )
 {
 	btnBold = new QToolButton;
 	btnBold->setCheckable ( true );
@@ -556,30 +561,29 @@ textEditorToolBar::textEditorToolBar ()
 
 	//----------------------------------------------------------------------------------------
 
+
 	auto layoutMainToolBar ( new QVBoxLayout );
-	layoutMainToolBar->setSpacing ( 1 );
-	layoutMainToolBar->setContentsMargins ( 1, 1, 1, 1 );
+	layoutMainToolBar->setSpacing ( 0 );
+	layoutMainToolBar->setContentsMargins ( 0, 0, 0, 0 );
 
-	layoutMainToolBar->addLayout ( layoutFontStyleButtons, 1 );
-	layoutMainToolBar->addWidget ( cboFontType, 1 );
-	layoutMainToolBar->addLayout ( gLayoutFontCombos, 1 );
-	layoutMainToolBar->addWidget ( hLine2, 1 );
-	layoutMainToolBar->addLayout ( layoutTextAlignmentButtons, 1 );
-	layoutMainToolBar->addWidget ( hLine3, 1 );
-	layoutMainToolBar->addLayout ( gLayoutRowsAndCols, 1 );
-	layoutMainToolBar->addLayout ( layoutTableBtns, 1 );
-	layoutMainToolBar->addWidget ( hLine4, 1 );
-	layoutMainToolBar->addLayout ( layoutLists, 1 );
-	layoutMainToolBar->addWidget ( hLine5, 1 );
-	layoutMainToolBar->addWidget ( btnInsertImage, 1 );
-	layoutMainToolBar->addWidget ( hLine6, 1 );
-	layoutMainToolBar->addLayout ( layoutPrint, 1 );
-
-	auto frmMainToolBar ( new QFrame );
-	frmMainToolBar->setFrameStyle ( QFrame::Raised | QFrame::StyledPanel );
-	frmMainToolBar->setLayout ( layoutMainToolBar );
-
-	setWidget ( frmMainToolBar );
+	mPanel = new vmTaskPanel ( emptyString, this );
+	vmActionGroup* group ( mPanel->createGroup ( emptyString, false, true, false ) );
+	group->addLayout ( layoutMainToolBar );
+	group->addLayout ( layoutFontStyleButtons );
+	group->addQEntry ( cboFontType, nullptr, true );
+	group->addLayout ( gLayoutFontCombos );
+	group->addQEntry ( hLine2, nullptr, true );
+	group->addLayout ( layoutTextAlignmentButtons );
+	group->addQEntry ( hLine3, nullptr, true );
+	group->addLayout ( gLayoutRowsAndCols );
+	group->addLayout ( layoutTableBtns );
+	group->addQEntry ( hLine4, nullptr, true );
+	group->addLayout ( layoutLists );
+	group->addQEntry ( hLine5, nullptr, true );
+	group->addQEntry ( btnInsertImage, nullptr, true );
+	group->addQEntry ( hLine6, nullptr, true );
+	group->addLayout ( layoutPrint );
+	setWidget ( mPanel );
 }
 
 textEditorToolBar::~textEditorToolBar () {}

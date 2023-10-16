@@ -45,7 +45,7 @@ companyPurchasesUI::companyPurchasesUI ( QWidget* parent )
 	: QDialog ( parent ), mbSearchIsOn ( false ), mFoundField ( -1 ),  mOldFoundField ( -1 ), cp_rec ( new companyPurchases ( true ) ), widgetList ( INVENTORY_FIELD_COUNT + 1 )
 {
 	setupUI ();
-	const bool have_items ( VDB ()->getHighestID ( TABLE_CP_ORDER ) > 0 );
+	const bool have_items ( VDB ()->getHighestID ( TABLE_CP_ORDER, VDB () ) > 0 );
 	std::fill ( bEnableStatus, bEnableStatus+4, have_items );
 
 	cp_rec->readLastRecord ();
@@ -509,7 +509,7 @@ void companyPurchasesUI::btnCPPrev_clicked ()
 	else
 		ok = cp_rec->readPrevRecord ();
 
-	const bool b_isfirst ( static_cast<uint>( recIntValue ( cp_rec, FLD_CP_ID ) ) == VDB ()->getLowestID ( TABLE_CP_ORDER ) );
+	const bool b_isfirst ( static_cast<uint>( recIntValue ( cp_rec, FLD_CP_ID ) ) == VDB ()->getLowestID ( TABLE_CP_ORDER, VDB () ) );
 	bEnableStatus[BTN_FIRST] = ok && !b_isfirst;
 	bEnableStatus[BTN_PREV] = ok && !b_isfirst;
 	bEnableStatus[BTN_NEXT] |= ok;
@@ -525,7 +525,7 @@ void companyPurchasesUI::btnCPNext_clicked ()
 	else
 		ok = cp_rec->readNextRecord ();
 
-	const bool b_islast ( static_cast<uint>( recIntValue ( cp_rec, FLD_CP_ID ) ) == VDB ()->getHighestID ( TABLE_CP_ORDER ) );
+	const bool b_islast ( static_cast<uint>( recIntValue ( cp_rec, FLD_CP_ID ) ) == VDB ()->getHighestID ( TABLE_CP_ORDER, VDB () ) );
 	bEnableStatus[BTN_FIRST] |= ok;
 	bEnableStatus[BTN_PREV] |= ok;
 	bEnableStatus[BTN_NEXT] = ok && !b_islast;

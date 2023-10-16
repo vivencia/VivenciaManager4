@@ -211,8 +211,8 @@ private:
 
 	QPixmap m_foldPixmap;
 
-	class TaskHeader* mHeader;
-	class TaskGroup* mGroup;
+	TaskHeader* mHeader;
+	TaskGroup* mGroup;
 	QWidget* mDummy;
 	ActionPanelScheme *mScheme;
 	QTimer* timerShow, *timerHide;

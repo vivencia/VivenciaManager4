@@ -371,9 +371,10 @@ void TaskHeader::keyReleaseEvent ( QKeyEvent* event )
 vmActionGroup::vmActionGroup ( const QString& title, const bool expandable,
 							   const bool stretchContents, const bool closable, QWidget* parent )
 	: QWidget ( parent ), vmWidget ( WT_QWIDGET, WT_ACTION ),
-	  mbStretchContents ( stretchContents ), timerShow ( nullptr ), timerHide ( nullptr )
+	  mbStretchContents ( stretchContents ), mHeader ( nullptr ), timerShow ( nullptr ), timerHide ( nullptr )
 {
-	mHeader = new TaskHeader ( QIcon (), title, expandable, closable, this );
+	if ( !title.isEmpty () )
+		mHeader = new TaskHeader ( QIcon (), title, expandable, closable, this );
 	init ();
 }
 
@@ -400,30 +401,32 @@ void vmActionGroup::init ()
 {
 	setWidgetPtr ( this );
 
-	if ( mHeader->expandable () )
-	{
-		m_foldStep = 0;
-		timerShow = new QTimer ( this );
-		timerShow->setSingleShot ( true );
-		connect ( timerShow, &QTimer::timeout, this, [&] () { return processShow (); } );
-		timerHide = new QTimer ( this );
-		timerHide->setSingleShot ( true );
-		connect ( timerHide, &QTimer::timeout, this, [&] () { return processHide (); } );
-	}
-	if ( mHeader->closable () )
-		mHeader->setCallbackForFoldButtonClicked ( [&] () { return showHide (); } );
-
 	auto vbl ( new QVBoxLayout () );
 	vbl->setContentsMargins ( 0, 0 ,0 ,0 );
 	vbl->setSpacing ( 0 );
 	setLayout ( vbl );
 
+	if ( mHeader)
+	{
+		if ( mHeader->expandable () )
+		{
+			m_foldStep = 0;
+			timerShow = new QTimer ( this );
+			timerShow->setSingleShot ( true );
+			connect ( timerShow, &QTimer::timeout, this, [&] () { return processShow (); } );
+			timerHide = new QTimer ( this );
+			timerHide->setSingleShot ( true );
+			connect ( timerHide, &QTimer::timeout, this, [&] () { return processHide (); } );
+		}
+		if ( mHeader->closable () )
+			mHeader->setCallbackForFoldButtonClicked ( [&] () { return showHide (); } );
+		vbl->addWidget ( mHeader, 1 );
+	}
+
 	mGroup = new TaskGroup ( this, mbStretchContents );
 	mDummy = new QWidget ( this );
 	mDummy->hide ();
 	setScheme ( ActionPanelScheme::defaultScheme () );
-
-	vbl->addWidget ( mHeader, 1 );
 	vbl->addWidget ( mGroup, 1 );
 	vbl->addWidget ( mDummy, 1 );
 }
@@ -431,7 +434,8 @@ void vmActionGroup::init ()
 void vmActionGroup::setScheme ( ActionPanelScheme* pointer )
 {
 	mScheme = pointer;
-	mHeader->setScheme ( pointer );
+	if ( mHeader )
+		mHeader->setScheme ( pointer );
 	mGroup->setScheme ( pointer );
 	update ();
 }
@@ -470,9 +474,6 @@ void vmActionGroup::addLayout ( QLayout* layout, const int stretch )
 void vmActionGroup::showHide ()
 {
 	if ( m_foldStep != 0.0 )
-		return;
-
-	if ( !mHeader->expandable () )
 		return;
 
 	if ( mGroup->isVisible () )
@@ -572,36 +573,40 @@ void vmActionGroup::paintEvent ( QPaintEvent * )
 
 bool vmActionGroup::isExpandable () const
 {
-	return mHeader->expandable ();
+	return mHeader != nullptr ? mHeader->expandable () : false;
 }
 
 void vmActionGroup::setExpandable ( const bool expandable )
 {
-	mHeader->setExpandable ( expandable );
+	if ( mHeader )
+		mHeader->setExpandable ( expandable );
 }
 
 bool vmActionGroup::hasHeader () const
 {
-	return mHeader->isVisible ();
+	return mHeader != nullptr ? mHeader->isVisible () : false;
 }
 
 void vmActionGroup::setHeader ( const bool enable )
 {
-	mHeader->setVisible ( enable );
+	if ( mHeader )
+		mHeader->setVisible ( enable );
 }
 
 QString vmActionGroup::headerText () const
 {
-	return mHeader->mTitle->text ();
+	return mHeader != nullptr ? mHeader->mTitle->text () : emptyString;
 }
 
 void vmActionGroup::setHeaderText ( const QString& headerText )
 {
-	mHeader->mTitle->setText ( headerText );
+	if ( mHeader )
+		mHeader->mTitle->setText ( headerText );
 }
 
 QSize vmActionGroup::minimumSizeHint () const
 {
-	return { 200, ( mbStretchContents ? 100 : mGroup->minimumHeight () + mHeader->height () ) };
+	const int header_height ( mHeader != nullptr ? mHeader->height () : 0 );
+	return { 200, ( mbStretchContents ? 100 : mGroup->minimumHeight () + header_height ) };
 }
 //--------------------------------------ACTION-GROUP-----------------------------------------------

@@ -46,6 +46,7 @@ public:
 		editorWindowClosed_func = func;
 	}
 
+	configOps* configManager () const { return m_config; }
 	inline vmCompleters* completerManager () const { return mCompleterManager; }
 
 protected:
@@ -62,7 +63,7 @@ private:
 	{
 		return static_cast<documentEditorWindow*>( tabDocuments->currentWidget () );
 	}
-	
+
 	void resizeViewPort ( documentEditorWindow* window );
 	uint openByFileType ( const QString& filename );
 

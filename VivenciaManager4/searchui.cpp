@@ -16,9 +16,8 @@
 #include <dbRecords/vivenciadb.h>
 #include <vmNotify/vmnotify.h>
 
-#include <QtCore/QModelIndex>
+#include <QtCore/QMutex>
 #include <QtSql/QSqlQuery>
-#include <QtWidgets/QApplication>
 #include <QtWidgets/QToolButton>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QVBoxLayout>
@@ -47,13 +46,15 @@ Q_DECLARE_METATYPE(stringRecord)
 searchUI::searchUI ( QWidget* parent )
 	: QDialog ( parent ), mSearchWorker ( nullptr ), mCurRow ( -1 ), mFoundList ( nullptr ), mCurrentDisplayedRec ( nullptr )
 {
+	//Register the class so that Qt can use it in its signaling mechanism. infoFound ( const stringRecord& row_info )
+	//will not work, not even compile, unless the following line is not included
 	qRegisterMetaType<stringRecord>("stringRecord");
 }
 
 searchUI::~searchUI ()
 {
 	if ( mCurrentDisplayedRec )
-		mCurrentDisplayedRec->clearSearchStatus (); //Otherwise the information will be left on the database
+		mCurrentDisplayedRec->clearSearchStatus (); //Otherwise the information will be left on the database upon program ending
 }
 
 void searchUI::setupUI ()
@@ -191,18 +192,12 @@ void searchUI::searchCallbackSelector ( const QKeyEvent* const ke )
 	}
 }
 
-#include <QtConcurrent/QtConcurrent>
-#include <QFuture>
-
 void searchUI::btnSearchClicked ()
 {
 	mBtnSearch->setEnabled ( false );
 	mBtnPrev->setEnabled ( false );
 	searchCancel ();
 	mSearchTerm = mtxtSearch->text ();
-
-	//QFuture<void> future = QtConcurrent::run( mSearchWorker, &searchThreadWorker::search );
-	//future.waitForFinished();
 
 	QThread *thread = new QThread ();
 	mSearchWorker = new searchThreadWorker ( nullptr );
@@ -447,7 +442,7 @@ void searchThreadWorker::parseSearchTerm ( QString& searchTerm )
 void searchThreadWorker::searchTable ( DBRecord* db_rec, const QString& columns, const std::function<void( const QSqlQuery& query_res, stringRecord& item_info )>& formatResult )
 {
 	int recordcategory ( -1 );
-	QSqlQuery query ( *( mVDB->database() ) );
+	QSqlQuery query;
 	stringRecord itemInfo;
 	QString strColName;
 

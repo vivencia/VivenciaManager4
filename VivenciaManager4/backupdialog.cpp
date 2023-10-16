@@ -122,7 +122,7 @@ bool BackupDialog::canDoBackup () const
 {
 	if ( VDB () != nullptr )
 	{
-		if ( !VDB ()->databaseIsEmpty () )
+		if ( !VDB ()->databaseIsEmpty ( VDB () ) )
 		{
 			const bool ret ( !fileOps::appPath ( VivenciaDB::backupApp () ).isEmpty () );
 			NOTIFY ()->notifyMessage ( TR_FUNC ( "Backup" ), ret
@@ -423,7 +423,7 @@ bool BackupDialog::doRestore ( const QString& files )
 		/* Force rescan of all tables, which is done in updateGeneralTable (called by VivenciaDB
 		 * when general table cannot be found or there is a version mismatch
 		 */
-		VDB ()->clearTable ( VDB ()->tableInfo ( TABLE_GENERAL_ORDER ) );
+		VDB ()->clearTable ( VDB ()->tableInfo ( TABLE_GENERAL_ORDER ), VDB () );
 		m_after_close_action = mb_nodb ? ACA_RETURN_TO_PREV_WINDOW : ACA_RESTART;
 		NOTIFY ()->notifyMessage ( TR_FUNC ( "Importing was sucessfull." ),
 									  TR_FUNC ( "Click on the Close button to resume the application." ) );

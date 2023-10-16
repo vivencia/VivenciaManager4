@@ -412,7 +412,7 @@ void estimateDlg::scanDir ()
 	treeView->clear ();
 	QString clientName;
 	QString dirName;
-	const uint lastClientID ( VDB ()->getHighestID ( TABLE_CLIENT_ORDER ) );
+	const uint lastClientID ( VDB ()->getHighestID ( TABLE_CLIENT_ORDER, VDB () ) );
 	
 	for ( uint c_id ( 1 ); c_id <= lastClientID; ++c_id )
 	{

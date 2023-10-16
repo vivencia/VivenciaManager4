@@ -1,70 +1,40 @@
 #ifndef DBSTATISTICS_H
 #define DBSTATISTICS_H
 
-#include <QtCore/QObject>
-
 #include <functional>
+
+#include <QtCore/QObject>
 
 class textEditWithCompleter;
 class QVBoxLayout;
+class VivenciaDB;
 
-#ifdef USE_THREADS
-class dbStatistics final : public QObject
-#else
-class dbStatistics final
-#endif
+class dbStatistics
 {
-
-#ifdef USE_THREADS
-Q_OBJECT
-#endif
 
 friend class VivenciaDB;
 
 public:
-	#ifdef USE_THREADS
-	explicit dbStatistics ( QObject* parent = nullptr );
-	#else
 	explicit dbStatistics ();
-	#endif
-	virtual ~dbStatistics () final = default;
+	~dbStatistics ();
 
 	inline QVBoxLayout* layout () const { return mainLayout; }
 	void reload ();
-
-#ifdef USE_THREADS
-public slots:
-	void writeInfo ( const QString& );
-#endif
 
 private:	
 	textEditWithCompleter* m_textinfo;
 	QVBoxLayout* mainLayout;
 };
 
-class dbStatisticsWorker : public QObject
+class dbStatisticsWorker final : public QObject
 {
 
-#ifdef USE_THREADS
-Q_OBJECT
-#endif
-
 public:
-	explicit dbStatisticsWorker ();
-	virtual ~dbStatisticsWorker () = default;
+	explicit dbStatisticsWorker ( QObject* parent = nullptr );
+	virtual ~dbStatisticsWorker () final;
 	
-#ifdef USE_THREADS
-public slots:
-	void startWorks ();
-	
-signals:
-	void infoProcessed ( const QString& );
-	void finished ();
-
-#else
 	void startWorks ();
 	void setCallbackForInfoReady ( const std::function<void( const QString& )>& func ) { m_readyFunc = func; }
-#endif
 	
 private:
 	void countClients ();
@@ -76,9 +46,8 @@ private:
 	void biggestJobs ();
 	void countPayments ();
 	
-#ifndef USE_THREADS
+	VivenciaDB* mVDB;
 	std::function<void( const QString& )> m_readyFunc;
-#endif
 };
 
 #endif // DBSTATISTICS_H

@@ -40,6 +40,7 @@ public:
 		return tr ( "All files (*.*)" );
 	}
 
+	virtual void showNow () {}
 	virtual void cut ();
 	virtual void copy ();
 	virtual void paste ();

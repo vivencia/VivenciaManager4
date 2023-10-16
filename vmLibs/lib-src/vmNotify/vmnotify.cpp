@@ -386,7 +386,7 @@ void vmNotify::notifyMessage ( const QString& title, const QString& msg, const i
 
 void vmNotify::notifyMessage ( QWidget* referenceWidget, const QString& title, const QString& msg, const int msecs, const bool b_critical )
 {
-	vmNotify* newNotify ( new vmNotify ( referenceWidget != nullptr ? QStringLiteral ( "C" ) : QString (), referenceWidget ) );
+	vmNotify* newNotify ( new vmNotify ( referenceWidget == nullptr ? QStringLiteral ( "C" ) : QString (), referenceWidget ) );
 	newNotify->mbDeleteWhenStackIsEmpty = true;
 	newNotify->notifyMessage ( title, msg, msecs, b_critical );
 }
@@ -428,7 +428,7 @@ int vmNotify::messageBox ( QWidget* const referenceWidget, const QString& title,
 					const MESSAGE_BOX_ICON icon, const  QStringList& btnsText, const int m_sec,
 						   const std::function<void ( const int btn_idx )>& messageFinished_func )
 {
-	auto newNotify ( new vmNotify ( referenceWidget != nullptr ? QStringLiteral ( "C" ) : QString (), referenceWidget ) );
+	auto newNotify ( new vmNotify ( referenceWidget == nullptr ? QStringLiteral ( "C" ) : QString (), referenceWidget ) );
 	newNotify->mbDeleteWhenStackIsEmpty = true;
 	return newNotify->messageBox ( title, msg, icon, btnsText, m_sec, messageFinished_func );
 }
@@ -443,7 +443,7 @@ bool vmNotify::questionBox ( const QString& title, const QString& msg, const int
 bool vmNotify::questionBox ( QWidget* const referenceWidget, const QString& title, const QString& msg, const int m_sec,
 							 const std::function<void ( const int btn_idx )>& messageFinished_func )
 {
-	auto newNotify ( new vmNotify ( referenceWidget != nullptr ? QStringLiteral ( "C" ) : QString (), referenceWidget ) );
+	auto newNotify ( new vmNotify ( referenceWidget == nullptr ? QStringLiteral ( "C" ) : QString (), referenceWidget ) );
 	newNotify->mbDeleteWhenStackIsEmpty = true;
 	return newNotify->questionBox ( title, msg, m_sec, messageFinished_func );
 }

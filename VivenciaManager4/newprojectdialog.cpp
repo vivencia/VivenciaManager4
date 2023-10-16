@@ -16,7 +16,8 @@
 
 static inline void fillClientsNamesList ( vmComboBox* combo )
 {
-	for ( uint i ( VDB ()->getLowestID ( TABLE_CLIENT_ORDER ) ); i <= VDB ()->getHighestID ( TABLE_CLIENT_ORDER ); ++i )
+	const uint highest_id ( VDB ()->getHighestID ( TABLE_CLIENT_ORDER, VDB () ) );
+	for ( uint i ( VDB ()->getLowestID ( TABLE_CLIENT_ORDER, VDB () ) ); i <= highest_id; ++i )
 		combo->insertItemSorted ( Client::clientName ( i ) );
 }
 

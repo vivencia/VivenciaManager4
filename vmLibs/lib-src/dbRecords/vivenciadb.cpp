@@ -32,14 +32,6 @@
 #include <QtCore/QTextStream>
 #include <QtCore/QScopedPointer>
 
-#ifdef USE_THREADS
-#include <QThread>
-
-#define PROCESS_EVENTS if ( ( row % 100 ) == 0 ) qApp->processEvents ();
-#else
-#define PROCESS_EVENTS
-#endif
-
 podList<uint> VivenciaDB::currentHighestID_list ( 0, TABLES_IN_DB + 1 );
 
 static const QLatin1String chrDelim2 ( "\'," );
@@ -261,7 +253,7 @@ DB_ERROR_CODES VivenciaDB::checkDatabase ( VivenciaDB* vdb )
 
 		if ( !vdb->openDataBase () )
 			return ERR_NO_DB;
-		if ( vdb->databaseIsEmpty () )
+		if ( vdb->databaseIsEmpty ( vdb ) )
 			return ERR_DB_EMPTY;
 	}
 	else
@@ -480,7 +472,7 @@ bool VivenciaDB::createAllTables ()
 
 bool VivenciaDB::createTable ( const TABLE_INFO* t_info )
 {
-	if ( tableExists ( t_info ) )
+	if ( tableExists ( t_info, this ) )
 		return true;
 
 	QString cmd ( QLatin1String ( "CREATE TABLE " ) + t_info->table_name + CHR_L_PARENTHESIS );
@@ -571,128 +563,162 @@ bool VivenciaDB::changeColumnProperties ( const uint column, const TABLE_INFO* _
 	return false;
 }
 
-void VivenciaDB::populateTable ( const TABLE_INFO* t_info, vmTableWidget* table ) const
+void VivenciaDB::populateTableWidget ( const TABLE_INFO* t_info, vmTableWidget* table ) const
 {
-	auto worker ( new threadedDBOps ( const_cast<VivenciaDB*>( this ) ) );
+	const QString cmd ( QStringLiteral ( "SELECT * FROM " ) + t_info->table_name );
 
-#ifdef USE_THREADS
-	QThread* workerThread ( new QThread );
-	worker->setCallbackForFinished ( [&] () { workerThread->quit (); return worker->deleteLater (); } );
-	worker->moveToThread ( workerThread );
-	worker->connect ( workerThread, &QThread::started, worker, [&,db_rec,table] () { return worker->populateTable ( db_rec, table ); } );
-	worker->connect ( workerThread, &QThread::finished, workerThread, [&] () { return workerThread->deleteLater(); } );
-	workerThread->start();
-#else
-	worker->populateTable ( t_info, table );
-	delete worker;
-#endif
+	QSqlQuery query ( *database () );
+	query.setForwardOnly ( true );
+	query.exec ( cmd );
+	if ( !query.first () ) return;
+
+	uint row ( 0 );
+	do
+	{
+		for ( uint col ( 0 ); col < t_info->field_count; col++)
+			table->sheetItem ( row, col )->setText ( query.value ( static_cast<int>( col ) ).toString (), false, false );
+		if ( static_cast<int>( ++row ) >= table->totalsRow () )
+			table->appendRow ();
+	} while ( query.next () );
 }
 
-void VivenciaDB::updateTable ( const TABLE_INFO* t_info, vmTableWidget* table, const bool b_only_new ) const
+void VivenciaDB::updateTableWidget ( const TABLE_INFO* t_info, vmTableWidget* table, const QString& cmd, uint startrow )
 {
-	auto worker ( new threadedDBOps ( const_cast<VivenciaDB*>( this ) ) );
-	//TODO threads
-	worker->updateTable ( t_info, table, b_only_new );
-	delete worker;
+	QSqlQuery query ( *database () );
+	query.setForwardOnly ( true );
+	query.exec ( cmd );
+	if ( !query.first () ) return;
+
+	if ( static_cast<int>( startrow ) >= table->totalsRow () )
+		table->appendRow ();
+
+	do
+	{
+		for ( uint col ( 0 ); col < t_info->field_count; col++)
+			table->sheetItem ( startrow, col )->setText ( query.value ( static_cast<int>( col ) ).toString (), false, false );
+		if ( static_cast<int>( ++startrow ) >= table->totalsRow () )
+			table->appendRow ();
+	} while ( query.next () );
 }
 
-void VivenciaDB::updateTable ( const TABLE_INFO* t_info, vmTableWidget* table, const uint id ) const
+void VivenciaDB::updateTableWidget ( const TABLE_INFO* t_info, vmTableWidget* table, const bool b_only_new )
 {
-	auto worker ( new threadedDBOps ( const_cast<VivenciaDB*>( this ) ) );
-	//TODO threads
-	worker->updateTable ( t_info, table, id );
-	delete worker;
+	QString cmd;
+	if ( b_only_new )
+		cmd = QStringLiteral ( "SELECT * FROM " ) + t_info->table_name +
+				QStringLiteral ( "WHERE ID>" ) + table->sheetItem ( static_cast<uint>( table->lastUsedRow () ), 0 )->text ();
+	else
+		cmd = QStringLiteral ( "SELECT * FROM " ) + t_info->table_name;
+	updateTableWidget ( t_info, table, cmd, b_only_new ? static_cast<uint>( table->lastUsedRow () ) + 1 : 0 );
 }
 
-void VivenciaDB::updateTable ( const TABLE_INFO* t_info, vmTableWidget* table, const podList<uint>& ids ) const
+void VivenciaDB::updateTableWidget ( const TABLE_INFO* t_info, vmTableWidget* table, const uint id )
 {
-	auto worker ( new threadedDBOps ( const_cast<VivenciaDB*>( this ) ) );
-	//TODO threads
-	worker->updateTable ( t_info, table, ids );
-	delete worker;
+	updateTableWidget ( t_info, table,
+				  QStringLiteral ( "SELECT * FROM " ) + t_info->table_name + QStringLiteral ( "WHERE ID=" ) + QString::number ( id ),
+				  /*Tables should be in order. A casual out of order record is OK, but more must be investigated the reason. The -10 is extrapollating*/
+				  static_cast<uint>( qMax ( static_cast<int>( id - 10 ), static_cast<int>( 0 ) ) ) );
 }
 
-bool VivenciaDB::deleteDB ( const QString& dbname )
+void VivenciaDB::updateTableWidget ( const TABLE_INFO* t_info, vmTableWidget* table, const podList<uint>& ids )
 {
-	QSqlQuery queryRes;
-	return runModifyingQuery ( QLatin1String ( "DROP DATABASE " ) + ( dbname.isEmpty () ? DB_NAME : dbname ), queryRes );
+	if ( !ids.isEmpty () )
+	{
+		QString id_string ( QString::number ( ids.first () ) );
+		uint id ( 0 );
+		do {
+			id = ids.next ();
+			if ( id > 0 )
+				id_string += CHR_COMMA + QString::number ( id );
+			else
+				break;
+		} while ( true );
+		updateTableWidget ( t_info, table,
+					  QStringLiteral ( "SELECT * FROM " ) + t_info->table_name + QStringLiteral ( "WHERE ID=" ) + id_string );
+	}
 }
 
-bool VivenciaDB::optimizeTable ( const TABLE_INFO* __restrict t_info )
+bool VivenciaDB::deleteDB ( const QString& dbname, const VivenciaDB* vdb )
 {
-	QSqlQuery query ( QLatin1String ( "OPTIMIZE LOCAL TABLE " ) + t_info->table_name );
+	QSqlQuery query ( vdb != nullptr ? *(vdb->database ()) : QSqlDatabase () );
+	return runModifyingQuery ( QLatin1String ( "DROP DATABASE " ) + ( dbname.isEmpty () ? DB_NAME : dbname ), query );
+}
+
+bool VivenciaDB::optimizeTable ( const TABLE_INFO* __restrict t_info, const VivenciaDB* vdb )
+{
+	QSqlQuery query ( QLatin1String ( "OPTIMIZE LOCAL TABLE " ) + t_info->table_name, *(vdb->database ()) );
 	return query.exec ();
 }
 
-bool VivenciaDB::lockTable ( const TABLE_INFO* __restrict t_info )
+bool VivenciaDB::lockTable ( const TABLE_INFO* __restrict t_info, const VivenciaDB* vdb )
 {
-	QSqlQuery query ( QLatin1String ( "LOCK TABLE " ) + t_info->table_name + QLatin1String ( "READ" ) );
+	QSqlQuery query ( QLatin1String ( "LOCK TABLE " ) + t_info->table_name + QLatin1String ( "READ" ), *(vdb->database ()) );
 	return query.exec ();
 }
 
-bool VivenciaDB::unlockTable ( const TABLE_INFO* __restrict t_info )
+bool VivenciaDB::unlockTable ( const TABLE_INFO* __restrict t_info, const VivenciaDB* vdb )
 {
-	QSqlQuery query ( QLatin1String ( "UNLOCK TABLE " ) + t_info->table_name );
+	QSqlQuery query ( QLatin1String ( "UNLOCK TABLE " ) + t_info->table_name, *(vdb->database ()) );
 	return query.exec ();
 }
 
-bool VivenciaDB::unlockAllTables ()
+bool VivenciaDB::unlockAllTables ( const VivenciaDB* vdb )
 {
-	QSqlQuery query ( QStringLiteral ( "UNLOCK TABLES" ) );
+	QSqlQuery query ( QStringLiteral ( "UNLOCK TABLES" ), *(vdb->database ()) );
 	return query.exec ();
 }
 
 // After a call to this function, must needs call unlockAllTables
-bool VivenciaDB::flushAllTables ()
+bool VivenciaDB::flushAllTables ( const VivenciaDB* vdb )
 {
-	QSqlQuery query ( QStringLiteral ( "FLUSH TABLES WITH READ LOCK" ) );
+	QSqlQuery query ( QStringLiteral ( "FLUSH TABLES WITH READ LOCK" ), *(vdb->database ()) );
 	return query.exec ();
 }
 
-bool VivenciaDB::deleteTable ( const QString& table_name )
+bool VivenciaDB::deleteTable ( const QString& table_name, const VivenciaDB* vdb )
 {
-	QSqlQuery query ( QStringLiteral ( "DROP TABLE " ) + table_name );
+	QSqlQuery query ( QStringLiteral ( "DROP TABLE " ) + table_name, *(vdb->database ()) );
 	return query.exec ();
 }
 
-bool VivenciaDB::clearTable ( const QString& table_name )
+bool VivenciaDB::clearTable ( const QString& table_name, const VivenciaDB* vdb )
 {
-	QSqlQuery query ( QStringLiteral ( "TRUNCATE TABLE " ) + table_name );
+	QSqlQuery query ( QStringLiteral ( "TRUNCATE TABLE " ) + table_name, *(vdb->database ()) );
 	return query.exec ();
 }
 
-bool VivenciaDB::tableExists ( const TABLE_INFO* __restrict t_info )
+bool VivenciaDB::tableExists ( const TABLE_INFO* __restrict t_info, const VivenciaDB* vdb )
 {
-	QSqlQuery query ( QStringLiteral ( "SHOW TABLES LIKE '" ) + t_info->table_name + CHR_CHRMARK );
+	QSqlQuery query ( QStringLiteral ( "SHOW TABLES LIKE '" ) + t_info->table_name + CHR_CHRMARK, *(vdb->database ()) );
 	if ( query.exec () && query.first () )
 		return query.value ( 0 ).toString () == t_info->table_name;
 	return false;
 }
 
-uint VivenciaDB::recordCount ( const TABLE_INFO* __restrict t_info )
+uint VivenciaDB::recordCount ( const TABLE_INFO* __restrict t_info, const VivenciaDB* vdb )
 {
-	QSqlQuery query ( QStringLiteral ( "SELECT COUNT(*) FROM " ) + t_info->table_name );
+	QSqlQuery query ( QStringLiteral ( "SELECT COUNT(*) FROM " ) + t_info->table_name, *(vdb->database ()) );
 	if ( query.exec () && query.first () )
 		return query.value ( 0 ).toUInt ();
 	return 0;
 }
 
-bool VivenciaDB::databaseIsEmpty ()
+bool VivenciaDB::databaseIsEmpty ( const VivenciaDB* vdb )
 {
-	QSqlQuery query ( QStringLiteral ( "SHOW TABLES FROM " ) + DB_NAME );
+	QSqlQuery query ( QStringLiteral ( "SHOW TABLES FROM " ) + DB_NAME, *(vdb->database ()) );
 	if ( query.exec () )
 		return ( !query.isActive () || !query.next () );
 	return true;
 }
 
-uint VivenciaDB::getHighestID ( const uint table )
+uint VivenciaDB::getHighestID ( const uint table, const VivenciaDB* vdb )
 {
 	if ( VivenciaDB::currentHighestID_list.at ( table ) == 0 )
 	{
-		QSqlQuery query;
+		QSqlQuery query ( vdb != nullptr ? *(vdb->database ()) : QSqlDatabase () );
 		if ( runSelectLikeQuery ( QStringLiteral ( "SELECT MAX(ID) FROM " ) + tableInfo ( table )->table_name, query ) )
 		{
-			if ( recordCount ( tableInfo ( table ) ) > 0 )
+			if ( recordCount ( tableInfo ( table ), vdb ) > 0 )
 				VivenciaDB::currentHighestID_list[table] = query.value ( 0 ).toUInt ();
 			else
 				return 0;
@@ -703,29 +729,29 @@ uint VivenciaDB::getHighestID ( const uint table )
 	return VivenciaDB::currentHighestID_list.at ( table );
 }
 
-uint VivenciaDB::getLowestID ( const uint table )
+uint VivenciaDB::getLowestID ( const uint table, const VivenciaDB* vdb )
 {
-	QSqlQuery query;
+	QSqlQuery query ( vdb != nullptr ? *(vdb->database ()) : QSqlDatabase () );
 	if ( runSelectLikeQuery ( QStringLiteral ( "SELECT MIN(ID) FROM " ) + tableInfo ( table )->table_name, query ) )
 	{
-		if ( recordCount ( tableInfo ( table ) ) > 0 )
+		if ( recordCount ( tableInfo ( table ), vdb ) > 0 )
 			return query.value ( 0 ).toUInt ();
 	}
 	return 0;
 }
 
-uint VivenciaDB::getNextID ( const uint table )
+uint VivenciaDB::getNextID ( const uint table, const VivenciaDB* vdb )
 {
 	if ( VivenciaDB::currentHighestID_list.at ( table ) == 0 )
-		VivenciaDB::currentHighestID_list[table] = getHighestID ( table );
+		VivenciaDB::currentHighestID_list[table] = getHighestID ( table, vdb );
 	return ++VivenciaDB::currentHighestID_list[table];
 }
 
-bool VivenciaDB::recordExists ( const QString& table_name, const int id )
+bool VivenciaDB::recordExists ( const QString& table_name, const int id, const VivenciaDB* vdb )
 {
 	if ( id >= 0 )
 	{
-		QSqlQuery query;
+		QSqlQuery query ( vdb != nullptr ? *(vdb->database ()) : QSqlDatabase () );
 		return ( runSelectLikeQuery ( QStringLiteral ( "SELECT `ID` FROM %1 WHERE `ID`=%2" ).arg (
 				 table_name, QString::number ( id ) ), query ) );
 	}
@@ -811,7 +837,7 @@ bool VivenciaDB::removeRecord ( const DBRecord* db_rec ) const
 		{
 			const auto id ( static_cast<uint>( db_rec->actualRecordInt ( 0 ) ) );
 			const uint table ( db_rec->t_info->table_order );
-			if ( id >= getHighestID ( table ) )
+			if ( id >= getHighestID ( table, this ) )
 				VivenciaDB::currentHighestID_list[table] = id - 1;
 
 			mBackupSynced = false;
@@ -836,7 +862,7 @@ bool VivenciaDB::insertDBRecord ( DBRecord* db_rec )
 {
 	const uint table_order ( db_rec->t_info->table_order );
 	const bool bOutOfOrder ( db_rec->recordInt ( 0 ) >= 1 );
-	const uint new_id ( bOutOfOrder ? static_cast<uint>( db_rec->recordInt ( 0 ) ) : getNextID ( table_order ) );
+	const uint new_id ( bOutOfOrder ? static_cast<uint>( db_rec->recordInt ( 0 ) ) : getNextID ( table_order, this ) );
 
 	db_rec->setIntValue ( 0, static_cast<int>( new_id ) );
 	db_rec->setValue ( 0, QString::number ( new_id ) );
@@ -1014,7 +1040,7 @@ bool VivenciaDB::runModifyingQuery ( const QString& query_cmd, QSqlQuery& queryR
 //-----------------------------------------IMPORT-EXPORT--------------------------------------------
 bool VivenciaDB::doBackup ( const QString& filepath, const QString& tables )
 {
-	flushAllTables ();
+	flushAllTables ( this );
 	if ( m_progressMaxSteps_func )
 		m_progressMaxSteps_func ( 3 );
 	m_progressStepUp_func ();
@@ -1032,7 +1058,7 @@ bool VivenciaDB::doBackup ( const QString& filepath, const QString& tables )
 
 	mysqldump_args.append ( tables.split ( CHR_SPACE ) );
 	mBackupSynced = fileOps::executeWithFeedFile ( mysqldump_args, backupApp (), filepath, false );
-	unlockAllTables ();
+	unlockAllTables ( this );
 	m_progressStepUp_func ();
 	return mBackupSynced;
 }
@@ -1338,93 +1364,3 @@ bool VivenciaDB::exportToCSV ( const uint table, const QString& filename )
 }
 //-----------------------------------------IMPORT-EXPORT--------------------------------------------
 
-threadedDBOps::threadedDBOps ( VivenciaDB* vdb )
-	:
-#ifdef USE_THREADS
-	QObject (), 
-#endif
-	m_vdb ( vdb ), m_finishedFunc ( nullptr ) {}
-
-void threadedDBOps::populateTable ( const TABLE_INFO* t_info, vmTableWidget* table )
-{
-	const QString cmd ( QStringLiteral ( "SELECT * FROM " ) + t_info->table_name );
-
-	QSqlQuery query ( *( m_vdb->database () ) );
-	query.setForwardOnly ( true );
-	query.exec ( cmd );
-	if ( !query.first () ) return;
-
-	uint row ( 0 );
-	do
-	{
-		for ( uint col ( 0 ); col < t_info->field_count; col++)
-			table->sheetItem ( row, col )->setText ( query.value ( static_cast<int>( col ) ).toString (), false, false );
-		if ( static_cast<int>( ++row ) >= table->totalsRow () )
-			table->appendRow ();
-		PROCESS_EVENTS // process pending events every 100 rows
-	} while ( query.next () );
-
-	if ( m_finishedFunc )
-		m_finishedFunc ();
-}
-
-//TODO test test test - only companyPurchases' new or save item so far gets to call here
-void threadedDBOps::updateTable ( const TABLE_INFO* t_info, vmTableWidget* table, const QString& cmd, uint startrow )
-{
-	QSqlQuery query ( *( m_vdb->database () ) );
-	query.setForwardOnly ( true );
-	query.exec ( cmd );
-	if ( !query.first () ) return;
-
-	if ( static_cast<int>( startrow ) >= table->totalsRow () )
-		table->appendRow ();
-
-	do
-	{
-		for ( uint col ( 0 ); col < t_info->field_count; col++)
-			table->sheetItem ( startrow, col )->setText ( query.value ( static_cast<int>( col ) ).toString (), false, false );
-		if ( static_cast<int>( ++startrow ) >= table->totalsRow () )
-			table->appendRow ();
-		PROCESS_EVENTS // process pending events every 100 rows
-	} while ( query.next () );
-
-	if ( m_finishedFunc )
-		m_finishedFunc ();
-}
-
-void threadedDBOps::updateTable ( const TABLE_INFO* t_info, vmTableWidget* table, const bool b_only_new )
-{
-	QString cmd;
-	if ( b_only_new )
-		cmd = QStringLiteral ( "SELECT * FROM " ) + t_info->table_name +
-				QStringLiteral ( "WHERE ID>" ) + table->sheetItem ( static_cast<uint>( table->lastUsedRow () ), 0 )->text ();
-	else
-		cmd = QStringLiteral ( "SELECT * FROM " ) + t_info->table_name;
-	updateTable ( t_info, table, cmd, b_only_new ? static_cast<uint>( table->lastUsedRow () ) + 1 : 0 );
-}
-
-void threadedDBOps::updateTable ( const TABLE_INFO* t_info, vmTableWidget* table, const uint id )
-{
-	updateTable ( t_info, table, 
-				  QStringLiteral ( "SELECT * FROM " ) + t_info->table_name + QStringLiteral ( "WHERE ID=" ) + QString::number ( id ),
-				  /*Tables should be in order. A casual out of order record is OK, but more must be investigated the reason. The -10 is extrapollating*/
-				  static_cast<uint>( qMax ( static_cast<int>( id - 10 ), static_cast<int>( 0 ) ) ) );
-}
-
-void threadedDBOps::updateTable ( const TABLE_INFO* t_info, vmTableWidget* table, const podList<uint>& ids )
-{
-	if ( !ids.isEmpty () )
-	{
-		QString id_string ( QString::number ( ids.first () ) );
-		uint id ( 0 );
-		do {
-			id = ids.next ();
-			if ( id > 0 )
-				id_string += CHR_COMMA + QString::number ( id );
-			else
-				break;
-		} while ( true );
-		updateTable ( t_info, table, 
-					  QStringLiteral ( "SELECT * FROM " ) + t_info->table_name + QStringLiteral ( "WHERE ID=" ) + id_string );
-	}
-}

@@ -120,15 +120,14 @@ void spreadSheetEditor::setupUI ()
 	{
 		m_table->setCallbackForSettingCompleterForWidget ( [&] ( vmWidget* widget, const int completer_type )
 		{
-		mCompleterManager->setCompleterForWidget ( widget, completer_type );
+			mCompleterManager->setCompleterForWidget ( widget, completer_type );
 		} );
 	}
 
 	m_table->setKeepModificationRecords ( false );
 	m_table->initTable ( 20 );
 
-	m_table->setCallbackForCellChanged ( [&] ( const vmTableItem* const item ) {
-				return cellModified ( item ); } );
+	m_table->setCallbackForCellChanged ( [&] ( const vmTableItem* const item ) { return cellModified ( item ); } );
 	m_table->setCallbackForRowRemoved ( [&] ( const uint row ) { return rowRemoved ( row ); } );
 
 	mLayoutMain = new QVBoxLayout;
@@ -144,7 +143,7 @@ void spreadSheetEditor::prepareToShow ( const Job* const job )
 {
 	mJob = const_cast<Job*>( job );
 	loadData ( recStrValue ( job, FLD_JOB_ID ) );
-	m_qpString = QLatin1String ( "QP-" ) + job->projectIDTemplate ();
+	m_qpString = QStringLiteral ( "QP-" ) + job->projectIDTemplate ();
 	m_table->addToLayout ( mLayoutMain );
 	m_table->scrollToTop ();
 }

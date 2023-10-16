@@ -10,6 +10,7 @@
 
 class textEditWithCompleter;
 class vmComboBox;
+class vmTaskPanel;
 
 class QPushButton;
 class QSpinBox;
@@ -39,6 +40,7 @@ public:
 
 	void setEditable ( const bool b_editable );
 
+	void showNow () override;
 	void cut () override;
 	void copy () override;
 	void paste () override;
@@ -148,6 +150,7 @@ private:
 	static textEditorToolBar *s_instance;
 	friend textEditorToolBar *TEXT_EDITOR_TOOLBAR ();
 	textEditor *mEditorWindow;
+	vmTaskPanel* mPanel;
 };
 
 class imageTextObject : public QObject, public QTextObjectInterface

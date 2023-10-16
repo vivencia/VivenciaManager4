@@ -83,28 +83,29 @@ public:
 	bool removeColumn ( const QString& column_name, const TABLE_INFO* t_info );
 	bool renameColumn ( const QString& old_column_name, const uint col_idx, const TABLE_INFO* t_info );
 	bool changeColumnProperties ( const uint column, const TABLE_INFO* t_info );
-	void populateTable ( const TABLE_INFO* t_info, vmTableWidget* table ) const;
-	void updateTable ( const TABLE_INFO* t_info, vmTableWidget* table, const bool b_only_new ) const;
-	void updateTable ( const TABLE_INFO* t_info, vmTableWidget* table, const uint id ) const;
-	void updateTable ( const TABLE_INFO* t_info, vmTableWidget* table, const podList<uint>& ids ) const;
+	void populateTableWidget ( const TABLE_INFO* t_info, vmTableWidget* table ) const;
+	void updateTableWidget ( const TABLE_INFO* t_info, vmTableWidget* table, const QString& cmd, uint startrow = 0 );
+	void updateTableWidget ( const TABLE_INFO* t_info, vmTableWidget* table, const bool b_only_new );
+	void updateTableWidget ( const TABLE_INFO* t_info, vmTableWidget* table, const uint id );
+	void updateTableWidget ( const TABLE_INFO* t_info, vmTableWidget* table, const podList<uint>& ids );
 
-	static bool deleteDB ( const QString& dbname = QString () );
-	static bool optimizeTable ( const TABLE_INFO* t_info );
-	static bool lockTable ( const TABLE_INFO* t_info );
-	static bool unlockTable ( const TABLE_INFO* t_info );
-	static bool unlockAllTables ();
-	static bool flushAllTables ();
-	static bool deleteTable ( const QString& table_name );
-	static inline bool deleteTable ( const TABLE_INFO* t_info ) { return deleteTable ( t_info->table_name ); }
-	static bool clearTable ( const QString& table_name );
-	static inline bool clearTable ( const TABLE_INFO* t_info ) { return clearTable ( t_info->table_name ); }
-	static bool tableExists ( const TABLE_INFO* t_info );
-	static uint recordCount ( const TABLE_INFO* t_info );
-	static bool databaseIsEmpty ();
-	static uint getHighestID ( const uint table );
-	static uint getLowestID ( const uint table );
-	static uint getNextID ( const uint table );
-	static bool recordExists ( const QString& table_name, const int id );
+	static bool deleteDB ( const QString& dbname, const VivenciaDB* vdb );
+	static bool optimizeTable ( const TABLE_INFO* t_info, const VivenciaDB* vdb );
+	static bool lockTable ( const TABLE_INFO* t_info, const VivenciaDB* vdb );
+	static bool unlockTable ( const TABLE_INFO* t_info, const VivenciaDB* vdb );
+	static bool unlockAllTables ( const VivenciaDB* vdb );
+	static bool flushAllTables ( const VivenciaDB* vdb );
+	static bool deleteTable ( const QString& table_name, const VivenciaDB* vdb );
+	static inline bool deleteTable ( const TABLE_INFO* t_info, const VivenciaDB* vdb ) { return deleteTable ( t_info->table_name, vdb ); }
+	static bool clearTable ( const QString& table_name, const VivenciaDB* vdb );
+	static inline bool clearTable ( const TABLE_INFO* t_info, const VivenciaDB* vdb ) { return clearTable ( t_info->table_name, vdb ); }
+	static bool tableExists ( const TABLE_INFO* t_info, const VivenciaDB* vdb );
+	static uint recordCount ( const TABLE_INFO* t_info, const VivenciaDB* vdb );
+	static bool databaseIsEmpty ( const VivenciaDB* vdb );
+	static uint getHighestID ( const uint table, const VivenciaDB* vdb );
+	static uint getLowestID ( const uint table, const VivenciaDB* vdb );
+	static uint getNextID ( const uint table , const VivenciaDB* vdb );
+	static bool recordExists ( const QString& table_name, const int id, const VivenciaDB* vdb );
 
 	//-----------------------------------------COMMOM-DBRECORD-------------------------------------------
 	bool insertRecord ( const DBRecord* db_rec ) const;
@@ -153,37 +154,5 @@ private:
 	std::function<void ( const uint max_steps )> m_progressMaxSteps_func;
 	std::function<void ()> m_progressStepUp_func;
 	std::function<void ( const char* err_msg )> m_errorHandling_func;
-};
-
-#undef USE_THREADS
-#include <QtCore/QObject>
-
-#ifdef USE_THREADS
-class threadedDBOps : public QObject
-{
-Q_OBJECT
-
-public:
-	virtual ~threadedDBOps ();
-	
-#else
-class threadedDBOps
-{
-
-public:
-	~threadedDBOps () = default;
-#endif
-	
-	explicit threadedDBOps ( VivenciaDB* vdb );
-	void populateTable ( const TABLE_INFO* t_info, vmTableWidget* table );
-	void updateTable ( const TABLE_INFO* t_info, vmTableWidget* table, const QString& cmd, uint startrow = 0 );
-	void updateTable ( const TABLE_INFO* t_info, vmTableWidget* table, const bool b_only_new );
-	void updateTable ( const TABLE_INFO* t_info, vmTableWidget* table, const uint id );
-	void updateTable ( const TABLE_INFO* t_info, vmTableWidget* table, const podList<uint>& ids );
-	inline void setCallbackForFinished ( const std::function<void ()>& func ) { m_finishedFunc = func; }
-	
-protected:
-	VivenciaDB* m_vdb;
-	std::function<void ()> m_finishedFunc;
 };
 #endif // VIVENCIADB_H

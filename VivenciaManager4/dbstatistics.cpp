@@ -15,6 +15,10 @@
 #include <QtSql/QSqlRecord>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QApplication>
+#include <QtCore/QProcess>
+#include <QtCore/QFuture>
+#include <QtCore/QScopedPointer>
+#include <QtConcurrent/QtConcurrent>
 
 /*
 #include <chrono>
@@ -23,122 +27,83 @@ std::this_thread::sleep_for ( std::chrono::milliseconds ( 1000 ) );
 std::this_thread::sleep_for ( std::chrono::seconds ( 1 ) );
 */
 
-#undef USE_THREADS
-#ifdef USE_THREADS
-
-	#include <QThread>
-
-	#define PROCESS_EVENTS qApp->processEvents ();
-	#define EMIT_INFO emit infoProcessed
-
-#else
-
-	#define PROCESS_EVENTS
-	#define EMIT_INFO m_readyFunc
-
-#endif
+#define PROCESS_EVENTS qApp->processEvents ();
 
 static const QString HTML_BOLD_ITALIC_UNDERLINE_11 ( QStringLiteral ( "<span style=\" font-size:11pt;text-decoration:underline;font-style:italic;font-weight:600;\">%1</span>") );
 static const QString HTML_BOLD_FONT_11 ( QStringLiteral ( "<span style=\" font-size:11pt;font-weight:600;\">%1</span>" ) );
 
-#ifdef USE_THREADS
-dbStatistics::dbStatistics ( QObject* parent )
-	: QObject ( parent ), m_textinfo ( new textEditWithCompleter ), mainLayout ( new QVBoxLayout )
-#else
 dbStatistics::dbStatistics ()
 	: m_textinfo ( new textEditWithCompleter ), mainLayout ( new QVBoxLayout )
-#endif
 {
 	m_textinfo->setUtilitiesPlaceLayout ( mainLayout );
 	m_textinfo->setEditable ( false );
 	mainLayout->addWidget ( m_textinfo );
 }
 
-#include <QProcess>
+dbStatistics::~dbStatistics () {}
+
 void dbStatistics::reload ()
 {
 	m_textinfo->clear ();
 	auto worker ( new dbStatisticsWorker );
-	
-#ifdef USE_THREADS
-	QThread* workerThread ( new QThread );
-	worker->moveToThread ( workerThread );
-	static_cast<void>( connect ( workerThread, SIGNAL ( started () ), worker, SLOT ( startWorks () ) ) );
-	static_cast<void>( connect ( worker, SIGNAL ( finished () ), workerThread, SLOT ( quit () ) ) );
-	static_cast<void>( connect ( worker, SIGNAL( finished () ), worker, SLOT ( deleteLater () ) ) );
-	static_cast<void>( connect ( workerThread, SIGNAL ( finished () ), workerThread, SLOT ( deleteLater () ) ) );
-	static_cast<void>( connect ( worker, SIGNAL ( infoProcessed ( const QString& ) ), this, SLOT ( writeInfo ( const QString& ) ) ) );
-	workerThread->start();
-	
-#else
 	worker->setCallbackForInfoReady ( [&] ( const QString& more_info ) { return m_textinfo->append ( more_info ); } );
-	worker->startWorks ();
-	delete worker;
-#endif
-
+	QFuture<void> future ( QtConcurrent::run ( worker, &dbStatisticsWorker::startWorks ) );
+	future.waitForFinished ();
 }
 
-#ifdef USE_THREADS
-void dbStatistics::writeInfo ( const QString &info )
-{
-	m_textinfo->append ( info );
-}
-#endif
+dbStatisticsWorker::dbStatisticsWorker ( QObject* parent )
+	: QObject ( parent ), mVDB ( nullptr ), m_readyFunc ( nullptr )
+{}
 
-dbStatisticsWorker::dbStatisticsWorker ()
-	: QObject ( nullptr )
+dbStatisticsWorker::~dbStatisticsWorker ()
 {
-#ifndef USE_THREADS
-	m_readyFunc = nullptr;
-#endif
+	if ( mVDB != nullptr )
+	{
+		delete mVDB;
+		mVDB = nullptr;
+	}
 }
 
 void dbStatisticsWorker::startWorks ()
 {
-#ifndef USE_THREADS
-	if ( !m_readyFunc )
-		return;
-#endif
-	
+	this->deleteLater ();
+	mVDB = new VivenciaDB;
+	mVDB->openDataBase ( "statistics_connection" );
+
 	countClients ();
-	PROCESS_EVENTS	
 	clientsPerYear ( true );
-	PROCESS_EVENTS
 	clientsPerYear ( false );
 	PROCESS_EVENTS
 	activeClientsPerYear ();
-	PROCESS_EVENTS
 	clientsPerCity ();
-	PROCESS_EVENTS
 	countJobs ();
 	PROCESS_EVENTS
 	jobPrices ();
-	PROCESS_EVENTS
 	biggestJobs ();
-	PROCESS_EVENTS
 	countPayments ();
-	PROCESS_EVENTS
-
-#ifdef USE_THREADS
-	emit finished ();
-#endif
 }
 
 void dbStatisticsWorker::countClients ()
 {
-	EMIT_INFO ( TR_FUNC ( "Total number of clients: " ) + 
-				HTML_BOLD_ITALIC_UNDERLINE_11.arg ( VDB ()->recordCount ( &Client::t_info ) ) + QStringLiteral ( "\n" ) );
+	m_readyFunc ( TR_FUNC ( "Total number of clients: " ) +
+				HTML_BOLD_ITALIC_UNDERLINE_11.arg ( mVDB->recordCount ( &Client::t_info, mVDB ) ) + QStringLiteral ( "\n" ) );
 	
-	QSqlQuery queryRes;
-	if ( VDB ()->runSelectLikeQuery ( QStringLiteral ( "SELECT COUNT(*) FROM CLIENTS WHERE STATUS='1'" ), queryRes ) )
-		EMIT_INFO ( TR_FUNC ( "Total number of active clients: " ) + HTML_BOLD_ITALIC_UNDERLINE_11.arg ( queryRes.value ( 0 ).toString () ) + QStringLiteral ( "\n" ) );
+	QSqlQuery queryRes ( *(mVDB->database ()) );
+	queryRes.setForwardOnly ( true );
+	if ( queryRes.exec ( QStringLiteral ( "SELECT COUNT(*) FROM CLIENTS WHERE STATUS='1'" ) ) )
+	{
+		queryRes.first ();
+		m_readyFunc ( TR_FUNC ( "Total number of active clients: " ) + HTML_BOLD_ITALIC_UNDERLINE_11.arg ( queryRes.value ( 0 ).toString () ) + QStringLiteral ( "\n" ) );
+	}
 }
 
 void dbStatisticsWorker::clientsPerYear ( const bool b_start )
 {
-	QSqlQuery queryRes;
-	if ( VDB ()->runSelectLikeQuery ( b_start ? QStringLiteral ( "SELECT BEGINDATE FROM CLIENTS" ) : QStringLiteral ( "SELECT ENDDATE,STATUS FROM CLIENTS" ), queryRes ) )
+	QSqlQuery queryRes ( *(mVDB->database ()) );
+	queryRes.setForwardOnly ( true );
+	if ( queryRes.exec ( b_start ? QStringLiteral ( "SELECT BEGINDATE FROM CLIENTS" ) : QStringLiteral ( "SELECT ENDDATE,STATUS FROM CLIENTS" ) ) )
 	{
+		queryRes.first ();
 		vmNumber date, db_date;
 		uint year ( 2005 );
 		podList<uint> count_years ( 0, vmNumber::currentDate ().year () - year + 1 );
@@ -164,14 +129,14 @@ void dbStatisticsWorker::clientsPerYear ( const bool b_start )
 			} while ( year <= vmNumber::currentDate ().year () );
 		} while ( queryRes.next () );
 		
-		EMIT_INFO ( b_start ? TR_FUNC ( "\nNumber of new clients per year since 2005:\n" ) : TR_FUNC ( "\nNumber of lost clients per year since 2005:\n" ) );
+		m_readyFunc ( b_start ? TR_FUNC ( "\nNumber of new clients per year since 2005:\n" ) : TR_FUNC ( "\nNumber of lost clients per year since 2005:\n" ) );
 		const QString strtemplate ( b_start ? TR_FUNC ( "\t%1: %2 new additions;" ) : TR_FUNC ( "\t%1: %2 clients lost;" ) );
 		year = 2005;
 		uint count ( count_years.first () );
 		while ( year <= vmNumber::currentDate ().year () )
 		{
 			
-			EMIT_INFO ( strtemplate.arg ( HTML_BOLD_FONT_11.arg ( QString::number ( year ) ), HTML_BOLD_ITALIC_UNDERLINE_11.arg ( QString::number ( count ) ) ) );
+			m_readyFunc ( strtemplate.arg ( HTML_BOLD_FONT_11.arg ( QString::number ( year ) ), HTML_BOLD_ITALIC_UNDERLINE_11.arg ( QString::number ( count ) ) ) );
 			count = count_years.next ();
 			++year;
 		}
@@ -180,9 +145,11 @@ void dbStatisticsWorker::clientsPerYear ( const bool b_start )
 
 void dbStatisticsWorker::activeClientsPerYear ()
 {
-	QSqlQuery queryRes;
-	if ( VDB ()->runSelectLikeQuery ( QStringLiteral ( "SELECT BEGINDATE,ENDDATE FROM CLIENTS" ), queryRes ) )
+	QSqlQuery queryRes ( *(mVDB->database ()) );
+	queryRes.setForwardOnly ( true );
+	if ( queryRes.exec ( QStringLiteral ( "SELECT BEGINDATE,ENDDATE FROM CLIENTS" ) ) )
 	{
+		queryRes.first ();
 		vmNumber date, start_date, end_date;
 		podList<uint> count_clients ( 0, vmNumber::currentDate ().year () - 2005 + 1 );
 		do
@@ -200,14 +167,14 @@ void dbStatisticsWorker::activeClientsPerYear ()
 			}
 		} while ( queryRes.next () );
 		
-		EMIT_INFO ( TR_FUNC ( "\nNumber of active clients per year since 2005:\n" ) );
+		m_readyFunc ( TR_FUNC ( "\nNumber of active clients per year since 2005:\n" ) );
 		const QString strtemplate ( TR_FUNC ( "\t%1: %2;" ) );
 		uint year ( 2005 );
 		uint count ( count_clients.first () );
 		while ( year <= vmNumber::currentDate ().year () )
 		{
 			
-			EMIT_INFO ( strtemplate.arg ( HTML_BOLD_FONT_11.arg ( QString::number ( year ) ), HTML_BOLD_ITALIC_UNDERLINE_11.arg ( QString::number ( count ) ) ) );
+			m_readyFunc ( strtemplate.arg ( HTML_BOLD_FONT_11.arg ( QString::number ( year ) ), HTML_BOLD_ITALIC_UNDERLINE_11.arg ( QString::number ( count ) ) ) );
 			count = count_clients.next ();
 			++year;
 		}
@@ -216,9 +183,11 @@ void dbStatisticsWorker::activeClientsPerYear ()
 
 void dbStatisticsWorker::clientsPerCity ()
 {
-	QSqlQuery queryRes;
-	if ( VDB ()->runSelectLikeQuery ( QStringLiteral ( "SELECT CITY FROM CLIENTS" ), queryRes ) )
+	QSqlQuery queryRes ( *(mVDB->database ()) );
+	queryRes.setForwardOnly ( true );
+	if ( queryRes.exec ( QStringLiteral ( "SELECT CITY FROM CLIENTS"  ) ) )
 	{
+		queryRes.first ();
 		QMap<QString,uint> city_count;
 		QString city;
 		uint count ( 0 );
@@ -236,13 +205,13 @@ void dbStatisticsWorker::clientsPerCity ()
 			city_count.insert ( city, count );
 		} while ( queryRes.next () );
 		
-		EMIT_INFO ( TR_FUNC ( "\nNumber of clients per city:\n" ) );
+		m_readyFunc ( TR_FUNC ( "\nNumber of clients per city:\n" ) );
 		QMap<QString,uint>::const_iterator itr ( city_count.constBegin () );
 		const QMap<QString,uint>::const_iterator& itr_end ( city_count.constEnd () );
 		const QString strtemplate ( TR_FUNC ( "\t%1: %2;" ) );
 		while ( itr != itr_end )
 		{
-			EMIT_INFO ( strtemplate.arg ( HTML_BOLD_FONT_11.arg ( itr.key () ), HTML_BOLD_ITALIC_UNDERLINE_11.arg ( itr.value () ) ) );
+			m_readyFunc ( strtemplate.arg ( HTML_BOLD_FONT_11.arg ( itr.key () ), HTML_BOLD_ITALIC_UNDERLINE_11.arg ( itr.value () ) ) );
 			++itr;
 		}
 	}
@@ -250,12 +219,14 @@ void dbStatisticsWorker::clientsPerCity ()
 
 void dbStatisticsWorker::countJobs ()
 {
-	EMIT_INFO ( TR_FUNC ( "\n\nTotal number of Jobs: " ) + 
-		HTML_BOLD_ITALIC_UNDERLINE_11.arg ( VDB ()->recordCount ( &Job::t_info ) ) + QStringLiteral ( "\n" ) );
+	m_readyFunc ( TR_FUNC ( "\n\n\nTotal number of Jobs: " ) +
+		HTML_BOLD_ITALIC_UNDERLINE_11.arg ( mVDB->recordCount ( &Job::t_info, mVDB ) ) + QStringLiteral ( "\n" ) );
 	
-	QSqlQuery queryRes;
-	if ( VDB ()->runSelectLikeQuery ( QStringLiteral ( "SELECT STARTDATE,TIME,REPORT FROM JOBS" ), queryRes ) )
+	QSqlQuery queryRes ( *(mVDB->database ()) );
+	queryRes.setForwardOnly ( true );
+	if ( queryRes.exec ( QStringLiteral ( "SELECT STARTDATE,TIME,REPORT FROM JOBS"  ) ) )
 	{
+		queryRes.first ();
 		vmNumber db_date;
 		podList<uint> count_years ( 0, vmNumber::currentDate ().year () - 2009 + 1 );
 		vmList<vmNumber> count_hours ( vmNumber (), count_years.preallocNumber () );
@@ -269,13 +240,12 @@ void dbStatisticsWorker::countJobs ()
 			count_days[db_date.year () - 2009] += stringTable ( queryRes.value ( 2 ).toString () ).countRecords ();
 		} while ( queryRes.next () );
 		
-		EMIT_INFO ( TR_FUNC ( "\nNumber of jobs per year since 2009:\n" ) );
+		m_readyFunc ( TR_FUNC ( "\nNumber of jobs per year since 2009:\n" ) );
 		const QString strtemplate ( TR_FUNC ( "\tJobs in %1: %2. Total number of worked hours: %3 ( %4 ). Worked days: %5;" ) );
 		uint year ( 2009 );
 		while ( year <= vmNumber::currentDate ().year () )
 		{
-			
-			EMIT_INFO ( strtemplate.arg ( HTML_BOLD_FONT_11.arg ( QString::number ( year ) ), 
+			m_readyFunc ( strtemplate.arg ( HTML_BOLD_FONT_11.arg ( QString::number ( year ) ),
 										  HTML_BOLD_ITALIC_UNDERLINE_11.arg ( count_years.at ( year-2009 ) ),
 										  HTML_BOLD_ITALIC_UNDERLINE_11.arg ( count_hours.at ( year-2009 ).toTime ( vmNumber::VTF_DAYS ) ),
 										  HTML_BOLD_ITALIC_UNDERLINE_11.arg ( count_hours.at ( year-2009 ).toTime ( vmNumber::VTF_FANCY ) ),
@@ -287,9 +257,11 @@ void dbStatisticsWorker::countJobs ()
 
 void dbStatisticsWorker::jobPrices ()
 {
-	QSqlQuery queryRes;
-	if ( VDB ()->runSelectLikeQuery ( QStringLiteral ( "SELECT STARTDATE,PRICE FROM JOBS" ), queryRes ) )
+	QSqlQuery queryRes ( *(mVDB->database ()) );
+	queryRes.setForwardOnly ( true );
+	if ( queryRes.exec ( QStringLiteral ( "SELECT STARTDATE,PRICE FROM JOBS"  ) ) )
 	{
+		queryRes.first ();
 		vmNumber db_date, price, total_income;
 		podList<uint> count_jobs ( 0, vmNumber::currentDate ().year () - 2009 + 1 );
 		vmList<vmNumber> count_price ( vmNumber (), count_jobs.preallocNumber () );
@@ -304,16 +276,16 @@ void dbStatisticsWorker::jobPrices ()
 			count_jobs[db_date.year () - 2009]++;
 		} while ( queryRes.next () );
 		
-		EMIT_INFO ( "" );
-		EMIT_INFO ( TR_FUNC ( "Total estimated income since 2009: " ) + HTML_BOLD_ITALIC_UNDERLINE_11.arg ( total_income.toPrice () ) );
-		EMIT_INFO ( TR_FUNC ( "\nTotal estimated income per year since 2009:\n" ) );
+		m_readyFunc ( "" );
+		m_readyFunc ( TR_FUNC ( "Total estimated income since 2009: " ) + HTML_BOLD_ITALIC_UNDERLINE_11.arg ( total_income.toPrice () ) );
+		m_readyFunc ( TR_FUNC ( "\nTotal estimated income per year since 2009:\n" ) );
 		
 		const QString strtemplate ( TR_FUNC ( "\tEstimated Income for the year %1: %2, in a total of %3 jobs:" ) );
 		uint year ( 2009 );
 		while ( year <= vmNumber::currentDate ().year () )
 		{
 			
-			EMIT_INFO ( strtemplate.arg ( HTML_BOLD_FONT_11.arg ( QString::number ( year ) ), 
+			m_readyFunc ( strtemplate.arg ( HTML_BOLD_FONT_11.arg ( QString::number ( year ) ),
 										  HTML_BOLD_ITALIC_UNDERLINE_11.arg ( count_price.at ( year-2009 ).toPrice () ),
 										  HTML_BOLD_ITALIC_UNDERLINE_11.arg ( count_jobs.at ( year-2009 ) ) ) );
 			++year;
@@ -323,9 +295,11 @@ void dbStatisticsWorker::jobPrices ()
 
 void dbStatisticsWorker::biggestJobs ()
 {
-	QSqlQuery queryRes;
-	if ( VDB ()->runSelectLikeQuery ( QStringLiteral ( "SELECT ID,PRICE,TIME FROM JOBS" ), queryRes ) )
+	QSqlQuery queryRes ( *(mVDB->database ()) );
+	queryRes.setForwardOnly ( true );
+	if ( queryRes.exec ( QStringLiteral ( "SELECT ID,PRICE,TIME FROM JOBS"  ) ) )
 	{
+		queryRes.first ();
 		vmNumber price ( 0.0 ), highest_price ( 0.0 ), n_days ( 0 ), n_days_max ( 0 );
 		uint jobid_most_value ( 0 ), jobid_longest ( 0 );
 		
@@ -346,28 +320,30 @@ void dbStatisticsWorker::biggestJobs ()
 			}
 		} while ( queryRes.next () );
 		
-		EMIT_INFO ( "" );
+		m_readyFunc ( "" );
 		Job job;
 		if ( job.readRecord ( jobid_most_value ) )
 		{
-			EMIT_INFO ( TR_FUNC ( "Highest income job:\n" ) );
-			EMIT_INFO ( Job::concatenateJobInfo ( job, true ) );
-			EMIT_INFO ( "" );
+			m_readyFunc ( TR_FUNC ( "Highest income job:\n" ) );
+			m_readyFunc ( Job::concatenateJobInfo ( job, true ) );
+			m_readyFunc ( "" );
 		}
 		if ( job.readRecord ( jobid_longest ) )
 		{
-			EMIT_INFO ( TR_FUNC ( "Longest job:\n" ) );
-			EMIT_INFO ( Job::concatenateJobInfo ( job, true ) );
-			EMIT_INFO ( "" );
+			m_readyFunc ( TR_FUNC ( "Longest job:\n" ) );
+			m_readyFunc ( Job::concatenateJobInfo ( job, true ) );
+			m_readyFunc ( "" );
 		}
 	}
 }
 
 void dbStatisticsWorker::countPayments ()
 {
-	QSqlQuery queryRes;
-	if ( VDB ()->runSelectLikeQuery ( QStringLiteral ( "SELECT INFO FROM PAYMENTS" ), queryRes ) )
+	QSqlQuery queryRes ( *(mVDB->database ()) );
+	queryRes.setForwardOnly ( true );
+	if ( queryRes.exec ( QStringLiteral ( "SELECT INFO FROM PAYMENTS"  ) ) )
 	{
+		queryRes.first ();
 		vmNumber db_date, price, total_income;
 		vmList<vmNumber> count_price ( vmNumber (), vmNumber::currentDate ().year () - 2009 + 1 );
 		stringTable payInfo;
@@ -391,16 +367,16 @@ void dbStatisticsWorker::countPayments ()
 			}
 		} while ( queryRes.next () );
 		
-		EMIT_INFO ( "" );
-		EMIT_INFO ( TR_FUNC ( "Total actual income since 2009: " ) + HTML_BOLD_ITALIC_UNDERLINE_11.arg ( total_income.toPrice () ) );
-		EMIT_INFO ( TR_FUNC ( "\nTotal actual income per year since 2009:\n" ) );
+		m_readyFunc ( "" );
+		m_readyFunc ( TR_FUNC ( "Total actual income since 2009: " ) + HTML_BOLD_ITALIC_UNDERLINE_11.arg ( total_income.toPrice () ) );
+		m_readyFunc ( TR_FUNC ( "\nTotal actual income per year since 2009:\n" ) );
 		
 		const QString strtemplate ( TR_FUNC ( "\tActual income for the year %1: %2" ) );
 		uint year ( 2009 );
 		while ( year <= vmNumber::currentDate ().year () )
 		{
 			
-			EMIT_INFO ( strtemplate.arg ( HTML_BOLD_FONT_11.arg ( QString::number ( year ) ), 
+			m_readyFunc ( strtemplate.arg ( HTML_BOLD_FONT_11.arg ( QString::number ( year ) ),
 										  HTML_BOLD_ITALIC_UNDERLINE_11.arg ( count_price.at ( year-2009 ).toPrice () )
 						) );
 			++year;

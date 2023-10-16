@@ -914,7 +914,7 @@ void reportGenerator::getUnpaidPayments ( Payment * const pay )
 
 void reportGenerator::getPaidPayments ( const uint n_months_past, const uint match_payid, vmNumber* const total_paid_value )
 {
-	if ( match_payid == 0 || match_payid > VivenciaDB::getHighestID ( TABLE_PAY_ORDER ) ) return;
+	if ( match_payid == 0 || match_payid > VivenciaDB::getHighestID ( TABLE_PAY_ORDER, nullptr ) ) return;
 	
 	TEXT_EDITOR_TOOLBAR ()->btnBold_clicked ( true );
 	TEXT_EDITOR_TOOLBAR ()->btnUnderline_clicked ( true );

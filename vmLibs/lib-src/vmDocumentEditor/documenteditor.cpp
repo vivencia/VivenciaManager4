@@ -86,12 +86,12 @@ void documentEditor::createActions ()
 	newAct = new vmAction ( -1, ( ICON ( "document-new" ) ), TR_FUNC ( "&New text file" ), this );
 	newAct->setShortcut ( QKeySequence::New );
 	newAct->setStatusTip ( TR_FUNC ( "Create a new document" ) );
-	static_cast<void>( connect ( newAct, &QAction::triggered, this, [&] ( const bool ) { return startNewTextEditor ()->show (); } ) );
+	static_cast<void>( connect ( newAct, &QAction::triggered, this, [&] ( const bool ) { return startNewTextEditor ()->showNow (); } ) );
 
 	newReportAct = new vmAction ( -1, ( ICON ( "documentation" ) ), TR_FUNC ( "New &Report" ), this );
 	newReportAct->setShortcut ( QKeySequence::Refresh );
 	newReportAct->setStatusTip ( TR_FUNC ( "Create a new report" ) );
-	static_cast<void>( connect ( newReportAct, &QAction::triggered, this, [&] ( const bool ) { return startNewReport ()->show (); } ) );
+	static_cast<void>( connect ( newReportAct, &QAction::triggered, this, [&] ( const bool ) { return startNewReport ()->showNow (); } ) );
 
 	openAct = new vmAction ( -1, ICON ( "document-open" ), TR_FUNC ( "&Open..." ), this );
 	openAct->setShortcut ( QKeySequence::Open );
@@ -470,7 +470,7 @@ void documentEditor::openDocument ( const QString& filename )
 		tabDocuments->setTabText ( tabDocuments->currentIndex (), window->title () );
 		addToRecentFiles ( filename );
 	}
-	window->show ();
+	window->showNow ();
 	window->setFocus ();
 }
 
