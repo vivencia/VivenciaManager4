@@ -7,6 +7,7 @@
 
 #include <vmUtils/fast_library_functions.h>
 #include <vmWidgets/vmwidgets.h>
+#include <vmWidgets/texteditwithcompleter.h>
 #include <vmStringRecord/stringrecord.h>
 
 #include <QtGui/QStandardItemModel>

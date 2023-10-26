@@ -17,30 +17,30 @@ public:
 	friend void table_item_swap ( vmTableItem& t_item1, vmTableItem& t_item2 );
 
 	vmTableItem ();
-	
+
 	explicit vmTableItem ( const PREDEFINED_WIDGET_TYPES wtype,
 						   const vmLineEdit::TEXT_TYPE ttype,
 						   const QString& text, const vmTableWidget* table );
 
 	vmTableItem ( const QString& text, const vmTableWidget* table ); // Simple item. No widget
 	inline vmTableItem ( const vmTableItem& t_item ) : vmTableItem () { copy ( t_item ); }
-	
+
 	inline vmTableItem ( vmTableItem&& other ) : vmTableItem ()
 	{
 		table_item_swap ( *this, other );
 	}
-	
+
 	inline const vmTableItem& operator= ( vmTableItem t_item )
 	{
 		table_item_swap ( *this, t_item );
 		return *this;
 	}
-	
+
 	virtual ~vmTableItem () override;
-	
+
 	inline void setTable ( vmTableWidget* table ) { m_table = table; }
 	inline vmTableWidget* table () const { return m_table; }
-	
+
 	const QString defaultStyleSheet () const override;
 	void setEditable ( const bool editable ) override;
 
@@ -57,7 +57,7 @@ public:
 	inline QString originalText () const { return mBackupData_cache.toString (); }
 	inline void setCellIsAltered ( const bool altered ) { mb_CellAltered = altered; }
 	inline bool cellIsAltered () const { return mb_CellAltered; }
-	
+
 	inline void syncOriginalTextWithCurrent () {
 		mBackupData_cache = mCache;
 		mb_CellAltered = false;

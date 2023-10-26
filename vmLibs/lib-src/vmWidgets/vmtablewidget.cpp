@@ -1631,9 +1631,13 @@ void vmTableWidget::setFormulaForCell ( vmTableItem* item )
 	}
 }
 
+#ifdef DEBUG
 void vmTableWidget::headerItemToggled ( const uint col, const bool checked )
+#else
+void vmTableWidget::headerItemToggled ( const uint /*col*/, const bool /*checked*/ )
+#endif
 {
-	qDebug () << "Column " << col << " is now " << ( checked ? "checked." : "unchecked." );
+	MSG_OUT ( "Column " << col << " is now " << ( checked ? "checked." : "unchecked." ) )
 }
 
 void vmTableWidget::textWidgetChanged ( const vmWidget* const sender )

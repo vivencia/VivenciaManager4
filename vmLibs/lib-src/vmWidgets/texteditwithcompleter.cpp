@@ -469,7 +469,7 @@ void textEditWithCompleter::setCompleter ( vmCompleters* const completer, const 
 	{
 		mCompleter = completer->getCompleter ( static_cast<COMPLETER_CATEGORIES>( type ) );
 		completer->setCompleterForWidget ( this, static_cast<COMPLETER_CATEGORIES>( type ) );
-		//mCompleter->setWidget ( this );
+		mCompleter->setWidget ( this );
 		static_cast<void>( connect ( mCompleter, static_cast<void (QCompleter::*)( const QString& )>( &QCompleter::activated ),
 			this, [&, this] ( const QString& text ) { insertCompletion ( text ); } ) );
 	}

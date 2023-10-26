@@ -299,7 +299,11 @@ triStateType fileOps::createDir ( const QString& path )
 				if ( new_path.at ( new_path.length () - 1 ) != CHR_F_SLASH )
 					new_path.append ( CHR_F_SLASH );
 				struct stat stFileInfo {};
+#ifdef USING_QT6
+                ::stat ( new_path.left ( idx ).toLocal8Bit ().constData (), &stFileInfo );
+#else
 				::stat ( new_path.leftRef ( idx ).toLocal8Bit ().constData (), &stFileInfo );
+#endif
 				return ( ::mkdir ( new_path.toLocal8Bit ().constData (), stFileInfo.st_mode ) == 0 ) ? TRI_ON : TRI_OFF;
 			}
 		}
@@ -372,7 +376,11 @@ const QString fileOps::nthDirFromPath ( const QString& c_path, const int n )
 			if ( idx != -1 )
 			{
 				dir = path.mid ( idx + 1, path.length () - idx - 1 );
+#ifdef USING_QT6
+                if ( !isDir ( c_path.left ( idx + 1 ) + dir ).isOn () )
+#else
 				if ( !isDir ( c_path.leftRef ( idx + 1 ) + dir ).isOn () )
+#endif
 				{
 					idx2 = path.lastIndexOf ( CHR_F_SLASH, 0 - ( path.length () - idx ) - 1 );
 					dir = path.mid ( idx2 + 1, idx - idx2 );
@@ -590,7 +598,8 @@ int fileOps::sysExec ( const QStringList &command_line )
 
 int fileOps::sysExec ( const QString& command_line )
 {
-	const QString cmdLine ( configOps::pkexec () + QSTRING_ENCODING_FIX(command_line) );
+	const QString cmdLine ( configOps::pkexec () + CHR_SPACE + QSTRING_ENCODING_FIX(command_line) );
+	MSG_OUT(cmdLine);
 	return ::system ( cmdLine.toLocal8Bit ().constData () );
 }
 
@@ -630,6 +639,7 @@ bool fileOps::executeWait ( QStringList& arguments, const QString& program, cons
 	else
 		prog = program;
 
+	MSG_OUT (prog + CHR_SPACE + arguments.join ( CHR_SPACE ) );
 	proc->start ( prog, arguments );
 	const bool ret ( proc->waitForFinished ( -1 ) );
 	if ( exitCode != nullptr )
@@ -698,6 +708,8 @@ bool fileOps::executeWithFeedFile ( QStringList& arguments, const QString& progr
 		proc->setStandardOutputFile ( filename );
 		proc->waitForReadyRead ();
 	}
+
+	MSG_OUT (prog + CHR_SPACE + arguments.join ( CHR_SPACE ) );
 	proc->waitForStarted ();
 	proc->start ( prog, arguments );
 

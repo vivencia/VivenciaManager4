@@ -638,7 +638,11 @@ void reportGenerator::btnCopyTableRow_clicked ()
 				TEXT_EDITOR_TOOLBAR ()->spinNRows->setValue ( TEXT_EDITOR_TOOLBAR ()->spinNRows->value () + static_cast<int>(n_selRows) );
 			}
 			name = m_spreadSheet->table ()->sheetItem ( i_row, 0 )->text ();
-			foundRow = itemNames.indexOf ( QRegExp ( name, Qt::CaseInsensitive ), 0 );
+#ifdef USING_QT6
+            foundRow = itemNames.indexOf ( QRegularExpression ( name, QRegularExpression::CaseInsensitiveOption ), 0 );
+#else
+            foundRow = itemNames.indexOf ( QRegExp ( name, Qt::CaseInsensitive ), 0 );
+#endif
 			if ( foundRow == -1 )
 				itemNames.append ( name );
 			else

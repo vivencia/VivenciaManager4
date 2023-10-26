@@ -528,8 +528,8 @@ int BackupDialog::showNoDatabaseOptionsWindow ()
 		layout->addWidget ( rdNothing, 1, Qt::AlignLeft );
 		layout->addWidget ( btnProceed, 1, Qt::AlignCenter );
 
-		layout->setContentsMargins ( 0, 0, 0, 0 );
-		layout->setSpacing ( 1 );
+        layout->setContentsMargins ( 10, 10, 10, 10 );
+        layout->setSpacing ( 10 );
 		dlgNoDB->adjustSize ();
 		dlgNoDB->setLayout ( layout );
 
@@ -567,14 +567,18 @@ void BackupDialog::btnNoDBProceed_clicked ()
 				return;
 			}
 		}
-		dlgNoDB->done ( QDialog::Rejected );
+        mErrorCode = ERR_DATABASE_PROBLEM;
 		NOTIFY ()->notifyMessage ( TR_FUNC ( "Database creation failed" ),
 									  TR_FUNC ( "Please try again. If the problem persists ... who knows?" ), 3000, true );
+        dlgNoDB->done ( QDialog::Rejected );
 		close ();
-		mErrorCode = ERR_DATABASE_PROBLEM;
 	}
-	else
+    else
+    {
 		mErrorCode = ERR_NO_DB;
+        dlgNoDB->done ( QDialog::Rejected );
+        close ();
+    }
 }
 
 void BackupDialog::selectAll ( QListWidgetItem* item )

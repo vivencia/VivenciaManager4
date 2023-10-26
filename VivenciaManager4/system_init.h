@@ -27,12 +27,11 @@ namespace Sys_Init
 	extern void deInit ( int err_code = 0 );
 	extern void cleanUpApp ();
 	
-	extern DB_ERROR_CODES checkSystem ( const bool bFirstPass = true );
+	extern DB_ERROR_CODES checkSystem ();
 	extern DB_ERROR_CODES checkLocalSetup ();
 	extern void checkSetup ();
 	extern void restartProgram ();
 	extern bool isMySQLRunning();
-	extern QString commandMySQLServer ( const QString& command, const bool only_return_cmd_line = false );
 
 	extern bool EXITING_PROGRAM;
 	extern QString APP_START_CMD;

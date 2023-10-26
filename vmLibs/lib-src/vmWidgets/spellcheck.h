@@ -14,7 +14,10 @@
 class configOps;
 class QMenu;
 class QAction;
+
+#ifndef USING_QT6
 class QTextCodec;
+#endif
 
 class spellCheck : public QObject
 {
@@ -47,11 +50,14 @@ private:
 	QString mDictionary;
 
 	Hunspell* __restrict mChecker;
-	QTextCodec* mCodec;
 	configOps* m_config;
 	QMenu* mMenu;
 
-	std::function<void ( const bool )> menuEntrySelected_func;
+    std::function<void ( const bool )> menuEntrySelected_func;
+
+#ifndef USING_QT6
+    QTextCodec* mCodec;
+#endif
 };
 
 #endif // SPELLCHECK_H

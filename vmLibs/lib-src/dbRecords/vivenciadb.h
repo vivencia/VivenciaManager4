@@ -6,6 +6,8 @@
 #include "dbrecord.h"
 #include "vmlist.h"
 
+#include <vmUtils/fileops.h>
+
 #include <QtSql/QSqlDatabase>
 #include <QtSql/QSqlQuery>
 
@@ -23,8 +25,6 @@ enum DB_ERROR_CODES
 	ERR_DB_EMPTY = 7
 };
 
-static const QString MYSQL_INIT_SCRIPT ( QStringLiteral ( "/etc/init.d/mysql" ) );
-
 class vmTableWidget;
 
 class VivenciaDB
@@ -34,7 +34,7 @@ friend class DBRecord;
 friend class fixDatabase;
 
 public:
-	explicit VivenciaDB ( const bool b_set_dbrec_mngr = false );
+	explicit VivenciaDB ();
 	~VivenciaDB ();
 
 	//-----------------------------------------STATIC---------------------------------------------
@@ -54,6 +54,8 @@ public:
 	static inline QString importApp () { return STR_MYSQL; }
 	static inline QString restoreApp () { return QStringLiteral ( "mysqlimport" ); }
 	static inline QString adminApp () { return QStringLiteral ( "mysqladmin" ); }
+
+	static const QString mysqlInitScript ();
 	//-----------------------------------------STATIC---------------------------------------------
 	
 	inline QSqlDatabase* database () const
@@ -65,9 +67,9 @@ public:
 	inline bool backUpSynced () const { return mBackupSynced; }
 
 	//-----------------------------------------MYSQL-------------------------------------------
-	static bool isMySQLRunning ();
-	static DB_ERROR_CODES commandMySQLServer ( const QString& command, const bool b_do_not_exec = false );
-	static DB_ERROR_CODES checkDatabase ( VivenciaDB* vdb );
+	static bool isMySQLRunning ( const bool b_firsttimerun = false );
+	static DB_ERROR_CODES commandMySQLServer ( const QString& command, const bool b_firsttimerun = false );
+	static DB_ERROR_CODES checkDatabase ( VivenciaDB* vdb, const bool b_firsttimerun = false );
 	//-----------------------------------------MYSQL-------------------------------------------
 
 	bool openDataBase ( const QString& connecion_name = QString () );

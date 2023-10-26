@@ -131,7 +131,7 @@ void vmFileMonitor::startMonitoring ( const QString& filename, const uint event 
 		return;
 	}
 
-	qDebug () << "inotify add watch succeeded. wd == " << wd;
+	MSG_OUT ( "inotify add watch succeeded. wd == " << wd )
 	auto new_watch = new watched_files;
 	new_watch->filename = fileOps::fileNameWithoutPath ( filename );
 	new_watch->wd = wd;

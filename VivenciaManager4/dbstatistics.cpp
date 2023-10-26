@@ -47,7 +47,11 @@ void dbStatistics::reload ()
 	m_textinfo->clear ();
 	auto worker ( new dbStatisticsWorker );
 	worker->setCallbackForInfoReady ( [&] ( const QString& more_info ) { return m_textinfo->append ( more_info ); } );
-	QFuture<void> future ( QtConcurrent::run ( worker, &dbStatisticsWorker::startWorks ) );
+#ifdef USING_QT6
+    QFuture<void> future = QtConcurrent::run ( &dbStatisticsWorker::startWorks, worker );
+#else
+    QFuture<void> future ( QtConcurrent::run ( worker, &dbStatisticsWorker::startWorks ) );
+#endif
 	future.waitForFinished ();
 }
 

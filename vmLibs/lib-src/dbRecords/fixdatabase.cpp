@@ -24,8 +24,8 @@ static const QLatin1String tempFile ( "/tmp/.vm-fixdb" );
 
 static void commandQueue ( QString& main_command )
 {
-	main_command += QLatin1String ( "; " ) + MYSQL_INIT_SCRIPT + CHR_SPACE + QStringLiteral ( "stop" ) +
-					QLatin1String ( "; " ) + MYSQL_INIT_SCRIPT + CHR_SPACE + QStringLiteral ( "start" );
+	main_command += QLatin1String ( "; " ) + _mysql_init_script + CHR_SPACE + QStringLiteral ( "stop" ) +
+					QLatin1String ( "; " ) + _mysql_init_script + CHR_SPACE + QStringLiteral ( "start" );
 }
 
 fixDatabase::fixDatabase ()

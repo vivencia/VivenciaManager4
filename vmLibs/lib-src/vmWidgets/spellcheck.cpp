@@ -9,15 +9,25 @@
 #include <QtCore/QFile>
 #include <QtCore/QLocale>
 #include <QtCore/QByteArray>
-#include <QtCore/QTextCodec>
 #include <QtWidgets/QMenu>
+
+#ifdef USING_QT6
+#include <QtCore/QStringConverter>
+#include <QtGui/QActionGroup>
+auto toUtf8 = QStringDecoder ( QStringDecoder::Utf8 );
+#else
+#include <QtCore/QTextCodec>
+#endif
 
 const QString cfgSectionName ( QStringLiteral ( "SPELLCHECK" ) );
 const QString cfgFieldLanguage ( QStringLiteral ( "LANG" ) );
 
 spellCheck::spellCheck ()
-	: mChecker ( nullptr ), mCodec ( nullptr ), m_config ( new configOps ( configOps::appConfigFile (), "SpellCheckConfig" ) ),
+    : mChecker ( nullptr ), m_config ( new configOps ( configOps::appConfigFile (), "SpellCheckConfig" ) ),
 	  mMenu ( nullptr ), menuEntrySelected_func ( nullptr )
+#ifndef USING_QT6
+      ,mCodec ( nullptr )
+#endif
 {
 	getDictionariesPath ();
 	m_config->addManagedSectionName ( cfgSectionName );
@@ -60,7 +70,12 @@ void spellCheck::updateUserDict ()
 bool spellCheck::checkWord ( const QString& word )
 {
 	// Encode from Unicode to the encoding used by current dictionary
+#ifdef USING_QT6
+    QString wordToDic ( toUtf8 ( word.toLocal8Bit () ) );
+    return ( mChecker ? mChecker->spell ( wordToDic.toStdString () ) != 0 : false );
+#else
 	return ( mChecker ? mChecker->spell ( mCodec->fromUnicode ( word ).toStdString () ) != 0 : false );
+#endif
 }
 
 /* The dictionaries files (.dic and .aff) are encoded in Western Europe's ISO-8859-15. Using
@@ -73,11 +88,21 @@ bool spellCheck::suggestionsList ( const QString& word, QStringList& wordList )
 {
 	if ( !checkWord ( word ) )
 	{
+#ifdef USING_QT6
+        QString wordToDic ( toUtf8 ( word.toLocal8Bit () ) );
+        std::vector<std::string> suggestList ( mChecker->suggest ( wordToDic.toStdString () ) );
+#else
 		std::vector<std::string> suggestList ( mChecker->suggest ( mCodec->fromUnicode ( word ).constData () ) );
+#endif
 		if ( !suggestList.empty () )
 		{
-			for ( const std::string& suggestion : suggestList ) {
-				wordList.append ( mCodec->toUnicode ( suggestion.data () ) );
+            for ( const std::string& suggestion : suggestList )
+            {
+#ifdef USING_QT6
+                wordList.append ( toUtf8 ( suggestion.data () ) );
+#else
+                wordList.append ( mCodec->toUnicode ( suggestion.data () ) );
+#endif
 			}
 			suggestList.clear ();
 			return true;
@@ -90,7 +115,12 @@ void spellCheck::addWord ( const QString& word, const bool b_add )
 {
 	if ( mChecker )
 	{
-		mChecker->add ( mCodec->fromUnicode ( word ).constData () );
+#ifdef USING_QT6
+        QString wordToDic ( toUtf8 ( word.toLocal8Bit () ) );
+        mChecker->add ( wordToDic.toStdString () );
+#else
+        mChecker->add ( mCodec->fromUnicode ( word ).constData () );
+#endif
 		if ( b_add )
 		{
 			unknownWordList.append ( word );
@@ -177,7 +207,9 @@ void spellCheck::createDictionaryInterface ()
 		QString dicAff;
 		getDictionaryAff ( dicAff );
 		mChecker = new Hunspell ( dicAff.toLocal8Bit ().constData (), mDictionary.toLocal8Bit ().constData () );
+#ifndef USING_QT6
 		mCodec = QTextCodec::codecForName ( mChecker->get_dic_encoding () );
+#endif
 	}
 }
 

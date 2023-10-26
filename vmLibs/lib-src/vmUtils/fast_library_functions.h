@@ -73,11 +73,11 @@ int insertStringIntoContainer ( const T& list, const QString& text,
 	{
 		str = get_func ( i );
 		// Insert item alphabetically
-		for ( x = 0; x < text.count (); ++x )
+        for ( x = 0; x < text.length (); ++x )
 		{
-			if ( x >= str.count () )
+            if ( x >= str.length () )
 			{
-				if ( x == text.count () && !b_insert_if_exists )
+                if ( x == text.length () && !b_insert_if_exists )
 					return -1;
 				else
 					break;

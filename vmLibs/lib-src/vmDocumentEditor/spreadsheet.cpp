@@ -213,7 +213,6 @@ void spreadSheetEditor::cellModified ( const vmTableItem* const item )
 		if ( item->column () == FLD_QP_SELL_TOTALPRICE || item->column () == FLD_QP_PURCHASE_TOTAL_PRICE  ||
 			 item->column () == FLD_QP_RESULT )
 		{
-			qDebug () << "auto column modified";
 			return;
 		}
 		if ( item->row () < m_table->totalsRow () )

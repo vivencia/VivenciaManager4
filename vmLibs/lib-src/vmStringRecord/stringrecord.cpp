@@ -1,5 +1,9 @@
 #include "stringrecord.h"
 
+#ifdef USING_QT6
+#include <QtCore/QStringView>
+#endif
+
 static const stringRecord emptyStringRecord;
 static const stringTable emptyStringTable;
 
@@ -91,7 +95,12 @@ static void s_changeFieldValue ( QString& data, const uint field, const QString&
 		}
 		--i_field;
 	} while ( i_field >= 0 );
+
+#ifdef USING_QT6
+    const QStringView cur_value ( data.mid ( idx, idx2 - idx ) );
+#else
 	const QStringRef cur_value ( data.midRef ( idx, idx2 - idx ) );
+#endif
 
 	if ( cur_value.isEmpty () )
 	{
@@ -392,14 +401,14 @@ int stringRecord::field ( const QString& value, const int init_idx, const bool b
 			{
 				if ( bprecise )
 				{
-					if ( value == mData.midRef ( idx, idx2 - idx ) )
+                    if ( value == mData.mid ( idx, idx2 - idx ) )
 					{
 						return field;
 					}
 				}
 				else
 				{
-					if ( mData.midRef ( idx, idx2 - idx ).contains ( value ) )
+                    if ( mData.mid ( idx, idx2 - idx ).contains ( value ) )
 					{
 						return field;
 					}

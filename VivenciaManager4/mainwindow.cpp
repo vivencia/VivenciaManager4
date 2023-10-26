@@ -47,14 +47,16 @@
 #ifdef DEBUG
 #include <QtCore/QMutex>
 #include <QtCore/QWaitCondition>
-static void msleep ( unsigned long msecs )
+auto _msleep = [] (unsigned long msecs) ->void
 {
 	QMutex mutex;
 	mutex.lock ();
 	QWaitCondition waitCondition;
 	waitCondition.wait ( &mutex, msecs );
 	mutex.unlock ();
-}
+};
+
+static std::function<void ( unsigned long )> func_dummy = _msleep;
 #endif
 
 enum JOB_INFO_LIST_USER_ROLES
@@ -89,7 +91,7 @@ const auto screen_width = [] ()-> int
 
 MainWindow::MainWindow ()
 	: QMainWindow ( nullptr ),
-	  ui ( new Ui::MainWindow ),  menuJobDoc ( nullptr ), menuJobXls ( nullptr ), menuJobPdf ( nullptr ),
+      ui ( nullptr ),  menuJobDoc ( nullptr ), menuJobXls ( nullptr ), menuJobPdf ( nullptr ),
 		  subMenuJobPdfView ( nullptr ), sepWin_JobPictures ( nullptr ), sepWin_JobReport ( nullptr ), mCal ( new dbCalendar ),
 	  mTableView ( nullptr ), mCalendarView ( nullptr ), mStatistics ( nullptr ), mMachines ( nullptr ), jobsPicturesMenuAction ( nullptr ),
 	  mainTaskPanel ( nullptr ), selJob_callback ( nullptr ), mb_jobPosActions ( false ), mClientCurItem ( nullptr ),
@@ -103,7 +105,11 @@ MainWindow::MainWindow ()
 
 MainWindow::~MainWindow ()
 {
-	saveEditItems ();
+    //First time use. The mainwindow might not be needed if there was an error creating/importing a database or if the user simply decided to do nothing and exit the application
+    if ( ui == nullptr )
+        return;
+
+    saveEditItems ();
 	
 	ui->clientsList->setIgnoreChanges ( true );
 	ui->jobsList->setIgnoreChanges ( true );
@@ -147,6 +153,7 @@ void MainWindow::continueStartUp ()
 	CONFIG ()->getWindowGeometry ( this, Ui::mw_configSectionName, Ui::mw_configCategoryWindowGeometry );
 	show ();
 
+    ui = new Ui::MainWindow;
 	ui->setupUi ( this );
 	setupCustomControls ();
 	restoreLastSession ();
@@ -821,8 +828,8 @@ void MainWindow::txtClientZipCode_textAltered ( const QString& text )
 
 void MainWindow::dteClient_dateAltered ( const vmWidget* const sender )
 {
-	setRecValue ( mClientCurItem->clientRecord (), static_cast<uint>( sender->id () ),
-				  static_cast<const vmDateEdit* const>( sender )->date ().toString ( DATE_FORMAT_DB ) );
+    setRecValue ( mClientCurItem->clientRecord (), static_cast<uint>( sender->id () ),
+                static_cast<const vmDateEdit*>( sender )->date ().toString ( DATE_FORMAT_DB ) );
 	postFieldAlterationActions ( mClientCurItem );
 }
 
@@ -2153,7 +2160,7 @@ void MainWindow::timeJobEnd_timeAltered ()
 
 void MainWindow::dteJob_dateAltered ( const vmWidget* const sender )
 {
-	const vmNumber date ( static_cast<const vmDateEdit* const>( sender )->date () );
+    const vmNumber date ( static_cast<const vmDateEdit*>( sender )->date () );
 	const bool input_ok ( date.isDateWithinRange ( vmNumber::currentDate (), 0, 4 ) );
 	//if ( input_ok )
 		setRecValue ( mJobCurItem->jobRecord (), static_cast<uint>( sender->id () ), date.toDate ( vmNumber::VDF_DB_DATE ) );
@@ -3852,7 +3859,8 @@ void MainWindow::appMainStyle ( vmTaskPanel* panel, const bool b_register )
 {
 	if ( b_register )
 		panelsThatFollowTheme.append ( panel );
-	panel->setScheme ( mainTaskPanel->currentScheme ()->styleName );
+	if ( mainTaskPanel )
+		panel->setScheme ( mainTaskPanel->currentScheme ()->styleName );
 }
 
 void MainWindow::changeSchemeStyle ( const QString& style, const bool b_save )

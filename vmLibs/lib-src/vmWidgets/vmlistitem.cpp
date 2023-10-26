@@ -33,7 +33,7 @@ vmListItem::vmListItem ( const QString& label )
 	: vmListItem ()
 {
 	//Calling vmTableItem::setText here, and in vmTableItem::update is a waste of time and resouces. When the item
-	//is created it does not need to undergo a series of calculations and procedures callings. Only when inserted
+	//is created it does not need to undergo a series of calculations and procedures. Only when inserted
 	//into a list
 	//setText ( label, false, false, false );
 	setMemoryTextOnly ( label );

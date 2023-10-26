@@ -75,7 +75,11 @@ void simpleCalculator::showCalc ( const QPoint& pos, vmLineEdit* line, QWidget* 
 	setParent ( parentWindow );
 	show ();
 	move ( pos.x () + width () , pos.y () );
-	qApp->setActiveWindow ( this );
+#ifdef USING_QT6
+    activateWindow ();
+#else
+    qApp->setActiveWindow ( this );
+#endif
 	txtInput->setFocus ( Qt::ActiveWindowFocusReason );
 }
 

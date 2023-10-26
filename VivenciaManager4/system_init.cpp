@@ -14,6 +14,11 @@
 
 #include <QtWidgets/QFileDialog>
 #include <QApplication>
+#ifdef USING_QT6
+#include <QtCore/QRegularExpression>
+#else
+#include <QtCore/QRegExp>
+#endif
 
 extern "C"
 {
@@ -38,6 +43,8 @@ configDialog* Sys_Init::configdlg_instance ( nullptr );
 spreadSheetEditor* Sys_Init::qp_instance ( nullptr );
 BackupDialog* Sys_Init::backup_instance ( nullptr );
 restoreManager* Sys_Init::restore_instance ( nullptr );
+
+static bool b_first_time_run ( false );
 
 void deleteInstances ()
 {
@@ -69,26 +76,56 @@ void Sys_Init::restartProgram ()
 	qApp->exit ( 0 );
 }
 
-DB_ERROR_CODES Sys_Init::checkSystem ( const bool bFirstPass )
+DB_ERROR_CODES Sys_Init::checkSystem ()
 {
-	if ( !fileOps::exists ( MYSQL_INIT_SCRIPT ).isOn () )
+#ifdef USING_QT6
+static const QRegularExpression regexp ( QStringLiteral ( "mysql|root" ) );
+#else
+static const QRegExp regexp ( QStringLiteral ( "mysql|root" ) );
+#endif
+
+	QStringList args ( fileOps::currentUser () );
+    const QString groups ( fileOps::executeAndCaptureOutput ( args, QStringLiteral ( "groups" ) ) );
+
+	//This was done for the older versions of the app. Now, I keep it here for the time being, but it is not necessary any more, apparently
+	// Will add user to the mysql group. However, only upon a new login will the information be carried over to new processes.
+    bool ret ( groups.contains ( regexp ) );
+	if ( !ret )
+	{
+		b_first_time_run = true;
+		args.clear ();
+		args <<
+				QStringLiteral ( "-a") <<
+				QStringLiteral ( "-G" ) <<
+				QStringLiteral ( "mysql" ) <<
+				fileOps::currentUser ();
+
+		ret = fileOps::executeWait ( args, QStringLiteral ( "usermod" ), true );
+	}
+		//The following code block does not work. The main thread gets stuck forever at executing newgrp mysql
+		/*args.clear ();
+		args <<
+				QStringLiteral ( "-gn" ); //Returns the primary group
+		const QString primaryGroup ( fileOps::executeAndCaptureOutput ( args, QStringLiteral ( "id" ) ) );
+		args.clear ();
+		args <<
+				QStringLiteral ( "mysql" ); //Add user to mysql and makes it the primary group
+		ret = fileOps::executeWait ( args, QStringLiteral ( "newgrp" ) );
+		args.clear ();
+		args <<
+				primaryGroup; //Return user to its original primary group
+		ret = fileOps::executeWait ( args, QStringLiteral ( "newgrp" ) );
+		if ( !ret )
+			return ERR_USER_NOT_ADDED_TO_MYSQL_GROUP;*/
+
+
+	if ( VivenciaDB::mysqlInitScript ().isEmpty () )
 	{
 		NOTIFY ()->criticalBox ( APP_TR_FUNC ( "MYSQL is not installed - Exiting" ),
-			APP_TR_FUNC ( "Could not find mysql init script at " ) + MYSQL_INIT_SCRIPT +
-			APP_TR_FUNC ( ". Please check if mysql-client and mysql-server are installed." ) );
+			APP_TR_FUNC ( "Could not find mysql init script at /etc/init.d. Please check if mysql-client and mysql-server are installed." ) );
 		return ERR_MYSQL_NOT_FOUND;
 	}
 
-	QStringList args ( fileOps::currentUser () );
-	const QString groups ( fileOps::executeAndCaptureOutput ( args, QStringLiteral ( "groups" ) ) );
-	bool ret ( groups.contains ( QRegExp ( QStringLiteral ( "mysql|root" ) ) ) );
-	if ( !ret && bFirstPass )
-	{
-		static_cast<void>( fileOps::sysExec ( QStringLiteral ( "usermod -a -G " ) + QStringLiteral ( "mysql " ) + fileOps::currentUser () ) );
-		ret = checkSystem ( false );
-		if ( !ret )
-			return ERR_USER_NOT_ADDED_TO_MYSQL_GROUP;
-	}
 	return NO_ERR;
 }
 
@@ -128,11 +165,11 @@ void Sys_Init::checkSetup ()
 	if ( err_code != NO_ERR )
 		deInit ( err_code );
 
-	err_code = checkLocalSetup ();
-	if ( err_code != NO_ERR )
-		deInit ( err_code );
+    //err_code = checkLocalSetup ();
+    //if ( err_code != NO_ERR )
+    //	deInit ( err_code );
 
-	err_code = VivenciaDB::checkDatabase ( VDB () );
+	err_code = VivenciaDB::checkDatabase ( VDB (), b_first_time_run );
 
 	switch ( err_code )
 	{
@@ -142,7 +179,10 @@ void Sys_Init::checkSetup ()
 		case ERR_DB_EMPTY:
 			err_code = static_cast<DB_ERROR_CODES>( BACKUP ()->showNoDatabaseOptionsWindow () );
 			if ( err_code != NO_ERR )
+			{
 				deInit ( err_code );
+				return; // not needed
+			}
 		break;
 		case ERR_DATABASE_PROBLEM:
 		case ERR_MYSQL_NOT_FOUND:
@@ -150,7 +190,9 @@ void Sys_Init::checkSetup ()
 		case ERR_USER_NOT_ADDED_TO_MYSQL_GROUP:
 		case ERR_SETUP_FILES_MISSING:
 			deInit ( err_code );
+			return; // not needed
 	}
+	DBRecord::setDatabaseManager ( VDB () );
 }
 
 //--------------------------------------STATIC-HELPER-FUNCTIONS---------------------------------------------
@@ -159,18 +201,19 @@ void Sys_Init::init ( const QString& cmd )
 	APP_START_CMD = cmd;
 	configOps::setAppName ( PROGRAM_NAME );
 
-	config_instance = new configOps ( configOps::appConfigFile (), "MainWindowConfig" );
-	vdb_instance = new VivenciaDB ( true );
-	completers_instance = new vmCompleters;
-	mainwindow_instance = new MainWindow;
-	notify_instance = new vmNotify ( "BR", mainwindow_instance );
-	DBRecord::setCompleterManager ( completers_instance );
+    config_instance = new configOps ( configOps::appConfigFile () );
+	vdb_instance = new VivenciaDB;
+    mainwindow_instance = new MainWindow;
+	notify_instance = new vmNotify ( QStringLiteral ( "BR" ), mainwindow_instance );
 
 	dbListItem::appStartingProcedures ();
 	vmDateEdit::appStartingProcedures ();
 
 	checkSetup ();
 	VDB ()->doPreliminaryWork ();
+
+	completers_instance = new vmCompleters;
+	DBRecord::setCompleterManager ( completers_instance );
 	MAINWINDOW ()->continueStartUp ();
 }
 

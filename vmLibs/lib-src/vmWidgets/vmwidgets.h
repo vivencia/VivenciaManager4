@@ -6,7 +6,7 @@
 
 #include <vmNumbers/vmnumberformats.h>
 
-#include <QtWidgets/QAction>
+#include <QtGui/QAction>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QToolButton>
 #include <QtWidgets/QDateEdit>

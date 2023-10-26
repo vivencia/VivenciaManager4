@@ -3,9 +3,16 @@
 
 #include <QtCore/QString>
 
+
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+#define USING_QT6
+#endif
+
 #ifdef DEBUG
 #include <QDebug>
-#undef USE_THREADS
+
+#define MSG_OUT(message) qDebug () << message;
+
 #define DBG_OUT(message,value,b_ShowValueExpression,separate) \
 		if ( separate ) \
 			qDebug () << QLatin1String ( "-----------------------------------" ); \
@@ -29,7 +36,7 @@
 			value << Qt::endl;
 #else
 #define DBG_OUT(message,value,b_ShowValueExpression,separate)
-#define USE_THREADS
+#define MSG_OUT(message)
 #endif
 
 #ifdef TRANSLATION_ENABLED

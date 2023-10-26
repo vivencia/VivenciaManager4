@@ -32,11 +32,16 @@
 #include <QtCore/QTextStream>
 #include <QtCore/QScopedPointer>
 
+#ifdef USING_QT6
+#include <QtCore/QStringView>
+#include <QtCore/QRegularExpression>
+#else
+#include <QtCore/QRegExp>
+#endif
+
 podList<uint> VivenciaDB::currentHighestID_list ( 0, TABLES_IN_DB + 1 );
 
 static const QLatin1String chrDelim2 ( "\'," );
-static const QString VMDB_PASSWORD_SERVICE ( QStringLiteral ( "vmdb_pswd_service" ) );
-static const QString VMDB_PASSWORD_SERVER_ADMIN_ID ( QStringLiteral ( "vmdb_pswd_server_admin_id" ) );
 
 const TABLE_INFO* const VivenciaDB::table_info[TABLES_IN_DB] = {
 	&generalTable::t_info,
@@ -58,7 +63,11 @@ const TABLE_INFO* const VivenciaDB::table_info[TABLES_IN_DB] = {
 static const uint PORT ( 3306 );
 static const QString HOST ( QStringLiteral ( "localhost" ) );
 static const QString CONNECTION_NAME ( QStringLiteral ( "vivenciadb" ) );
+#ifdef USING_QT6
+static const QString DB_DRIVER_NAME ( QStringLiteral ( "QMYSQL" ) );
+#else
 static const QString DB_DRIVER_NAME ( QStringLiteral ( "QMYSQL3" ) );
+#endif
 static const QString ROOT_CONNECTION ( QStringLiteral ( "root_connection" ) );
 
 //-----------------------------------------STATIC---------------------------------------------
@@ -184,22 +193,28 @@ QString VivenciaDB::tableName ( const TABLE_ORDER table )
 	}
 	return ret;
 }
+
+const QString VivenciaDB::mysqlInitScript ()
+{
+	static QString script;
+	if ( script.isEmpty() )
+	{
+		if ( fileOps::exists ( QStringLiteral ( "/etc/init.d/mariadb" ) ).isOn () )
+			script = QStringLiteral ( "/etc/init.d/mariadb" );
+		else if ( fileOps::exists ( QStringLiteral ( "/etc/init.d/mysql" ) ).isOn () )
+			script = QStringLiteral ( "/etc/init.d/mysql" );
+	}
+	return script;
+}
+
 //-----------------------------------------STATIC---------------------------------------------
 
-VivenciaDB::VivenciaDB ( const bool b_set_dbrec_mngr )
+VivenciaDB::VivenciaDB ()
 	: m_db ( nullptr ), m_ok ( false ), mNewDB ( false ), mBackupSynced ( true ),
       m_progressMaxSteps_func ( nullptr ), m_errorHandling_func ( nullptr )
 {
-	if ( b_set_dbrec_mngr )
-	{
-		if ( openDataBase () )
-		{
-			if ( DBRecord::databaseManager () == nullptr )
-				DBRecord::setDatabaseManager ( this );
-		}
-	}
 	//Avoid constant ifs for checking whether this callback was set or not
-	m_progressStepUp_func = [&] () { qDebug () << "VivenciaDB working..."; };
+	m_progressStepUp_func = [&] () { MSG_OUT("VivenciaDB working...") };
 }
 
 VivenciaDB::~VivenciaDB ()
@@ -211,39 +226,87 @@ VivenciaDB::~VivenciaDB ()
 }
 
 //-----------------------------------------MYSQL-------------------------------------------
-bool VivenciaDB::isMySQLRunning ()
+bool VivenciaDB::isMySQLRunning ( const bool b_firsttimerun )
 {
-	QStringList args ( QStringLiteral ( "status" ) );
-	QString outStr ( fileOps::executeAndCaptureOutput ( args, MYSQL_INIT_SCRIPT ) );
+	QStringList args;
 
-	if ( fileOps::exists ( QStringLiteral ( "/etc/lsb-release" ) ).isOn () ) // *buntu derivatives
+	if ( b_firsttimerun )
 	{
-		if ( configOps::initSystem ( SYSTEMD ) )
-			return ( static_cast<bool>( outStr.indexOf ( QStringLiteral ( "active (running)" ) ) != -1 ) );
-		return ( static_cast<bool>( outStr.indexOf ( QStringLiteral ( "start/running, process" ) ) != -1 ) );
+		args <<
+				QStringLiteral ( "status" );
+
+#ifdef USING_QT6
+		const QStringView outStr ( fileOps::executeAndCaptureOutput ( args, mysqlInitScript (), true ) );
+		return ( static_cast<bool>( outStr.indexOf ( QRegularExpression ( QStringLiteral ( "OK|active (running)|start/running|Server version" ) ) ) != -1 ) );
+#else
+		const QString outStr ( fileOps::executeAndCaptureOutput ( args, mysqlInitScript (), true ) );
+		return ( static_cast<bool>( outStr.indexOf ( QRegExp ( QStringLiteral ( "OK|active (running)|start/running|Server version" ) ) ) != -1 ) );
+#endif
 	}
-	return ( static_cast<bool>( outStr.indexOf ( QStringLiteral ( "OK" ) ) != -1 ) );
+	else //New code as of 2023-10-26 - MX Linux 23
+	{
+
+		args <<
+				QStringLiteral ( "--user=") + USER_NAME <<
+				QStringLiteral ( "--password=" ) + PASSWORD <<
+				QStringLiteral ( "status" );
+#ifdef USING_QT6
+		const QStringView outStr ( fileOps::executeAndCaptureOutput ( args, adminApp () ) );
+#else
+		const QString outStr ( fileOps::executeAndCaptureOutput ( args, adminApp () ) );
+#endif
+		return ( static_cast<bool>( outStr.indexOf ( QStringLiteral ( "Uptime:" ) ) != -1 ) );
+	}
 }
 
-DB_ERROR_CODES VivenciaDB::commandMySQLServer ( const QString& command, const bool b_do_not_exec )
+/*bool VivenciaDB::isMySQLRunning ( const bool b_firsttimerun )
 {
-	if ( !b_do_not_exec )
-	{
-		QStringList args ( command );
-		if ( !fileOps::executeWait ( args, MYSQL_INIT_SCRIPT, true ) )
-			return ERR_COMMAND_MYSQL;
-	}
+	QStringList args ( QStringLiteral ( "status" ) );
+#ifdef USING_QT6
+	QStringView
+#else
+	QString
+#endif
+			//The first time this probram is run we must exec the script using root.
+			//Even though we might have added the user to the mysl group (which owns access to the mysql init script)
+			//We will not have the permission effectively in place until the next login
+			 outStr ( fileOps::executeAndCaptureOutput ( args, mysqlInitScript (), b_firsttimerun ) );
+
+	//if ( fileOps::exists ( QStringLiteral ( "/etc/lsb-release" ) ).isOn () ) // *buntu derivatives
+	//{
+
+	//The regular expression looks for several possible outputs of the status script. Theses options were what I found along the years, with different distributions
+#ifdef USING_QT6
+		return ( static_cast<bool>( outStr.indexOf ( QRegularExpression ( QStringLiteral ( "OK|active (running)|start/running|Server version" ) ) ) != -1 ) );
+#else
+		return ( static_cast<bool>( outStr.indexOf ( QRegExp ( QStringLiteral ( "OK|active (running)|start/running|Server version" ) ) ) != -1 ) );
+#endif
+		//if ( configOps::initSystem ( SYSTEMD ) )
+		//	return ( static_cast<bool>( outStr.indexOf ( QStringLiteral ( "active (running)" ) ) != -1 ) );
+		//return ( static_cast<bool>( outStr.indexOf ( QStringLiteral ( "start/running, process" ) ) != -1 ) );
+	//}
+	//return ( static_cast<bool>( outStr.indexOf ( QStringLiteral ( "OK" ) ) != -1 ) );
+}*/
+
+DB_ERROR_CODES VivenciaDB::commandMySQLServer ( const QString& command, const bool b_firsttimerun )
+{
+	QStringList args ( command );
+	//In the first run all around must be root to use mysql. After that, the regular user will have access to the mysql tools and database
+	if ( !fileOps::executeWait ( args, mysqlInitScript (), b_firsttimerun ) )
+		return ERR_COMMAND_MYSQL;
 	return NO_ERR;
 }
 
-DB_ERROR_CODES VivenciaDB::checkDatabase ( VivenciaDB* vdb )
+DB_ERROR_CODES VivenciaDB::checkDatabase ( VivenciaDB* vdb, const bool b_firsttimerun )
 {
-	if ( !isMySQLRunning () )
+	bool ok ( false );
+	ok = isMySQLRunning ( b_firsttimerun );
+	if ( !ok )
 	{
-		static_cast<void>( VivenciaDB::commandMySQLServer ( QStringLiteral ( "start" ) ) );
+		ok = VivenciaDB::commandMySQLServer ( QStringLiteral ( "start" ), b_firsttimerun ) == NO_ERR;
 	}
 
-	if ( isMySQLRunning () )
+	if ( ok )
 	{
 		if ( vdb == nullptr )
 		{
@@ -375,9 +438,10 @@ bool VivenciaDB::createDatabase ( const bool bCreateTables )
 				return true;
 			}
 		}
+		vmNotify::notifyMessage ( nullptr, APP_TR_FUNC ( "Database error" ), APP_TR_FUNC ( "MYSQL could create the database. Exiting..." ), 5000, true );
+		return false;
 	}
-	vmNotify::notifyMessage ( nullptr, APP_TR_FUNC ( "Database error" ), APP_TR_FUNC ( "MYSQL could create the database. Exiting..." ), 5000, true );
-	return false;
+	return true;
 }
 
 //The root password is not stored by the application
@@ -421,7 +485,7 @@ bool VivenciaDB::changeRootPassword ( const QString& oldpasswd, const QString& n
 	int e_code;
 
 	const QString mysqladmin_output ( fileOps::executeAndCaptureOutput ( mysqladmin_args, adminApp (), true, &e_code ) );
-	qDebug () << mysqladmin_output;
+	MSG_OUT(mysqladmin_output)
 	return e_code == 0;
 }
 
@@ -481,12 +545,20 @@ bool VivenciaDB::createTable ( const TABLE_INFO* t_info )
 
 	QString values;
 	while ( ( sep_2[0] = t_info->field_names.indexOf ( CHR_PIPE, sep_1[0] ) ) != -1 )
-	{
-		values.append ( t_info->field_names.midRef ( sep_1[0], sep_2[0] - sep_1[0] ) );
+    {
+#ifdef USING_QT6
+        values.append ( t_info->field_names.mid ( sep_1[0], sep_2[0] - sep_1[0] ) );
+#else
+        values.append ( t_info->field_names.midRef ( sep_1[0], sep_2[0] - sep_1[0] ) );
+#endif
 		sep_1[0] = sep_2[0] + 1;
 
 		sep_2[1] = t_info->field_flags.indexOf ( CHR_PIPE, sep_1[1] );
-		values.append ( t_info->field_flags.midRef ( sep_1[1], sep_2[1]-sep_1[1] ) );
+#ifdef USING_QT6
+        values.append ( t_info->field_flags.mid ( sep_1[1], sep_2[1]-sep_1[1] ) );
+#else
+        values.append ( t_info->field_flags.midRef ( sep_1[1], sep_2[1]-sep_1[1] ) );
+#endif
 		sep_1[1] = sep_2[1] + 1;
 	}
 	values.append ( t_info->primary_key );
@@ -512,7 +584,7 @@ bool VivenciaDB::insertColumn ( const uint column, const TABLE_INFO* __restrict 
 		mBackupSynced = false;
 		return true;
 	}
-	qDebug () << database ()->lastError ().text ();
+	MSG_OUT(database ()->lastError ().text ())
 	return false;
 }
 
@@ -778,10 +850,10 @@ bool VivenciaDB::insertRecord ( const DBRecord* db_rec ) const
 		return true;
 	}
 
-	qDebug () << QStringLiteral ( "VivenciaDB::insertRecord - " ) << database ()->lastError ().text ();
-	qDebug () << QStringLiteral ( "--------" );
-	qDebug () << QStringLiteral ( "Query command:" );
-	qDebug () << str_query;
+	MSG_OUT(QStringLiteral ( "VivenciaDB::insertRecord - " ) << database ()->lastError ().text ())
+	MSG_OUT(QStringLiteral ( "--------" ))
+	MSG_OUT(QStringLiteral ( "Query command:" ))
+	MSG_OUT(str_query)
 	return false;
 }
 
@@ -806,8 +878,11 @@ bool VivenciaDB::updateRecord ( const DBRecord* db_rec ) const
 		sep_2 = sep_matcher.indexIn ( db_rec->t_info->field_names, sep_1 );
 		if ( db_rec->isModified ( i ) )
 		{
-			str_query += db_rec->t_info->field_names.midRef ( sep_1, sep_2 - sep_1 ) +
-						 chrDelim + recStrValue ( db_rec, i ) + chrDelim2;
+#ifdef USING_QT6
+            str_query += db_rec->t_info->field_names.mid ( sep_1, sep_2 - sep_1 ) + chrDelim + recStrValue ( db_rec, i ) + chrDelim2;
+#else
+            str_query += db_rec->t_info->field_names.midRef ( sep_1, sep_2 - sep_1 ) + chrDelim + recStrValue ( db_rec, i ) + chrDelim2;
+#endif
 		}
 		sep_1 = sep_2 + 1;
 	}
@@ -821,7 +896,7 @@ bool VivenciaDB::updateRecord ( const DBRecord* db_rec ) const
 		mBackupSynced = false;
 		return true;
 	}
-	qDebug () << QStringLiteral ( "VivenciaDB::updateRecord - " ) << database ()->lastError ().text ();
+	MSG_OUT(QStringLiteral ( "VivenciaDB::updateRecord - " ) << database ()->lastError ().text ())
 	return false;
 }
 
@@ -843,7 +918,7 @@ bool VivenciaDB::removeRecord ( const DBRecord* db_rec ) const
 			mBackupSynced = false;
 			return true;
 		}
-		qDebug () << QStringLiteral ( "VivenciaDB::removeRecord - " ) << database ()->lastError ().text ();
+		MSG_OUT(QStringLiteral ( "VivenciaDB::removeRecord - " ) << database ()->lastError ().text ())
 	}
 	return false;
 }
@@ -915,13 +990,13 @@ bool VivenciaDB::getDBRecord ( DBRecord* db_rec, const uint field, const bool lo
 	}
 	catch ( const std::runtime_error& e )
 	{
-		qDebug () << "A runtime exception was caught with message: \"" << e.what () << "\"";
+		MSG_OUT("A runtime exception was caught with message: \"" << e.what () << "\"")
 		if ( m_errorHandling_func )
 			m_errorHandling_func ( e.what () );
 	}
 	catch ( const std::exception& e )
 	{
-		qDebug () << "A standard exception was caught with message: \"" << e.what () << "\"";
+		MSG_OUT("A standard exception was caught with message: \"" << e.what () << "\"")
 		if ( m_errorHandling_func )
 			m_errorHandling_func ( e.what () );
 	}
@@ -976,13 +1051,13 @@ bool VivenciaDB::getDBRecord ( DBRecord* db_rec, DBRecord::st_Query& stquery, co
 	}
 	catch ( const std::runtime_error& e )
 	{
-		qDebug () << "A runtime exception was caught with message: \"" << e.what () << "\"";
+		MSG_OUT("A runtime exception was caught with message: \"" << e.what () << "\"")
 		if ( m_errorHandling_func )
 			m_errorHandling_func ( e.what () );
 	}
 	catch ( const std::exception& e )
 	{
-		qDebug () << "A standard exception was caught with message: \"" << e.what () << "\"";
+		MSG_OUT("A standard exception was caught with message: \"" << e.what () << "\"")
 		if ( m_errorHandling_func )
 			m_errorHandling_func ( e.what () );
 	}
@@ -1005,11 +1080,11 @@ bool VivenciaDB::runSelectLikeQuery ( const QString& query_cmd, QSqlQuery& query
 		}
 		catch ( const std::runtime_error& e )
 		{
-			qDebug () << "A runtime exception was caught with message: \"" << e.what () << "\"";
+			MSG_OUT("A runtime exception was caught with message: \"" << e.what () << "\"")
 		}
 		catch ( const std::exception& e )
 		{
-			qDebug () << "A standard exception was caught with message: \"" << e.what () << "\"";
+			MSG_OUT("A standard exception was caught with message: \"" << e.what () << "\"")
 		}
 	}
 	return false;	
@@ -1026,11 +1101,11 @@ bool VivenciaDB::runModifyingQuery ( const QString& query_cmd, QSqlQuery& queryR
 		}
 		catch ( const std::runtime_error& e )
 		{
-			qDebug () << "A runtime exception was caught with message: \"" << e.what () << "\"";
+			MSG_OUT("A runtime exception was caught with message: \"" << e.what () << "\"")
 		}
 		catch ( const std::exception& e )
 		{
-			qDebug () << "A standard exception was caught with message: \"" << e.what () << "\"";
+			MSG_OUT("A standard exception was caught with message: \"" << e.what () << "\"")
 		}
 	}
 	return false;	
@@ -1131,7 +1206,7 @@ bool VivenciaDB::doRestore ( const QString& filepath )
 					   QStringLiteral ( "--user=") + USER_NAME <<
 					   QStringLiteral ( "--password=" ) + PASSWORD <<
 					   QStringLiteral ( "--default_character_set=utf8mb4" ) <<
-					   QStringLiteral ( "--databases" ) << DB_NAME;
+					   QStringLiteral ( "--database" ) << DB_NAME;
 	bool ret ( true );
 
 	//hopefully, by now, Data will have intermediated well the situation, having all the pieces of the program
@@ -1161,7 +1236,7 @@ bool VivenciaDB::doRestore ( const QString& filepath )
 					QStringLiteral ( "--password=" ) + PASSWORD <<
 					QStringLiteral ( "--auto-repair" ) <<
 					QStringLiteral ( "--optimize" ) <<
-					QStringLiteral ( "databases" ) << DB_NAME;
+					QStringLiteral ( "--databases" ) << DB_NAME;
 	fileOps::executeWait ( repairapp_args, QStringLiteral ( "mysqlcheck" ) );
 
 	m_progressStepUp_func ();
@@ -1240,8 +1315,8 @@ bool VivenciaDB::importFromCSV ( const QString& filename )
 	bool bSuccess ( false );
 	//we don't import if there is a version mismatch
 	if ( rec.fieldValue ( 0 ).isEmpty () )
-		 return false;
-	if ( rec.fieldValue ( 0 ).at ( 0 ) == db_rec->t_info->version )
+         return false;
+    if ( rec.fieldValue ( 0 ).at ( 0 ).toLatin1 () == db_rec->t_info->version )
 	{
 		uint fld ( 1 );
 		int idx ( 1 );

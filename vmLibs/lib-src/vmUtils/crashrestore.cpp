@@ -32,7 +32,7 @@ void restoreManager::appExitingProcedures ()
 
 void restoreManager::saveSession ()
 {
-	qDebug () << "Saving session ... ";
+	MSG_OUT ( "Saving session ... " )
 	/* We do not know the nature of the exeption that led here. So we attempt to save the current state information and then
 	 * resume with program exiting process which, if successfull, will undo the saving state but better be safe than sorry
 	 */

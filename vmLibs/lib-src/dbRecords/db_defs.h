@@ -48,7 +48,7 @@ struct TABLE_INFO //compile-time set
 	const QString field_flags;
 	const QString field_labels;
 	const DB_FIELD_TYPE* field_types;
-	const unsigned char version;
+    const unsigned char version;
 	uint field_count;
 	const unsigned int table_order;
 	bool ( *update_func ) ( const unsigned char current_table_version );// New field: From version 2.0, upates are conducted within the originating module

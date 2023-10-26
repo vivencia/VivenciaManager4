@@ -11,7 +11,6 @@
 #include <dbRecords/completers.h>
 
 #include <QtCore/QFile>
-#include <QtCore/QTextCodec>
 #include <QtCore/QVariant>
 #include <QtGui/QTextDocumentWriter>
 #include <QtGui/QTextList>
@@ -30,6 +29,11 @@
 #include <QtPrintSupport/QPrintDialog>
 #include <QtPrintSupport/QPrinter>
 #include <QtPrintSupport/QPrintPreviewDialog>
+#ifdef USING_QT6
+#include <QtCore/QStringConverter>
+#else
+#include <QtCore/QTextCodec>
+#endif
 
 imageTextObject::~imageTextObject () {}
 
@@ -134,13 +138,19 @@ bool textEditor::loadFile ( const QString& filename )
 				if ( fileOps::fileExtension ( filename ) == QStringLiteral ( "txt" ) )
 				{
 					mb_UseHtml = false;
-					mDocument->setPlainText ( QString::fromUtf8 ( data.constData () ) );
+                    mDocument->setPlainText ( data.constData () );
 				}
 				else
 				{
 					mb_UseHtml = true;
-					QTextCodec* codec ( Qt::codecForHtml ( data ) );
-					mDocument->setHtml ( codec->toUnicode ( data ) );
+#ifdef USING_QT6
+                    QStringDecoder decoder;
+                    decoder = QStringDecoder::decoderForHtml ( data );
+                    mDocument->setHtml ( decoder ( data ) );
+#else
+                    QTextCodec* codec ( Qt::codecForHtml ( data ) );
+                    mDocument->setHtml ( codec->toUnicode ( data ) );
+#endif
 				}
 			}
 			if ( mDocument->document ()->isEmpty () )
@@ -197,7 +207,11 @@ bool textEditor::saveFile ( const QString& filename )
 	QFile file ( filename );
 	if ( file.open ( QFile::WriteOnly | QFile::Text ) )
 	{
-		QString str ( mb_UseHtml ? mDocument->document()->toHtml ( "utf-8" ) : mDocument->document()->toPlainText () );
+#ifdef USING_QT6
+        QString str ( mb_UseHtml ? mDocument->document()->toHtml () : mDocument->document()->toPlainText () );
+#else
+        QString str ( mb_UseHtml ? mDocument->document()->toHtml ( "utf-8" ) : mDocument->document()->toPlainText () );
+#endif
 
 		if ( !mapImages.isEmpty () )
 		{
@@ -916,10 +930,17 @@ void textEditorToolBar::btnPrint_clicked ()
 	QPrinter printer ( QPrinter::ScreenResolution );
 	preparePrinterDevice ( &printer );
 	auto printerDlg ( new QPrintDialog ( &printer, this ) );
-	if ( mEditorWindow->mDocument->textCursor ().hasSelection () )
-		printerDlg->addEnabledOption ( QAbstractPrintDialog::PrintSelection );
-	printerDlg->setWindowTitle ( TR_FUNC ( "Print document" ) );
-
+    if ( mEditorWindow->mDocument->textCursor ().hasSelection () )
+    {
+#ifdef USING_QT6
+        printerDlg->setOption ( QAbstractPrintDialog::PrintSelection );
+        printerDlg->setOption ( QAbstractPrintDialog::PrintToFile );
+        printerDlg->setOption ( QAbstractPrintDialog::PrintPageRange );
+#else
+        printerDlg->addEnabledOption ( QAbstractPrintDialog::PrintSelection | QAbstractPrintDialog::PrintToFile | QAbstractPrintDialog::PrintPageRange );
+#endif
+    printerDlg->setWindowTitle ( TR_FUNC ( "Print document" ) );
+    }
 	if ( printerDlg->exec () == QDialog::Accepted )
 		mEditorWindow->mDocument->print ( &printer );
 	mEditorWindow->setPreview ( false );

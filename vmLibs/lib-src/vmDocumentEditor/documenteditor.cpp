@@ -38,8 +38,8 @@ documentEditor::~documentEditor ()
 }
 
 documentEditor::documentEditor ( QWidget* parent, vmCompleters* completer )
-	: QMainWindow ( parent ), mb_ClosingAllTabs ( false ), recentFilesList ( QString (), MAX_RECENT_FILES ),
-	  m_config ( new configOps ( configOps::appConfigFile (), "DocumentEditorConfig" ) ), mCompleterManager ( completer )
+    : QMainWindow ( parent ), mb_ClosingAllTabs ( false ),
+      m_config ( new configOps ( configOps::appConfigFile (), "DocumentEditorConfig" ) ), mCompleterManager ( completer )
 {
 	editorWindowClosed_func = [] () { return; };
 	setDockNestingEnabled ( true );

@@ -42,7 +42,11 @@ static void decode_pos ( const QString& pos, int* const row, int* const col )
 	else
 	{
 		*col = pos.at ( 0 ).toLatin1 () - 'A';
-		*row = pos.rightRef ( pos.size () - 1 ).toInt ();
+#ifdef USING_QT6
+        *row = pos.right ( pos.size () - 1 ).toInt ();
+#else
+        *row = pos.rightRef ( pos.size () - 1 ).toInt ();
+#endif
 	}
 }
 
@@ -254,15 +258,17 @@ QVariant vmTableItem::data ( const int role ) const
 		case Qt::DisplayRole:
 		case Qt::StatusTipRole:
 		case Qt::EditRole:
-		//Only widgets themselves should display their data. Otherwise both the widgets and the table item would
-		//have their display contents drawn (and therefore calculated, even if not properly displayed for being behind
-		//the widget).
-		if ( ownerItem () != nullptr )
-				return mCache;
-		
+            //Only widgets themselves should display their data. Otherwise both the widgets and the table item would
+            //have their display contents drawn (and therefore calculated, even if not properly displayed for being behind
+            //the widget).
+			if ( ownerItem () == nullptr )
+                return mCache;
+        break;
 		default:
 			return QTableWidgetItem::data ( role );
-	}
+        break;
+    }
+    return QVariant ( emptyString );
 }
 
 void vmTableItem::targetsFromFormula ()

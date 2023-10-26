@@ -92,9 +92,7 @@ bool companyPurchasesUI::tableRowRemoved ( const uint row )
 {
 	//TODO: maybe ask if user is certain about this action. Maybe, put the asking code under vmTableWidget::removeRow_slot ()
 	stringTable items ( recStrValue ( cp_rec, FLD_CP_ITEMS_REPORT ) );
-	qDebug () << items.toString();
 	items.removeRecord ( row );
-	qDebug () << items.toString();
 	setRecValue ( cp_rec, FLD_CP_ITEMS_REPORT, items.toString () );
 	return true;
 }
@@ -659,7 +657,7 @@ void companyPurchasesUI::txtCP_textAltered ( const vmWidget* const sender )
 
 void companyPurchasesUI::dteCP_dateAltered ( const vmWidget* const sender )
 {
-    setRecValue ( cp_rec, static_cast<uint>( sender->id () ), static_cast<const vmDateEdit* const>( sender )->date ().toString ( DATE_FORMAT_DB ) );
+    setRecValue ( cp_rec, static_cast<uint>( sender->id () ), static_cast<const vmDateEdit*>( sender )->date ().toString ( DATE_FORMAT_DB ) );
 }
 
 void companyPurchasesUI::btnCPShowSupplier_clicked ( const bool checked )

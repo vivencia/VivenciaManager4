@@ -6,14 +6,16 @@
 #undef QT_NO_CAST_TO_ASCII
 
 #include <QtCore/QStringMatcher>
-#include <QtCore/QRegExp>
 #include <QtGui/QTextDocument>
 #include <QtGui/QTextCharFormat>
 
+#ifdef USING_QT6
+#include <QtCore/QRegularExpression>
+static const QRegularExpression word_split_syntax ( QStringLiteral ( "([^\\w,^\\\\]|(?=\\\\))+" ) );
+#else
+#include <QtCore/QRegExp>
 static const QRegExp word_split_syntax ( QStringLiteral ( "([^\\w,^\\\\]|(?=\\\\))+" ) );
-
-//QTextCharFormat* __restrict__ wordHighlighter::m_spellCheckFormat ( nullptr );
-//QTextCharFormat* __restrict__ wordHighlighter::m_HighlightFormat ( nullptr );
+#endif
 
 wordHighlighter::wordHighlighter ( QTextDocument* parent, spellCheck* const spellchecker )
 	: QSyntaxHighlighter ( parent ), mb_spellCheckEnabled ( false ), mb_HighlightEnabled ( false ),
@@ -113,7 +115,11 @@ void wordHighlighter::highlightBlock ( const QString& text )
 					{
 						if ( !mSpellChecker->checkWord ( str ) )
 						{
-							number = text.count ( QRegExp ( QLatin1String ("\\b" ) + str + QLatin1String ("\\b" ) ) );
+#ifdef USING_QT6
+                            number = text.count ( QRegularExpression ( QLatin1String ("\\b" ) + str + QLatin1String ("\\b" ) ) );
+#else
+                            number = text.count ( QRegExp ( QLatin1String ("\\b" ) + str + QLatin1String ("\\b" ) ) );
+#endif
 							// underline all incorrect occurences of misspelled word
 							str_match.setPattern ( str );
 							for ( j = 0; j < number; ++j )

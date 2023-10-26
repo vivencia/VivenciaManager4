@@ -93,7 +93,7 @@ public:
 	virtual void relationActions ( dbListItem* = nullptr ) { ; }
 	void setRelatedItem ( const uint rel_idx, dbListItem* const item );
 	dbListItem* relatedItem ( const uint rel_idx ) const;
-	
+
 	virtual uint translatedInputFieldIntoBadInputField ( const uint field ) const;
 
 	inline int crashID () const { return m_crashid; }
@@ -153,7 +153,7 @@ public:
 	virtual ~clientListItem () override;
 
 	// Prevent Qt from deleting these objects
-	inline void operator delete ( void* ) { return; }
+    //inline void operator delete ( void* ) { return; }
 
 	inline Client* clientRecord () const { return static_cast<Client*> ( dbRec () ); }
 
@@ -181,7 +181,7 @@ public:
 	virtual ~jobListItem () override;
 
 	// Prevent Qt from deleting these objects
-	inline void operator delete ( void* ) { return; }
+    //inline void operator delete ( void* ) { return; }
 	
 	inline Job* jobRecord () const { return static_cast<Job*>( dbRec () ); }
 
@@ -221,7 +221,7 @@ public:
 	virtual ~payListItem () override;
 
 	// Prevent Qt from deleting these objects
-	inline void operator delete ( void* ) { return; }
+    //inline void operator delete ( void* ) { return; }
 		
 	inline Payment* payRecord () const { return static_cast<Payment*> ( dbRec () ); }
 
@@ -247,7 +247,7 @@ public:
 	virtual ~buyListItem () override;
 
 	// Prevent Qt from deleting these objects
-	inline void operator delete ( void* ) { return; }
+    //inline void operator delete ( void* ) { return; }
 		
 	inline Buy* buyRecord () const { return static_cast<Buy*> ( dbRec () ); }
 

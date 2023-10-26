@@ -198,8 +198,8 @@ void vmLineFilter::keyPressEvent ( QKeyEvent* const ke )
 			t_accept.setOn ();
 		}
 		else if ( key == Qt::Key_cedilla )
-		{
-			mBuffer.insert ( startlevel, Qt::Key_C );
+        {
+            mBuffer.insert ( startlevel, QChar ( int(Qt::Key_C) ) );
 			t_accept.setOn ();
 		}
 	}

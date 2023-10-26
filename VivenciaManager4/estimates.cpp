@@ -15,7 +15,6 @@
 #include <vmDocumentEditor/reportgenerator.h>
 
 #include <QtSql/QSqlQuery>
-#include <QtWidgets/QAction>
 #include <QtWidgets/QToolButton>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QLabel>
@@ -24,6 +23,12 @@
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QTreeWidget>
 #include <QtWidgets/QTreeWidgetItem>
+
+#ifdef USING_QT6
+#include <QtGui/QAction>
+#else
+#include <QtWidgets/QAction>
+#endif
 
 static QToolButton* btnDoc ( nullptr );
 static QToolButton* btnXls ( nullptr );
@@ -847,7 +852,11 @@ void estimateDlg::projectActions ( QAction *action )
 jobListItem* estimateDlg::findJobByPath ( QTreeWidgetItem* const item )
 {
 	jobListItem* jobItem ( nullptr );
-	const QString clientID ( Client::clientID ( item->text ( 0 ) ) );
+#ifdef USING_QT6
+    const QString clientID ( QString::number ( Client::clientID ( item->text ( 0 ) ) ) );
+#else
+    const QString clientID ( Client::clientID ( item->text ( 0 ) ) );
+#endif
 	clientListItem* clientItem ( MAINWINDOW ()->getClientItem ( clientID.toUInt () ) );
 	if ( clientItem )
 	{

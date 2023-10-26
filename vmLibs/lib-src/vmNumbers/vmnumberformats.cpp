@@ -462,14 +462,22 @@ vmNumber& vmNumber::fromTrustedStrDouble ( const QString& str_double )
 	}
 	
 	clear ( false );
+#ifdef USING_QT6
+    nbr_part[0] = str_double.left ( str_double.indexOf ( CHR_DOT ) ).toInt ( &mb_valid );
+#else
 	nbr_part[0] = str_double.leftRef ( str_double.indexOf ( CHR_DOT ) ).toInt ( &mb_valid );
-	
-	if ( mb_valid )
+#endif
+
+    if ( mb_valid )
 	{
 		setType ( VMNT_DOUBLE );
 		setCached ( true );
 		cached_str = str_double;
+#ifdef USING_QT6
+        nbr_part[1] = str_double.right ( 2 ).toInt ();
+#else
 		nbr_part[1] = str_double.rightRef ( 2 ).toInt ();
+#endif
 	}
 	return *this;
 }
@@ -660,28 +668,48 @@ vmNumber& vmNumber::fromStrDate ( const QString& date )
 
 			if ( n == 4 ) // day starts with year
 			{
-				nbr_upart[VM_IDX_YEAR] = date.leftRef ( n ).toUInt ();
-				nbr_upart[VM_IDX_DAY] = date.rightRef ( date.length () - idx - 1 ).toUInt ();
+#ifdef USING_QT6
+                nbr_upart[VM_IDX_YEAR] = date.left ( n ).toUInt ();
+                nbr_upart[VM_IDX_DAY] = date.right ( date.length () - idx - 1 ).toUInt ();
+#else
+                nbr_upart[VM_IDX_YEAR] = date.leftRef ( n ).toUInt ();
+                nbr_upart[VM_IDX_DAY] = date.rightRef ( date.length () - idx - 1 ).toUInt ();
+#endif
 				nbr_upart[VM_IDX_STRFORMAT] = sep_chr == CHR_F_SLASH ? VDF_DB_DATE : VDF_DROPBOX_DATE;
 			}
 			else // date may start with day or a two digit year
 			{
-				nbr_upart[VM_IDX_DAY] = date.leftRef ( n ).toUInt ();
+#ifdef USING_QT6
+                nbr_upart[VM_IDX_DAY] = date.left ( n ).toUInt ();
+#else
+                nbr_upart[VM_IDX_DAY] = date.leftRef ( n ).toUInt ();
+#endif
 				if ( nbr_upart[VM_IDX_DAY] > 31 ) // two-digit year
 				{
 					nbr_upart[VM_IDX_YEAR] = nbr_upart[VM_IDX_DAY];
-					nbr_upart[VM_IDX_DAY] = date.rightRef ( 2 ).toUInt ();
+#ifdef USING_QT6
+                    nbr_upart[VM_IDX_DAY] = date.right ( 2 ).toUInt ();
+#else
+                    nbr_upart[VM_IDX_DAY] = date.rightRef ( 2 ).toUInt ();
+#endif
 				}
 				else
 				{
-					nbr_upart[VM_IDX_YEAR] = date.rightRef ( date.length () -
-														  date.lastIndexOf ( sep_chr ) - 1 ).toUInt ();
+#ifdef USING_QT6
+                    nbr_upart[VM_IDX_YEAR] = date.right ( date.length () - date.lastIndexOf ( sep_chr ) - 1 ).toUInt ();
+#else
+                    nbr_upart[VM_IDX_YEAR] = date.rightRef ( date.length () - date.lastIndexOf ( sep_chr ) - 1 ).toUInt ();
+#endif
 				}
 				// Most-most likely not a dropbox date. But we use it here as a fallback
 				nbr_upart[VM_IDX_STRFORMAT] = sep_chr == CHR_F_SLASH ? VDF_HUMAN_DATE : VDF_DROPBOX_DATE;
 			}
 			++n;
-			nbr_upart[VM_IDX_MONTH] = date.midRef ( n, idx - n ).toUInt ();
+#ifdef USING_QT6
+            nbr_upart[VM_IDX_MONTH] = date.mid ( n, idx - n ).toUInt ();
+#else
+            nbr_upart[VM_IDX_MONTH] = date.midRef ( n, idx - n ).toUInt ();
+#endif
 			if ( nbr_upart[VM_IDX_YEAR] < 100 )
 			{
 				nbr_upart[VM_IDX_YEAR] += 2000;
@@ -746,9 +774,15 @@ vmNumber& vmNumber::fromTrustedStrDate ( const QString& date, const VM_DATE_FORM
 
 vmNumber& vmNumber::dateFromHumanDate ( const QString& date, const bool cache )
 {
-	nbr_upart[VM_IDX_YEAR] = date.rightRef ( 4 ).toUInt ();
-	nbr_upart[VM_IDX_MONTH] = date.midRef ( 3, 2 ).toUInt ();
-	nbr_upart[VM_IDX_DAY] = date.leftRef ( 2 ).toUInt ();
+#ifdef USING_QT6
+    nbr_upart[VM_IDX_YEAR] = date.right ( 4 ).toUInt ();
+    nbr_upart[VM_IDX_MONTH] = date.mid ( 3, 2 ).toUInt ();
+    nbr_upart[VM_IDX_DAY] = date.left ( 2 ).toUInt ();
+#else
+    nbr_upart[VM_IDX_YEAR] = date.rightRef ( 4 ).toUInt ();
+    nbr_upart[VM_IDX_MONTH] = date.midRef ( 3, 2 ).toUInt ();
+    nbr_upart[VM_IDX_DAY] = date.leftRef ( 2 ).toUInt ();
+#endif
 	setType ( VMNT_DATE );
 	nbr_upart[VM_IDX_STRFORMAT] = VDF_HUMAN_DATE;
 	if ( cache )
@@ -761,9 +795,15 @@ vmNumber& vmNumber::dateFromHumanDate ( const QString& date, const bool cache )
 
 vmNumber& vmNumber::dateFromDBDate ( const QString& date, const bool cache )
 {
-	nbr_upart[VM_IDX_YEAR] = date.leftRef ( 4 ).toUInt ();
-	nbr_upart[VM_IDX_MONTH] = date.midRef ( 5, 2 ).toUInt ();
-	nbr_upart[VM_IDX_DAY] = date.rightRef ( 2 ).toUInt ();
+#ifdef USING_QT6
+    nbr_upart[VM_IDX_YEAR] = date.left ( 4 ).toUInt ();
+    nbr_upart[VM_IDX_MONTH] = date.mid ( 5, 2 ).toUInt ();
+    nbr_upart[VM_IDX_DAY] = date.right ( 2 ).toUInt ();
+#else
+    nbr_upart[VM_IDX_YEAR] = date.leftRef ( 4 ).toUInt ();
+    nbr_upart[VM_IDX_MONTH] = date.midRef ( 5, 2 ).toUInt ();
+    nbr_upart[VM_IDX_DAY] = date.rightRef ( 2 ).toUInt ();
+#endif
 	setType ( VMNT_DATE );
 	nbr_upart[VM_IDX_STRFORMAT] = VDF_DB_DATE;
 	if ( cache )
@@ -776,9 +816,15 @@ vmNumber& vmNumber::dateFromDBDate ( const QString& date, const bool cache )
 
 vmNumber& vmNumber::dateFromDropboxDate ( const QString& date, const bool cache )
 {
-	nbr_upart[VM_IDX_YEAR] = date.leftRef ( 4 ).toUInt ();
-	nbr_upart[VM_IDX_MONTH] = date.midRef ( 5, 2 ).toUInt ();
-	nbr_upart[VM_IDX_DAY] = date.rightRef ( 2 ).toUInt ();
+#ifdef USING_QT6
+    nbr_upart[VM_IDX_YEAR] = date.left ( 4 ).toUInt ();
+    nbr_upart[VM_IDX_MONTH] = date.mid ( 5, 2 ).toUInt ();
+    nbr_upart[VM_IDX_DAY] = date.right ( 2 ).toUInt ();
+#else
+    nbr_upart[VM_IDX_YEAR] = date.leftRef ( 4 ).toUInt ();
+    nbr_upart[VM_IDX_MONTH] = date.midRef ( 5, 2 ).toUInt ();
+    nbr_upart[VM_IDX_DAY] = date.rightRef ( 2 ).toUInt ();
+#endif
 	setType ( VMNT_DATE );
 	nbr_upart[VM_IDX_STRFORMAT] = VDF_DROPBOX_DATE;
 	if ( cache )
@@ -805,9 +851,15 @@ vmNumber& vmNumber::dateFromFilenameDate ( const QString& date, const bool cache
 	if ( date.length () >= 6 )
 	{
 		const int year_end_idx ( date.length () > 6 ? 4 : 2 );
-		nbr_upart[VM_IDX_YEAR] = date.leftRef ( year_end_idx ).toUInt ();
-		nbr_upart[VM_IDX_MONTH] = date.midRef ( year_end_idx, 2 ).toUInt ();
-		nbr_upart[VM_IDX_DAY] = date.rightRef ( 2 ).toUInt ();
+#ifdef USING_QT6
+        nbr_upart[VM_IDX_YEAR] = date.left ( year_end_idx ).toUInt ();
+        nbr_upart[VM_IDX_MONTH] = date.mid ( year_end_idx, 2 ).toUInt ();
+        nbr_upart[VM_IDX_DAY] = date.right ( 2 ).toUInt ();
+#else
+        nbr_upart[VM_IDX_YEAR] = date.leftRef ( year_end_idx ).toUInt ();
+        nbr_upart[VM_IDX_MONTH] = date.midRef ( year_end_idx, 2 ).toUInt ();
+        nbr_upart[VM_IDX_DAY] = date.rightRef ( 2 ).toUInt ();
+#endif
 		setType ( VMNT_DATE );
 		nbr_upart[VM_IDX_STRFORMAT] = VDF_FILE_DATE;
 		if ( cache )
@@ -1197,8 +1249,13 @@ vmNumber& vmNumber::fromTrustedStrPhone ( const QString& phone, const bool cache
 	clear ( false );
 	nbr_upart[VM_IDX_PREFIX] = retrievePhonePrefix ( phone, true ).toUInt ();
 	const QString phone_body ( retrievePhoneBody ( phone, true ) );
-	nbr_upart[VM_IDX_PHONE1] = phone_body.leftRef ( phone_body.count () == 8 ? 4 : 5 ).toUInt ();
-	nbr_upart[VM_IDX_PHONE2] = phone_body.rightRef ( 4 ).toUInt ();
+#ifdef USING_QT6
+    nbr_upart[VM_IDX_PHONE1] = phone_body.left ( phone_body.length () == 8 ? 4 : 5 ).toUInt ();
+    nbr_upart[VM_IDX_PHONE2] = phone_body.right ( 4 ).toUInt ();
+#else
+    nbr_upart[VM_IDX_PHONE1] = phone_body.leftRef ( phone_body.count () == 8 ? 4 : 5 ).toUInt ();
+    nbr_upart[VM_IDX_PHONE2] = phone_body.rightRef ( 4 ).toUInt ();
+#endif
 	setType ( VMNT_PHONE );
 	if ( cache )
 	{
@@ -1426,8 +1483,13 @@ vmNumber& vmNumber::fromTrustedStrPrice ( const QString& price, const bool cache
 		clear ( false );
 		const int idx_sep ( price.indexOf ( CHR_COMMA ) );
 		const int idx_space ( price.indexOf ( CHR_SPACE ) );
-		nbr_part[VM_IDX_TENS] = price.midRef ( idx_space + 1, idx_sep - idx_space - 1 ).toInt ();
-		nbr_part[VM_IDX_CENTS] = price.rightRef ( 2 ).toInt ();
+#ifdef USING_QT6
+        nbr_part[VM_IDX_TENS] = price.mid ( idx_space + 1, idx_sep - idx_space - 1 ).toInt ();
+        nbr_part[VM_IDX_CENTS] = price.right ( 2 ).toInt ();
+#else
+        nbr_part[VM_IDX_TENS] = price.midRef ( idx_space + 1, idx_sep - idx_space - 1 ).toInt ();
+        nbr_part[VM_IDX_CENTS] = price.rightRef ( 2 ).toInt ();
+#endif
 		if ( price.at ( 0 ) == CHR_L_PARENTHESIS ) // negative
 			nbr_part[VM_IDX_TENS] = 0 - nbr_part[VM_IDX_TENS];
 	}
@@ -1599,13 +1661,20 @@ vmNumber& vmNumber::fromStrTime ( const QString& time )
 				is_negative = true;
 				temp_time.remove ( CHR_HYPHEN );
 			}
-			hours = temp_time.leftRef ( idx ).toInt ();
-			mins = temp_time.midRef ( idx + 1, 2 ).toInt ();
-			
+#ifdef USING_QT6
+            hours = temp_time.left ( idx ).toInt ();
+            mins = temp_time.mid ( idx + 1, 2 ).toInt ();
+#else
+            hours = temp_time.leftRef ( idx ).toInt ();
+            mins = temp_time.midRef ( idx + 1, 2 ).toInt ();
+#endif
 			idx = time.indexOf ( CHR_COLON, idx + 1 );
 			if ( idx != -1 )
-				secs = temp_time.midRef ( idx + 1, 2 ).toInt ();
-			
+#ifdef USING_QT6
+                secs = temp_time.mid ( idx + 1, 2 ).toInt ();
+#else
+                secs = temp_time.midRef ( idx + 1, 2 ).toInt ();
+#endif
 			nbr_part[VM_IDX_HOUR] = !is_negative ? hours : 0 - hours;
 			nbr_part[VM_IDX_MINUTE] = mins;
 			nbr_part[VM_IDX_SECOND] = secs;
@@ -1638,28 +1707,51 @@ vmNumber& vmNumber::fromTrustedStrTime ( const QString& time, const VM_TIME_FORM
 	{
 		switch ( format )
 		{
-			case VTF_24_HOUR:
-				nbr_part[VM_IDX_HOUR] = time.leftRef ( 2 ).toInt ();
-				if ( time.length () < 8 )
-					nbr_part[VM_IDX_MINUTE] = time.rightRef ( 2 ).toInt ();
-				else
-				{
-					nbr_part[VM_IDX_MINUTE] = time.midRef ( 3, 2 ).toInt ();
-					nbr_part[VM_IDX_SECOND] = time.rightRef ( 2 ).toInt ();
-				}
-			break;
-				
-			case VTF_DAYS:
-				nbr_part[VM_IDX_HOUR] = time.leftRef ( 4 ).toInt ();
-				if ( time.length () < 10 )
-					nbr_part[VM_IDX_MINUTE] = time.rightRef ( 2 ).toInt ();
-				else
-				{
-					nbr_part[VM_IDX_MINUTE] = time.midRef ( 5, 2 ).toInt ();
-					nbr_part[VM_IDX_SECOND] = time.rightRef ( 2 ).toInt ();
-				}
-			break;
-				
+#ifdef USING_QT6
+        case VTF_24_HOUR:
+            nbr_part[VM_IDX_HOUR] = time.left ( 2 ).toInt ();
+            if ( time.length () < 8 )
+                nbr_part[VM_IDX_MINUTE] = time.right ( 2 ).toInt ();
+            else
+            {
+                nbr_part[VM_IDX_MINUTE] = time.mid ( 3, 2 ).toInt ();
+                nbr_part[VM_IDX_SECOND] = time.right ( 2 ).toInt ();
+            }
+            break;
+
+        case VTF_DAYS:
+            nbr_part[VM_IDX_HOUR] = time.left ( 4 ).toInt ();
+            if ( time.length () < 10 )
+                nbr_part[VM_IDX_MINUTE] = time.right ( 2 ).toInt ();
+            else
+            {
+                nbr_part[VM_IDX_MINUTE] = time.mid ( 5, 2 ).toInt ();
+                nbr_part[VM_IDX_SECOND] = time.right ( 2 ).toInt ();
+            }
+            break;
+#else
+        case VTF_24_HOUR:
+            nbr_part[VM_IDX_HOUR] = time.leftRef ( 2 ).toInt ();
+            if ( time.length () < 8 )
+                nbr_part[VM_IDX_MINUTE] = time.rightRef ( 2 ).toInt ();
+            else
+            {
+                nbr_part[VM_IDX_MINUTE] = time.midRef ( 3, 2 ).toInt ();
+                nbr_part[VM_IDX_SECOND] = time.rightRef ( 2 ).toInt ();
+            }
+            break;
+
+        case VTF_DAYS:
+            nbr_part[VM_IDX_HOUR] = time.leftRef ( 4 ).toInt ();
+            if ( time.length () < 10 )
+                nbr_part[VM_IDX_MINUTE] = time.rightRef ( 2 ).toInt ();
+            else
+            {
+                nbr_part[VM_IDX_MINUTE] = time.midRef ( 5, 2 ).toInt ();
+                nbr_part[VM_IDX_SECOND] = time.rightRef ( 2 ).toInt ();
+            }
+            break;
+#endif
 			case VTF_FANCY:
 				//getTimeFromFancyTimeString ( time, mQString );
 			break;

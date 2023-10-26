@@ -173,7 +173,7 @@ void calendarViewUI::fillCalendarJobsList ( const stringTable& jobids, vmListWid
 		{
 			uint jobid ( 0 );
 			const QString dayStr ( QStringLiteral ( " (Day(s) " ) );
-			jobListItem* job_item ( nullptr ), *job_parent ( nullptr );
+            jobListItem* job_item, *job_parent ( nullptr );
 			clientListItem* client_parent ( nullptr );
 			vmListWidget* old_list ( nullptr );
 			bool b_old_is_ignoring_change ( false );

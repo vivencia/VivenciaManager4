@@ -6,7 +6,11 @@
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMenu>
+
+#ifdef USING_QT6
+#else
 #include <QtWidgets/QDesktopWidget>
+#endif
 
 #define TITLE_BAR_HEIGHT qApp->style ()->pixelMetric ( QStyle::PM_TitleBarHeight )
 QString vmWidget::strColor1;
@@ -215,23 +219,49 @@ int vmWidget::vmColorIndex ( const VMColors vmcolor )
 	return idx;
 }
 
+#ifdef USING_QT6
+#include <QtGui/QScreen>
 QPoint vmWidget::getGlobalWidgetPosition ( const QWidget* widget, QWidget* appMainWindow )
 {
-	QWidget* refWidget ( nullptr );
-	if ( appMainWindow && appMainWindow->isAncestorOf ( widget ) )
-		refWidget = appMainWindow;
-	else
-	{
-		refWidget = widget->parentWidget ();
-		if ( refWidget == nullptr )
-			refWidget = qApp->desktop ();
-	}
-	QPoint wpos;
-	const QPoint posInRefWidget ( widget->mapTo ( refWidget, widget->pos () ) );
-	wpos.setX ( refWidget->pos ().x () + posInRefWidget.x () - widget->pos ().x () );
-	wpos.setY ( refWidget->pos ().y () + posInRefWidget.y () - widget->pos ().y () + widget->height () + TITLE_BAR_HEIGHT );
-	return wpos;
+    QWidget* refWidget ( nullptr );
+    QRect parentGeometry;
+    if ( appMainWindow )
+        refWidget = appMainWindow;
+    else
+        refWidget = widget->parentWidget ();
+
+    if ( refWidget == nullptr )
+        parentGeometry = qApp->primaryScreen ()->availableGeometry ();
+    else
+        parentGeometry = refWidget->geometry ();
+
+    QPoint wpos;
+    const QPoint posInRefWidget ( widget->mapTo ( refWidget, widget->pos () ) );
+    wpos.setX ( parentGeometry.x () + posInRefWidget.x () - widget->pos ().x () );
+    wpos.setY ( parentGeometry.y () + posInRefWidget.y () - widget->pos ().y () + widget->height () + TITLE_BAR_HEIGHT );
+    return wpos;
 }
+
+#else
+QPoint vmWidget::getGlobalWidgetPosition ( const QWidget* widget, QWidget* appMainWindow )
+{
+    QWidget* refWidget ( nullptr );
+    if ( appMainWindow && appMainWindow->isAncestorOf ( widget ) )
+        refWidget = appMainWindow;
+    else
+    {
+        refWidget = widget->parentWidget ();
+        if ( refWidget == nullptr )
+            refWidget = qApp->desktop ();
+    }
+    QPoint wpos;
+    const QPoint posInRefWidget ( widget->mapTo ( refWidget, widget->pos () ) );
+    wpos.setX ( refWidget->pos ().x () + posInRefWidget.x () - widget->pos ().x () );
+    wpos.setY ( refWidget->pos ().y () + posInRefWidget.y () - widget->pos ().y () + widget->height () + TITLE_BAR_HEIGHT );
+    return wpos;
+}
+
+#endif
 
 void vmWidget::execMenuWithinWidget ( QMenu* menu, const QWidget* widget,
 									  const QPoint& mouse_pos, QWidget *appMainWindow )

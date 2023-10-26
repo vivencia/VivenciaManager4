@@ -2,6 +2,7 @@
 #define STRINGRECORD_H
 
 #include "vmlist.h"
+#include "vmlibs.h"
 
 #include <vmUtils/tristatetype.h>
 
@@ -132,7 +133,7 @@ public:
 
 private:
 	QChar record_sep;
-	QStringMatcher recsep_matcher;
+    QStringMatcher recsep_matcher;
 	QString mData;
 	mutable QString mCurValue;
 	uint mFields;

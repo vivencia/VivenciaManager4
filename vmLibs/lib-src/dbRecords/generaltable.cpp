@@ -59,7 +59,7 @@ void generalTable::insertOrUpdate ( const TABLE_INFO* const t_info )
 	{
 		setAction ( ACTION_EDIT );
 		setRecValue ( this, FLD_GENERAL_TABLENAME, t_info->table_name );
-		setRecValue ( this, FLD_GENERAL_TABLEVERSION, QString ( t_info->version ) );
+        setRecValue ( this, FLD_GENERAL_TABLEVERSION, QString ( QChar( t_info->version ) ) );
 	}
 	else
 	{
@@ -67,7 +67,7 @@ void generalTable::insertOrUpdate ( const TABLE_INFO* const t_info )
 		setRecIntValue ( this, FLD_GENERAL_ID, static_cast<int>( t_info->table_order + 1 ) );
 		setRecValue ( this, FLD_GENERAL_ID, genIDStr );
 		setRecValue ( this, FLD_GENERAL_TABLENAME, t_info->table_name );
-		setRecValue ( this, FLD_GENERAL_TABLEVERSION, QString ( t_info->version ) );
+        setRecValue ( this, FLD_GENERAL_TABLEVERSION, QString ( QChar( t_info->version ) ) );
 		setRecValue ( this, FLD_GENERAL_TABLEID, QString::number ( t_info->table_id ) );
 		setRecValue ( this, FLD_GENERAL_CONFIG_FILE, QString () );
 		setRecValue ( this, FLD_GENERAL_EXTRA, QString () );

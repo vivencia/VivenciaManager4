@@ -144,7 +144,7 @@ const QString configOps::defaultConfigDir ()
 	if ( !appName ().isEmpty () )
 		return _configDir ();
 
-	qDebug () << "Error: configOps::appName () not set. This must be one of the first actions of any program linked against vmUtils.so";
+	MSG_OUT ( "Error: configOps::appName () not set. This must be one of the first actions of any program linked against vmUtils.so" )
 	return QString ();
 }
 
@@ -153,7 +153,7 @@ const QString configOps::appConfigFile ()
 	if ( !appName ().isEmpty () )
 		return _configDir () + QStringLiteral ( "vmngr.conf" );
 
-	qDebug () << "Error: configOps::appName () not set. This must be one of the first actions of any program linked against vmUtils.so";
+	MSG_OUT ( "Error: configOps::appName () not set. This must be one of the first actions of any program linked against vmUtils.so" )
 	return QString ();
 }
 
@@ -173,7 +173,7 @@ const QString configOps::appDataDir ()
 		return dir_name;
 	}
 
-	qDebug () << "Error: configOps::appName () not set. This must be one of the first actions of any program linked against vmUtils.so";
+	MSG_OUT ( "Error: configOps::appName () not set. This must be one of the first actions of any program linked against vmUtils.so" )
 	return QString ();
 }
 

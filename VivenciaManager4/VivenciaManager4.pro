@@ -80,11 +80,11 @@ unix:!macx: LIBS += -L$$PWD/../vmLibs/libs/ -ldbRecords -lvmUtils -lvmWidgets -l
 
 DEPENDPATH += $$PWD/../vmLibs/libs $$PWD/../vmLibs/common $$PWD/../vmLibs/lib-src
 INCLUDEPATH += $$PWD/../vmLibs/lib-src $$PWD/../vmLibs/common
+QMAKE_RPATHDIR += -Wl,-rpath,'./'
 
-DEFINES += DEBUG QT_USE_QSTRINGBUILDER QT_USE_FAST_CONCATENATION QT_USE_FAST_OPERATOR_PLUS QT_NO_DEBUG
-
+DEFINES += QT_USE_QSTRINGBUILDER QT_USE_FAST_CONCATENATION QT_USE_FAST_OPERATOR_PLUS
+DEFINES_DEBUG += DEBUG QT_DEBUG
+DEFINES_RELEASE += QT_NO_DEBUG
 QMAKE_CXXFLAGS_RELEASE += -O3 -march=native -fomit-frame-pointer -funroll-loops -Ofast
-#QMAKE_CXXFLAGS_DEBUG += -g -fvar-tracking-assignments-toggle
 QMAKE_CXXFLAGS_DEBUG += -g
-#QMAKE_CXXFLAGS += -g -fvar-tracking-assignments-toggle
-QMAKE_CXXFLAGS += -Wall -Wextra -pedantic -std=c++11 -finput-charset=UTF-8 -fexec-charset=UTF-8
+QMAKE_CXXFLAGS += -Werror -Wall -Wextra -pedantic -std=c++14 -finput-charset=UTF-8 -fexec-charset=UTF-8
